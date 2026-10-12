@@ -2,7 +2,8 @@
   "name": "usage-limits",
   "version": "0.3.0",
   "author": {
-    "name": "thorstenalpers"
+    "name": "Claude",
+    "email": "noreply@anthropic.com"
   },
   "license": "MIT",
   "description": "One row above the prompt: how much of the 5-hour and weekly usage limits is used, in percent, with the time until each resets.",

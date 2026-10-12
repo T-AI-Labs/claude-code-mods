@@ -2,7 +2,8 @@
   "name": "cache-meter",
   "version": "0.3.4",
   "author": {
-    "name": "thorstenalpers"
+    "name": "Claude",
+    "email": "noreply@anthropic.com"
   },
   "license": "MIT",
   "description": "Prompt-cache hit rate and context fill in one row above the prompt, with a switchable auto-compact threshold and Compact and Clear buttons.",

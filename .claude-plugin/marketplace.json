@@ -1,7 +1,8 @@
 {
   "name": "claude-code-mods",
   "owner": {
-    "name": "thorstenalpers"
+    "name": "Claude",
+    "email": "noreply@anthropic.com"
   },
   "metadata": {
     "description": "Mods for Claude Code: a prompt-cache and context row with compaction controls, and a usage-limits row."
