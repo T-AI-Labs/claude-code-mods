@@ -3,10 +3,10 @@
 <p align="center"><em>See your prompt-cache hit rate, context fill and usage limits at a glance, right above the Claude Code prompt.</em></p>
 
 <p align="center">
-  <a href="https://github.com/thorstenalpers/claude-code-mods/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/thorstenalpers/claude-code-mods/ci.yml?branch=main&style=flat-square&label=ci" alt="CI"></a>
-  <a href="https://github.com/thorstenalpers/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fthorstenalpers%2Fclaude-code-mods%2Fmain%2Fcache-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=cache-meter&style=flat-square" alt="cache-meter version"></a>
-  <a href="https://github.com/thorstenalpers/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fthorstenalpers%2Fclaude-code-mods%2Fmain%2Fusage-limits%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=usage-limits&style=flat-square" alt="usage-limits version"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/thorstenalpers/claude-code-mods?style=flat-square" alt="License"></a>
+  <a href="https://github.com/T-AI-Labs/claude-code-mods/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/T-AI-Labs/claude-code-mods/ci.yml?branch=main&style=flat-square&label=ci" alt="CI"></a>
+  <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcache-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=cache-meter&style=flat-square" alt="cache-meter version"></a>
+  <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fusage-limits%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=usage-limits&style=flat-square" alt="usage-limits version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/T-AI-Labs/claude-code-mods?style=flat-square" alt="License"></a>
   <img src="https://img.shields.io/badge/Claude%20Code-2.1.295-d97757?style=flat-square" alt="Claude Code 2.1.295">
   <img src="https://img.shields.io/badge/Claude%20desktop%20app-2.31226.1-d97757?style=flat-square" alt="Claude desktop app 2.31226.1">
 </p>
@@ -34,7 +34,7 @@
 - No network calls, no external programs and no extra tokens for the display. See [Token cost](#token-cost).
 
 ```
-claude plugin marketplace add thorstenalpers/claude-code-mods
+claude plugin marketplace add T-AI-Labs/claude-code-mods
 claude plugin install cache-meter@claude-code-mods
 claude plugin install usage-limits@claude-code-mods
 ```
@@ -46,8 +46,8 @@ Run the three commands above in any shell (cmd, PowerShell, bash). The mods load
 From the prompt of a running Claude Code terminal session, the same install is:
 
 ```
-/plugin install cache-meter --marketplace thorstenalpers/claude-code-mods
-/plugin install usage-limits --marketplace thorstenalpers/claude-code-mods
+/plugin install cache-meter --marketplace T-AI-Labs/claude-code-mods
+/plugin install usage-limits --marketplace T-AI-Labs/claude-code-mods
 ```
 
 The mods use Claude Code's function-hook plugin API, which is in early access and may change between releases. They are built and tested against Claude Code 2.1.295, the engine in the Claude desktop app 2.31226.1.
