@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1044 176" width="1044" height="176" role="img" aria-labelledby="t d">
+  <title id="t">context-bar and usage-limits above the Claude Code prompt</title>
+  <desc id="d">Illustration. First row: cache hit 92 percent, context fill 10 percent, and the buttons Auto-compact 97 percent, Compact and Clear. Second row: 5-hour limit 42 percent, weekly limit 78 percent.</desc>
+  <rect width="1044" height="176" rx="12" fill="#1a1a1a"/>
+  <g font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas, 'DejaVu Sans Mono', monospace" font-size="15">
+    <g fill="#8c8c8c">
+      <text x="28" y="50">Cache</text>
+      <text x="216" y="50">(92k/100k)</text>
+      <text x="350" y="50">Context</text>
+      <text x="566" y="50">(100k/1M)</text>
+      <text x="28" y="82">5h limit</text>
+      <text x="216" y="82">(2h 13m left)</text>
+      <text x="350" y="82">Weekly limit</text>
+      <text x="566" y="82">(3d 4h left)</text>
+    </g>
+    <g fill="#e8e8e8">
+      <text x="118" y="50">▮▮▮▮▮</text>
+      <text x="204" y="50" text-anchor="end">92%</text>
+      <text x="468" y="50">▮<tspan fill="#5c5c5c">▯▯▯▯</tspan></text>
+      <text x="554" y="50" text-anchor="end">10%</text>
+      <text x="118" y="82">▮▮<tspan fill="#5c5c5c">▯▯▯</tspan></text>
+      <text x="204" y="82" text-anchor="end">42%</text>
+    </g>
+    <g fill="#e0a83c">
+      <text x="468" y="82">▮▮▮▮<tspan fill="#5c5c5c">▯</tspan></text>
+      <text x="554" y="82" text-anchor="end">78%</text>
+    </g>
+    <g fill="none" stroke="#5a5a5a">
+      <rect x="700.5" y="31.5" width="160" height="27" rx="6"/>
+      <rect x="868.5" y="31.5" width="78" height="27" rx="6"/>
+      <rect x="954.5" y="31.5" width="62" height="27" rx="6"/>
+    </g>
+    <g fill="#e8e8e8" text-anchor="middle">
+      <text x="780.5" y="50">Auto-compact 97%</text>
+      <text x="907.5" y="50">Compact</text>
+      <text x="985.5" y="50">Clear</text>
+    </g>
+    <rect x="20.5" y="112.5" width="1003" height="44" rx="8" fill="#222222" stroke="#4a4a4a"/>
+    <text x="38" y="140" fill="#6e6e6e">&gt; Ask Claude anything</text>
+  </g>
+</svg>
