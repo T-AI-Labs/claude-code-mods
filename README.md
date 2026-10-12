@@ -35,8 +35,8 @@
 
 ```
 claude plugin marketplace add T-AI-Labs/claude-code-mods
-claude plugin install cache-meter@claude-code-mods
-claude plugin install usage-limits@claude-code-mods
+claude plugin install cache-meter@T-AI-Labs
+claude plugin install usage-limits@T-AI-Labs
 ```
 
 ## Install
@@ -102,16 +102,16 @@ Both mods take the same two options:
 Change them at any time from a shell, once per mod. In PowerShell:
 
 ```
-'{"display":"text","details":"false"}' | claude plugin configure cache-meter@claude-code-mods --values-stdin
+'{"display":"text","details":"false"}' | claude plugin configure cache-meter@T-AI-Labs --values-stdin
 ```
 
 In cmd:
 
 ```
-echo {"display":"text","details":"false"} | claude plugin configure cache-meter@claude-code-mods --values-stdin
+echo {"display":"text","details":"false"} | claude plugin configure cache-meter@T-AI-Labs --values-stdin
 ```
 
-Leave out an option to keep its value. `claude plugin configure cache-meter@claude-code-mods` alone shows what is set. A new session picks up the change.
+Leave out an option to keep its value. `claude plugin configure cache-meter@T-AI-Labs` alone shows what is set. A new session picks up the change.
 
 They can also be set while installing, with `--config display=text`, and in a terminal session they are rows of the `/config` menu. Give both mods the same settings to keep their columns aligned.
 
@@ -128,14 +128,14 @@ In the terminal, use the mouse, or move the focus into the row with `ctrl+x tab`
 ## Update and uninstall
 
 ```
-claude plugin marketplace update claude-code-mods
-claude plugin update cache-meter@claude-code-mods
-claude plugin update usage-limits@claude-code-mods
+claude plugin marketplace update T-AI-Labs
+claude plugin update cache-meter@T-AI-Labs
+claude plugin update usage-limits@T-AI-Labs
 ```
 
 ```
-claude plugin uninstall cache-meter@claude-code-mods
-claude plugin uninstall usage-limits@claude-code-mods
+claude plugin uninstall cache-meter@T-AI-Labs
+claude plugin uninstall usage-limits@T-AI-Labs
 ```
 
 A new session picks up the change.
