@@ -74,7 +74,8 @@ test('shows the cache hit rate and the context fill in one row', async ($, on) =
     expect(await ui.find({ type: 'Text', text: '(80/100)' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: '(82k/200k)' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: 'below' })).toBeDefined()
-    expect(await ui.findAll({ type: 'Button' })).toHaveLength(3)
+    expect(await ui.findAll({ type: 'Button' })).toHaveLength(2)
+    expect(await ui.find({ type: 'Select', key: 'threshold' })).toBeDefined()
     await ui.unmount()
   }
 })
@@ -135,21 +136,38 @@ test('leaves the token counts out when details is off', { options: { details: fa
   }
 })
 
-test('the threshold button cycles 97, 90, 70, 60, 50 and wraps', async ($, on) => {
+test('the threshold is a picker over 97, 90, 70, 60 and 50', async ($, on) => {
   world(on)
 
   for (const surface of SURFACES) {
     const ui = await $.ui.mount({ ...BAND, surface })
+    const options = (await ui.find({ key: 'threshold' }))?.props.options
 
-    for (const step of [90, 70, 60, 50, 97]) {
-      await ui.press({ key: 'threshold' })
-      expect((await ui.find({ key: 'threshold' }))?.props.label).toBe(
-        `Auto ${step}%`,
-      )
+    expect(options).toEqual(
+      [97, 90, 70, 60, 50].map(step => ({ value: `${step}`, label: `${step}%` })),
+    )
+
+    for (const step of [70, 50, 97]) {
+      await ui.select({ key: 'threshold', value: `${step}` })
+      expect((await ui.find({ key: 'threshold' }))?.props.value).toBe(`${step}`)
     }
 
     await ui.unmount()
   }
+})
+
+test('on mobile the threshold is a button that steps through the values', async ($, on) => {
+  world(on)
+  const ui = await $.ui.mount({ ...BAND, surface: 'mobile' })
+
+  for (const step of [90, 70, 60, 50, 97]) {
+    await ui.press({ key: 'threshold' })
+    expect((await ui.find({ key: 'threshold' }))?.props.label).toBe(
+      `Auto ${step}%`,
+    )
+  }
+
+  await ui.unmount()
 })
 
 test('compacts once at the stored threshold and re-arms below it', async ($, on) => {

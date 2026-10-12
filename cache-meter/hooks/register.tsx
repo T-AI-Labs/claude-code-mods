@@ -10,6 +10,7 @@ import type {
 import type { ContextFill } from '../types'
 
 const STEPS = [97, 90, 70, 60, 50]
+const OPTIONS = STEPS.map(step => ({ value: String(step), label: `${step}%` }))
 const DEFAULT_THRESHOLD = 97
 const STORE_KEY = 'threshold'
 
@@ -117,6 +118,13 @@ const cycleThreshold = async ($: EngineInterface) => {
   await $.store.set(STORE_KEY, value)
 }
 
+const setThreshold = async ($: EngineInterface, value: number) => {
+  if (STEPS.includes(value)) {
+    await update($, threshold, () => value)
+    await $.store.set(STORE_KEY, value)
+  }
+}
+
 export const register: Register = (on, options) => {
   const layout: Layout = {
     hasGauge: options.display !== 'text',
@@ -212,6 +220,29 @@ export const register: Register = (on, options) => {
     const fill = await read($, context)
     const limit = await read($, threshold)
     const hitPercent = hit === null ? null : (hit.read / hit.total) * 100
+    let picker
+
+    // The mobile surface draws no Select.
+    if (e.surface === 'mobile') {
+      picker = (
+        <Button
+          key="threshold"
+          label={`Auto ${limit}%`}
+          onPress={() => void cycleThreshold($)}
+        />
+      )
+    } else {
+      const { Select } = $.ui.resolve(e)
+      picker = (
+        <Select
+          key="threshold"
+          label="Auto"
+          options={OPTIONS}
+          value={String(limit)}
+          onSelect={value => void setThreshold($, Number(value))}
+        />
+      )
+    }
 
     return (
       <Box flexDirection="column">
@@ -235,11 +266,7 @@ export const register: Register = (on, options) => {
                 : `(${tokens(fill.tokens)}/${tokens(fill.window)})`,
           })}
           <Box flexDirection="row" gap={1} flexShrink={0}>
-            <Button
-              key="threshold"
-              label={`Auto ${limit}%`}
-              onPress={() => void cycleThreshold($)}
-            />
+            {picker}
             <Button
               key="compact"
               label="Compact"

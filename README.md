@@ -52,14 +52,14 @@ The mods use Claude Code's function-hook plugin API, which is in early access an
 ## cache-meter
 
 ```
-Cache ▮▮▮▮▮  92% (92k/100k) Context ▮▯▯▯▯  10% (100k/1M)  [ Auto 97% ] [ Compact ] [ Clear ]
+Cache ▮▮▮▮▮  92% (92k/100k) Context ▮▯▯▯▯  10% (100k/1M)  Auto 97% ▾  [ Compact ] [ Clear ]
 ```
 
 | Element | What it shows |
 | --- | --- |
 | **Cache** | Share of the last turn's input tokens that the prompt cache served, with tokens read and total input in parentheses. Turns yellow below 40 %. |
 | **Context** | Fill of the model's context window, with tokens used and window size in parentheses. Turns yellow within 15 points of the auto-compact threshold and red at it. |
-| **Auto** | The auto-compact threshold in percent. Each press steps through 97, 90, 70, 60 and 50. The choice is kept across sessions. |
+| **Auto** | The auto-compact threshold, a dropdown over 97, 90, 70, 60 and 50 %. The choice is kept across sessions. |
 | **Compact** | Runs `/compact`. |
 | **Clear** | Runs `/clear`. |
 
