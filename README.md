@@ -99,13 +99,29 @@ Both mods take the same two options:
 | `display` | `gauge`, `text` | `gauge` | `gauge` draws a five-segment fill level before each percentage; `text` leaves it out. |
 | `details` | `true`, `false` | `true` | Shows the figures in parentheses. |
 
-Set them while installing:
+Change them at any time from a shell, once per mod. In PowerShell:
 
 ```
-claude plugin install cache-meter@claude-code-mods --config display=text
+'{"display":"text","details":"false"}' | claude plugin configure cache-meter@claude-code-mods --values-stdin
 ```
 
-In a terminal session they are also rows of the `/config` menu. Give both mods the same settings to keep their columns aligned.
+In cmd:
+
+```
+echo {"display":"text","details":"false"} | claude plugin configure cache-meter@claude-code-mods --values-stdin
+```
+
+Leave out an option to keep its value. `claude plugin configure cache-meter@claude-code-mods` alone shows what is set. A new session picks up the change.
+
+They can also be set while installing, with `--config display=text`, and in a terminal session they are rows of the `/config` menu. Give both mods the same settings to keep their columns aligned.
+
+### Fitting one line
+
+cache-meter needs about 92 columns with the defaults. On a narrower window its buttons wrap to a second line. Turning `details` off saves about 22 columns, `display` set to `text` about 12:
+
+```
+Cache ▮▮▮▮▮  92% Context ▮▯▯▯▯  10%  Auto 97% ▾  [ Compact ] [ Clear ]
+```
 
 In the terminal, use the mouse, or move the focus into the row with `ctrl+x tab`: Tab walks the controls, Enter presses a button, and the arrow keys pick a threshold. To hide both rows there, collapse the band with its `[-]` mark or `ctrl+x ctrl+a`.
 
