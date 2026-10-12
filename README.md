@@ -14,6 +14,7 @@
   <a href="#install"><strong>Install</strong></a> ·
   <a href="#cache-meter">cache-meter</a> ·
   <a href="#usage-limits">usage-limits</a> ·
+  <a href="#token-cost">Token cost</a> ·
   <a href="#configure">Configure</a> ·
   <a href="#update-and-uninstall">Update</a>
 </p>
@@ -24,11 +25,11 @@
 
 ## TL;DR
 
-- **cache-meter** shows how much of each turn the prompt cache served, next to the context fill, and puts Auto-compact, Compact and Clear one click away.
+- **cache-meter** shows how much of each turn the prompt cache served, next to the context fill, and puts the auto-compact threshold, Compact and Clear one click away.
 - **usage-limits** shows how much of the 5-hour and weekly limits is used, and how long until each resets.
 - Each is one quiet line. The figures stay neutral and only take a color when something needs attention.
 - They work in the Claude Code CLI and in the desktop app, alone or together. Together, their columns line up.
-- No network calls and no external programs. The mods read figures Claude Code already has and run its own `/compact` and `/clear`.
+- No network calls, no external programs and no extra tokens for the display. See [Token cost](#token-cost).
 
 ```
 claude plugin marketplace add thorstenalpers/claude-code-mods
@@ -52,15 +53,15 @@ The mods use Claude Code's function-hook plugin API, which is in early access an
 ## cache-meter
 
 ```
-Cache ▮▮▮▮▮  92% (92k/100k) Context ▮▯▯▯▯  10% (100k/1M)  Auto 97% ▾  [ Compact ] [ Clear ]
+Cache ▮▮▮▮▮  92% (92k/100k) Context ▮▯▯▯▯  10% (100k/1M)  Compact at 97% ▾  [ Compact ] [ Clear ]
 ```
 
 | Element | What it shows |
 | --- | --- |
 | **Cache** | Share of the last turn's input tokens that the prompt cache served, with tokens read and total input in parentheses. Turns yellow below 40 %. |
 | **Context** | Fill of the model's context window, with tokens used and window size in parentheses. Turns yellow within 15 points of the auto-compact threshold and red at it. |
-| **Auto** | The auto-compact threshold, a dropdown over 97, 90, 70, 60 and 50 %. The choice is kept across sessions. |
-| **Compact** | Runs `/compact`. |
+| **Compact at** | The auto-compact threshold: the context fill at which the mod compacts on its own. A dropdown over 97, 90, 70, 60 and 50 %. The choice is kept across sessions. |
+| **Compact** | Runs `/compact` now. |
 | **Clear** | Runs `/clear`. |
 
 Both figures read `–` until the first response of a session, and again after a clear.
@@ -70,6 +71,12 @@ Both figures read `–` until the first response of a session, and again after a
 After each turn the mod compares the context fill with the threshold and runs `/compact` once it is reached. It does not fire again until the fill has dropped below the threshold, so a compaction that lands above it does not loop.
 
 Claude Code's built-in auto-compaction stays on and still runs at its own limit. A threshold above that limit therefore never fires, and a long turn can pass the threshold before the mod gets to compact.
+
+### Token cost
+
+Showing the rows costs nothing. The mods read figures Claude Code already has; they make no model requests of their own and add nothing to the conversation.
+
+A compaction does cost tokens, whether you press Compact or the threshold triggers it: `/compact` is a model request that summarizes the conversation, and the next turn starts on a cold cache. The lower the threshold, the more often that happens. To keep usage down, leave the threshold high and compact by hand when it suits you.
 
 ## usage-limits
 
@@ -98,7 +105,7 @@ claude plugin install cache-meter@claude-code-mods --config display=text
 
 In a terminal session they are also rows of the `/config` menu. Give both mods the same settings to keep their columns aligned.
 
-In the terminal, press a button with the mouse, or move the focus into the row with `ctrl+x tab` and use Tab and Enter.
+In the terminal, use the mouse, or move the focus into the row with `ctrl+x tab`: Tab walks the controls, Enter presses a button, and the arrow keys pick a threshold. To hide both rows there, collapse the band with its `[-]` mark or `ctrl+x ctrl+a`.
 
 ## Update and uninstall
 

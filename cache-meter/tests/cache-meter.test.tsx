@@ -163,7 +163,7 @@ test('on mobile the threshold is a button that steps through the values', async 
   for (const step of [90, 70, 60, 50, 97]) {
     await ui.press({ key: 'threshold' })
     expect((await ui.find({ key: 'threshold' }))?.props.label).toBe(
-      `Auto ${step}%`,
+      `Compact at ${step}%`,
     )
   }
 

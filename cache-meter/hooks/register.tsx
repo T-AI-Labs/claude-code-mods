@@ -227,7 +227,7 @@ export const register: Register = (on, options) => {
       picker = (
         <Button
           key="threshold"
-          label={`Auto ${limit}%`}
+          label={`Compact at ${limit}%`}
           onPress={() => void cycleThreshold($)}
         />
       )
@@ -236,7 +236,7 @@ export const register: Register = (on, options) => {
       picker = (
         <Select
           key="threshold"
-          label="Auto"
+          label="Compact at"
           options={OPTIONS}
           value={String(limit)}
           onSelect={value => void setThreshold($, Number(value))}
