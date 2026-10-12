@@ -1,0 +1,8 @@
+{
+  "name": "context-bar",
+  "version": "0.1.0",
+  "author": { "name": "thorstenalpers" },
+  "license": "MIT",
+  "description": "One row above the prompt: cache hit rate, context fill, a switchable auto-compact threshold, and Compact and Clear buttons.",
+  "types": "./types/index.d.ts"
+}
