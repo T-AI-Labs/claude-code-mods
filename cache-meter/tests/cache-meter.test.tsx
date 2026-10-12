@@ -3,7 +3,7 @@ import { expect, mock, test } from 'claude-code/testing'
 
 const SURFACES = ['terminal', 'desktop'] as const
 const BAND = {
-  plugin: 'context-bar',
+  plugin: 'cache-meter',
   component: 'AbovePrompt',
   props: {
     hasSurvey: false,

@@ -29,10 +29,10 @@ type Cell = {
   detail: string
 }
 
-const cache = atom({ plugin: 'context-bar', key: 'cache' } as const, null)
-const context = atom({ plugin: 'context-bar', key: 'context' } as const, null)
+const cache = atom({ plugin: 'cache-meter', key: 'cache' } as const, null)
+const context = atom({ plugin: 'cache-meter', key: 'context' } as const, null)
 const threshold = atom(
-  { plugin: 'context-bar', key: 'threshold' } as const,
+  { plugin: 'cache-meter', key: 'threshold' } as const,
   DEFAULT_THRESHOLD,
 )
 
@@ -105,7 +105,7 @@ const meter = ({ Box, Text }: Tags, layout: Layout, one: Cell) => {
 const runCommand = ($: EngineInterface, command: string) => {
   $.command
     .run({ command })
-    .catch(() => $.ui.toast(`context-bar: /${command} could not run`))
+    .catch(() => $.ui.toast(`cache-meter: /${command} could not run`))
 }
 
 const cycleThreshold = async ($: EngineInterface) => {

@@ -1,10 +1,10 @@
 <h1 align="center">CCMods</h1>
 
-<p align="center"><em>Cache, context and usage limits at a glance, right above the Claude Code prompt.</em></p>
+<p align="center"><em>See your prompt-cache hit rate, context fill and usage limits at a glance, right above the Claude Code prompt.</em></p>
 
 <p align="center">
   <a href="https://github.com/thorstenalpers/CCMods/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/thorstenalpers/CCMods/ci.yml?branch=main&style=flat-square&label=ci" alt="CI"></a>
-  <a href="https://github.com/thorstenalpers/CCMods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fthorstenalpers%2FCCMods%2Fmain%2Fcontext-bar%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=context-bar&style=flat-square" alt="context-bar version"></a>
+  <a href="https://github.com/thorstenalpers/CCMods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fthorstenalpers%2FCCMods%2Fmain%2Fcache-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=cache-meter&style=flat-square" alt="cache-meter version"></a>
   <a href="https://github.com/thorstenalpers/CCMods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fthorstenalpers%2FCCMods%2Fmain%2Fusage-limits%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=usage-limits&style=flat-square" alt="usage-limits version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/thorstenalpers/CCMods?style=flat-square" alt="License"></a>
   <img src="https://img.shields.io/badge/Claude%20Code-tested%20on%202.1.295-d97757?style=flat-square" alt="Tested on Claude Code 2.1.295">
@@ -12,19 +12,19 @@
 
 <p align="center">
   <a href="#install"><strong>Install</strong></a> ·
-  <a href="#context-bar">context-bar</a> ·
+  <a href="#cache-meter">cache-meter</a> ·
   <a href="#usage-limits">usage-limits</a> ·
   <a href="#configure">Configure</a> ·
   <a href="#update-and-uninstall">Update</a>
 </p>
 
-<p align="center"><img src="docs/preview.svg" alt="context-bar and usage-limits above the Claude Code prompt" width="100%"></p>
+<p align="center"><img src="docs/preview.svg" alt="cache-meter and usage-limits above the Claude Code prompt" width="100%"></p>
 
 <p align="center"><sub>Illustration of both mods above the prompt, with the default settings.</sub></p>
 
 ## TL;DR
 
-- **context-bar** shows the prompt-cache hit rate and the context fill, and puts Auto-compact, Compact and Clear one click away.
+- **cache-meter** shows how much of each turn the prompt cache served, next to the context fill, and puts Auto-compact, Compact and Clear one click away.
 - **usage-limits** shows how much of the 5-hour and weekly limits is used, and how long until each resets.
 - Each is one quiet line. The figures stay neutral and only take a color when something needs attention.
 - They work in the Claude Code CLI and in the desktop app, alone or together. Together, their columns line up.
@@ -32,7 +32,7 @@
 
 ```
 claude plugin marketplace add thorstenalpers/CCMods
-claude plugin install context-bar@claude-code-mods
+claude plugin install cache-meter@claude-code-mods
 claude plugin install usage-limits@claude-code-mods
 ```
 
@@ -43,13 +43,13 @@ Run the three commands above in any shell (cmd, PowerShell, bash). The mods load
 From the prompt of a running Claude Code terminal session, the same install is:
 
 ```
-/plugin install context-bar --marketplace thorstenalpers/CCMods
+/plugin install cache-meter --marketplace thorstenalpers/CCMods
 /plugin install usage-limits --marketplace thorstenalpers/CCMods
 ```
 
 The mods use Claude Code's function-hook plugin API, which is in early access and may change between releases. They are built and tested against Claude Code 2.1.295.
 
-## context-bar
+## cache-meter
 
 ```
 Cache    ▮▮▮▮▮  92% (92k/100k)     Context      ▮▯▯▯▯  10% (100k/1M)      [ Auto-compact 97% ] [ Compact ] [ Clear ]
@@ -93,7 +93,7 @@ Both mods take the same two options:
 Set them while installing:
 
 ```
-claude plugin install context-bar@claude-code-mods --config display=text
+claude plugin install cache-meter@claude-code-mods --config display=text
 ```
 
 In a terminal session they are also rows of the `/config` menu. Give both mods the same settings to keep their columns aligned.
@@ -104,12 +104,12 @@ In the terminal, press a button with the mouse, or move the focus into the row w
 
 ```
 claude plugin marketplace update claude-code-mods
-claude plugin update context-bar@claude-code-mods
+claude plugin update cache-meter@claude-code-mods
 claude plugin update usage-limits@claude-code-mods
 ```
 
 ```
-claude plugin uninstall context-bar@claude-code-mods
+claude plugin uninstall cache-meter@claude-code-mods
 claude plugin uninstall usage-limits@claude-code-mods
 ```
 

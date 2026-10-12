@@ -1,11 +1,11 @@
 {
-  "name": "context-bar",
-  "version": "0.2.0",
+  "name": "cache-meter",
+  "version": "0.3.0",
   "author": {
     "name": "thorstenalpers"
   },
   "license": "MIT",
-  "description": "One row above the prompt: cache hit rate, context fill, a switchable auto-compact threshold, and Compact and Clear buttons.",
+  "description": "Prompt-cache hit rate and context fill in one row above the prompt, with a switchable auto-compact threshold and Compact and Clear buttons.",
   "types": "./types/index.d.ts",
   "userConfig": {
     "display": {

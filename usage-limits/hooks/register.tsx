@@ -13,7 +13,7 @@ const MINUTE = 60_000
 const HOUR = 60 * MINUTE
 const DAY = 24 * HOUR
 
-// Shared with context-bar so the columns of both rows line up.
+// Shared with cache-meter so the columns of both rows line up.
 const LABEL_WIDTHS = [8, 12]
 const SEGMENTS = 5
 const PERCENT_WIDTH = 4

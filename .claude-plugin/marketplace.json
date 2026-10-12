@@ -1,14 +1,16 @@
 {
   "name": "claude-code-mods",
-  "owner": { "name": "thorstenalpers" },
+  "owner": {
+    "name": "thorstenalpers"
+  },
   "metadata": {
-    "description": "Mods for Claude Code: a cache and context row with compaction controls, and a usage-limits row."
+    "description": "Mods for Claude Code: a prompt-cache and context row with compaction controls, and a usage-limits row."
   },
   "plugins": [
     {
-      "name": "context-bar",
-      "source": "./context-bar",
-      "description": "One row above the prompt: cache hit rate, context fill, a switchable auto-compact threshold, and Compact and Clear buttons."
+      "name": "cache-meter",
+      "source": "./cache-meter",
+      "description": "Prompt-cache hit rate and context fill in one row above the prompt, with a switchable auto-compact threshold and Compact and Clear buttons."
     },
     {
       "name": "usage-limits",

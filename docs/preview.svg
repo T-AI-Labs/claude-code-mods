@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1044 176" width="1044" height="176" role="img" aria-labelledby="t d">
-  <title id="t">context-bar and usage-limits above the Claude Code prompt</title>
+  <title id="t">cache-meter and usage-limits above the Claude Code prompt</title>
   <desc id="d">Illustration. First row: cache hit 92 percent, context fill 10 percent, and the buttons Auto-compact 97 percent, Compact and Clear. Second row: 5-hour limit 42 percent, weekly limit 78 percent.</desc>
   <rect width="1044" height="176" rx="12" fill="#1a1a1a"/>
   <g font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas, 'DejaVu Sans Mono', monospace" font-size="15">
