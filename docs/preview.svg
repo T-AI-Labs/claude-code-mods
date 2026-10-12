@@ -1,41 +1,58 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 872 176" width="872" height="176" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 882 176" width="882" height="176" role="img" aria-labelledby="t d">
   <title id="t">cache-meter and usage-limits above the Claude Code prompt</title>
-  <desc id="d">Illustration. First row: cache hit 92 percent, context fill 10 percent, and the Auto 97 percent dropdown and the buttons Compact and Clear. Second row: 5-hour limit 42 percent, weekly limit 78 percent.</desc>
-  <rect width="872" height="176" rx="12" fill="#1a1a1a"/>
+  <desc id="d">Illustration. First row: cache hit 92 percent, context fill 10 percent, the Auto 97 percent dropdown and the buttons Compact and Clear. Second row: 5-hour limit 42 percent, weekly limit 78 percent.</desc>
+  <rect width="882" height="176" rx="12" fill="#1a1a1a"/>
   <g font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas, 'DejaVu Sans Mono', monospace" font-size="15">
     <g fill="#8c8c8c">
       <text x="28" y="50">Cache</text>
-      <text x="184" y="50">(92k/100k)</text>
-      <text x="296" y="50">Context</text>
-      <text x="472" y="50">(100k/1M)</text>
+      <text x="188" y="50">(92k/100k)</text>
+      <text x="300" y="50">Context</text>
+      <text x="480" y="50">(100k/1M)</text>
       <text x="28" y="82">5h</text>
-      <text x="184" y="82">(2h 13m)</text>
-      <text x="296" y="82">Week</text>
-      <text x="472" y="82">(3d 4h)</text>
+      <text x="188" y="82">(2h 13m)</text>
+      <text x="300" y="82">Week</text>
+      <text x="480" y="82">(3d 4h)</text>
     </g>
-    <g fill="#e8e8e8">
-      <text x="86" y="50">▮▮▮▮▮</text>
-      <text x="172" y="50" text-anchor="end">92%</text>
-      <text x="374" y="50">▮<tspan fill="#5c5c5c">▯▯▯▯</tspan></text>
-      <text x="460" y="50" text-anchor="end">10%</text>
-      <text x="86" y="82">▮▮<tspan fill="#5c5c5c">▯▯▯</tspan></text>
-      <text x="172" y="82" text-anchor="end">42%</text>
+    <g>
+      <rect x="86" y="39" width="6" height="12" rx="1" fill="#e8e8e8"/>
+      <rect x="95" y="39" width="6" height="12" rx="1" fill="#e8e8e8"/>
+      <rect x="104" y="39" width="6" height="12" rx="1" fill="#e8e8e8"/>
+      <rect x="113" y="39" width="6" height="12" rx="1" fill="#e8e8e8"/>
+      <rect x="122" y="39" width="6" height="12" rx="1" fill="#e8e8e8"/>
+      <rect x="378" y="39" width="6" height="12" rx="1" fill="#e8e8e8"/>
+      <rect x="387.5" y="39.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+      <rect x="396.5" y="39.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+      <rect x="405.5" y="39.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+      <rect x="414.5" y="39.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+      <rect x="86" y="71" width="6" height="12" rx="1" fill="#e8e8e8"/>
+      <rect x="95" y="71" width="6" height="12" rx="1" fill="#e8e8e8"/>
+      <rect x="104.5" y="71.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+      <rect x="113.5" y="71.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+      <rect x="122.5" y="71.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+      <rect x="378" y="71" width="6" height="12" rx="1" fill="#e0a83c"/>
+      <rect x="387" y="71" width="6" height="12" rx="1" fill="#e0a83c"/>
+      <rect x="396" y="71" width="6" height="12" rx="1" fill="#e0a83c"/>
+      <rect x="405" y="71" width="6" height="12" rx="1" fill="#e0a83c"/>
+      <rect x="414.5" y="71.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
     </g>
-    <g fill="#e0a83c">
-      <text x="374" y="82">▮▮▮▮<tspan fill="#5c5c5c">▯</tspan></text>
-      <text x="460" y="82" text-anchor="end">78%</text>
+    <g fill="#e8e8e8" text-anchor="end">
+      <text x="176" y="50">92%</text>
+      <text x="468" y="50">10%</text>
+      <text x="176" y="82">42%</text>
+      <text x="468" y="82" fill="#e0a83c">78%</text>
     </g>
     <g fill="none" stroke="#5a5a5a">
-      <rect x="580.5" y="31.5" width="108" height="27" rx="6"/>
-      <rect x="696.5" y="31.5" width="78" height="27" rx="6"/>
-      <rect x="782.5" y="31.5" width="62" height="27" rx="6"/>
+      <rect x="590.5" y="31.5" width="108" height="27" rx="6"/>
+      <rect x="706.5" y="31.5" width="78" height="27" rx="6"/>
+      <rect x="792.5" y="31.5" width="62" height="27" rx="6"/>
     </g>
     <g fill="#e8e8e8" text-anchor="middle">
-      <text x="634.5" y="50">Auto 97% ▾</text>
-      <text x="735.5" y="50">Compact</text>
-      <text x="813.5" y="50">Clear</text>
+      <text x="637.5" y="50">Auto 97%</text>
+      <text x="745.5" y="50">Compact</text>
+      <text x="823.5" y="50">Clear</text>
     </g>
-    <rect x="20.5" y="112.5" width="831" height="44" rx="8" fill="#222222" stroke="#4a4a4a"/>
+    <path d="M681 42 l4 5 l4 -5 z" fill="#e8e8e8"/>
+    <rect x="20.5" y="112.5" width="841" height="44" rx="8" fill="#222222" stroke="#4a4a4a"/>
     <text x="38" y="140" fill="#6e6e6e">&gt; Ask Claude anything</text>
   </g>
 </svg>

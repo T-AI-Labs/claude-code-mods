@@ -1,4 +1,4 @@
-<h1 align="center">CCMods</h1>
+<h1 align="center">Claude Code Mods</h1>
 
 <p align="center"><em>See your prompt-cache hit rate, context fill and usage limits at a glance, right above the Claude Code prompt.</em></p>
 
@@ -16,7 +16,8 @@
   <a href="#usage-limits">usage-limits</a> ·
   <a href="#token-cost">Token cost</a> ·
   <a href="#configure">Configure</a> ·
-  <a href="#update-and-uninstall">Update</a>
+  <a href="#update-and-uninstall">Update</a> ·
+  <a href="#credits">Credits</a>
 </p>
 
 <p align="center"><img src="docs/preview.svg" alt="cache-meter and usage-limits above the Claude Code prompt" width="100%"></p>
@@ -121,6 +122,10 @@ claude plugin uninstall usage-limits@claude-code-mods
 ```
 
 A new session picks up the change.
+
+## Credits
+
+The idea for these mods comes from [Julian Ivanov](https://www.youtube.com/@Julian-Ivanov) and his video [Diese 10 Claude Code Mods solltest du unbedingt kennen](https://www.youtube.com/watch?v=ji4ANdb_M6Y). The code in this repository was written independently.
 
 ## License
 
