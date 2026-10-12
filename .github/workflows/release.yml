@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "*/.claude-plugin/plugin.json"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Release each mod whose version has no release yet
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for manifest in */.claude-plugin/plugin.json; do
+            mod=$(dirname "$(dirname "$manifest")")
+            version=$(jq -r .version "$manifest")
+            tag="$mod-v$version"
+
+            if gh release view "$tag" > /dev/null 2>&1; then
+              echo "$tag is already released"
+              continue
+            fi
+
+            zip -r "$mod-$version.zip" "$mod" LICENSE
+            gh release create "$tag" "$mod-$version.zip" \
+              --title "$mod $version" \
+              --target "$GITHUB_SHA" \
+              --generate-notes
+          done

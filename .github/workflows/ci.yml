@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  CLAUDE_CODE_VERSION: 2.1.295
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Install Claude Code
+        run: npm install --global "@anthropic-ai/claude-code@$CLAUDE_CODE_VERSION"
+
+      - name: Validate the marketplace
+        run: claude plugin validate .
+
+      - name: Validate and test each mod
+        run: |
+          for manifest in */.claude-plugin/plugin.json; do
+            mod=$(dirname "$(dirname "$manifest")")
+            echo "::group::$mod"
+            claude plugin validate "$mod"
+            claude plugin test "$mod"
+            echo "::endgroup::"
+          done
