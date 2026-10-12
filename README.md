@@ -3,10 +3,10 @@
 <p align="center"><em>See your prompt-cache hit rate, context fill and usage limits at a glance, right above the Claude Code prompt.</em></p>
 
 <p align="center">
-  <a href="https://github.com/thorstenalpers/CCMods/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/thorstenalpers/CCMods/ci.yml?branch=main&style=flat-square&label=ci" alt="CI"></a>
-  <a href="https://github.com/thorstenalpers/CCMods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fthorstenalpers%2FCCMods%2Fmain%2Fcache-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=cache-meter&style=flat-square" alt="cache-meter version"></a>
-  <a href="https://github.com/thorstenalpers/CCMods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fthorstenalpers%2FCCMods%2Fmain%2Fusage-limits%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=usage-limits&style=flat-square" alt="usage-limits version"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/thorstenalpers/CCMods?style=flat-square" alt="License"></a>
+  <a href="https://github.com/thorstenalpers/claude-code-mods/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/thorstenalpers/claude-code-mods/ci.yml?branch=main&style=flat-square&label=ci" alt="CI"></a>
+  <a href="https://github.com/thorstenalpers/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fthorstenalpers%2Fclaude-code-mods%2Fmain%2Fcache-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=cache-meter&style=flat-square" alt="cache-meter version"></a>
+  <a href="https://github.com/thorstenalpers/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fthorstenalpers%2Fclaude-code-mods%2Fmain%2Fusage-limits%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=usage-limits&style=flat-square" alt="usage-limits version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/thorstenalpers/claude-code-mods?style=flat-square" alt="License"></a>
   <img src="https://img.shields.io/badge/Claude%20Code-tested%20on%202.1.295-d97757?style=flat-square" alt="Tested on Claude Code 2.1.295">
 </p>
 
@@ -31,7 +31,7 @@
 - No network calls and no external programs. The mods read figures Claude Code already has and run its own `/compact` and `/clear`.
 
 ```
-claude plugin marketplace add thorstenalpers/CCMods
+claude plugin marketplace add thorstenalpers/claude-code-mods
 claude plugin install cache-meter@claude-code-mods
 claude plugin install usage-limits@claude-code-mods
 ```
@@ -43,8 +43,8 @@ Run the three commands above in any shell (cmd, PowerShell, bash). The mods load
 From the prompt of a running Claude Code terminal session, the same install is:
 
 ```
-/plugin install cache-meter --marketplace thorstenalpers/CCMods
-/plugin install usage-limits --marketplace thorstenalpers/CCMods
+/plugin install cache-meter --marketplace thorstenalpers/claude-code-mods
+/plugin install usage-limits --marketplace thorstenalpers/claude-code-mods
 ```
 
 The mods use Claude Code's function-hook plugin API, which is in early access and may change between releases. They are built and tested against Claude Code 2.1.295.
@@ -52,14 +52,14 @@ The mods use Claude Code's function-hook plugin API, which is in early access an
 ## cache-meter
 
 ```
-Cache    ▮▮▮▮▮  92% (92k/100k)     Context      ▮▯▯▯▯  10% (100k/1M)      [ Auto-compact 97% ] [ Compact ] [ Clear ]
+Cache ▮▮▮▮▮  92% (92k/100k) Context ▮▯▯▯▯  10% (100k/1M)  [ Auto 97% ] [ Compact ] [ Clear ]
 ```
 
 | Element | What it shows |
 | --- | --- |
 | **Cache** | Share of the last turn's input tokens that the prompt cache served, with tokens read and total input in parentheses. Turns yellow below 40 %. |
 | **Context** | Fill of the model's context window, with tokens used and window size in parentheses. Turns yellow within 15 points of the auto-compact threshold and red at it. |
-| **Auto-compact** | The threshold in percent. Each press steps through 97, 90, 70, 60 and 50. The choice is kept across sessions. |
+| **Auto** | The auto-compact threshold in percent. Each press steps through 97, 90, 70, 60 and 50. The choice is kept across sessions. |
 | **Compact** | Runs `/compact`. |
 | **Clear** | Runs `/clear`. |
 
@@ -74,10 +74,10 @@ Claude Code's built-in auto-compaction stays on and still runs at its own limit.
 ## usage-limits
 
 ```
-5h limit ▮▮▯▯▯  42% (2h 13m left)  Weekly limit ▮▮▮▮▯  78% (3d 4h left)
+5h    ▮▮▯▯▯  42% (2h 13m)   Week    ▮▮▮▮▯  78% (3d 4h)
 ```
 
-Each rate-limit window Claude Code reports gets a gauge, the percentage used and the time left until it resets. A figure turns yellow from 75 % and red from 90 %.
+Each rate-limit window Claude Code reports gets a gauge, the percentage used and, in parentheses, the time left until it resets. `5h` is the 5-hour limit, `Week` the weekly one. A figure turns yellow from 75 % and red from 90 %.
 
 The readings arrive with the first response of a session and are only reported on a subscription plan. Until then the row reads `Usage limits: no reading yet`.
 

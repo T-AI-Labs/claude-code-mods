@@ -144,7 +144,7 @@ test('the threshold button cycles 97, 90, 70, 60, 50 and wraps', async ($, on) =
     for (const step of [90, 70, 60, 50, 97]) {
       await ui.press({ key: 'threshold' })
       expect((await ui.find({ key: 'threshold' }))?.props.label).toBe(
-        `Auto-compact ${step}%`,
+        `Auto ${step}%`,
       )
     }
 

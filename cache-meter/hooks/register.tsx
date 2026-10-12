@@ -14,10 +14,10 @@ const DEFAULT_THRESHOLD = 97
 const STORE_KEY = 'threshold'
 
 // Shared with usage-limits so the columns of both rows line up.
-const LABEL_WIDTHS = [8, 12]
+const LABEL_WIDTHS = [5, 7]
 const SEGMENTS = 5
 const PERCENT_WIDTH = 4
-const DETAIL_WIDTH = 14
+const DETAIL_WIDTH = 10
 
 type Tags = Pick<Elements['terminal'], 'Box' | 'Text'>
 type Layout = { hasGauge: boolean; hasDetails: boolean }
@@ -215,7 +215,7 @@ export const register: Register = (on, options) => {
 
     return (
       <Box flexDirection="column">
-        <Box flexDirection="row">
+        <Box flexDirection="row" flexWrap="wrap">
           {meter({ Box, Text }, layout, {
             label: 'Cache',
             column: 0,
@@ -237,7 +237,7 @@ export const register: Register = (on, options) => {
           <Box flexDirection="row" gap={1} flexShrink={0}>
             <Button
               key="threshold"
-              label={`Auto-compact ${limit}%`}
+              label={`Auto ${limit}%`}
               onPress={() => void cycleThreshold($)}
             />
             <Button

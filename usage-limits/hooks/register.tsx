@@ -4,9 +4,9 @@ import type { Color, Elements, EngineInterface, Register } from 'claude-code'
 import type { UsageWindow } from '../types'
 
 const LABELS: Record<string, string> = {
-  five_hour: '5h limit',
-  seven_day: 'Weekly limit',
-  spend_limit: 'Spend limit',
+  five_hour: '5h',
+  seven_day: 'Week',
+  spend_limit: 'Spend',
 }
 const ORDER = ['five_hour', 'seven_day', 'spend_limit']
 const MINUTE = 60_000
@@ -14,10 +14,10 @@ const HOUR = 60 * MINUTE
 const DAY = 24 * HOUR
 
 // Shared with cache-meter so the columns of both rows line up.
-const LABEL_WIDTHS = [8, 12]
+const LABEL_WIDTHS = [5, 7]
 const SEGMENTS = 5
 const PERCENT_WIDTH = 4
-const DETAIL_WIDTH = 14
+const DETAIL_WIDTH = 10
 
 type Tags = Pick<Elements['terminal'], 'Box' | 'Text'>
 type Layout = { hasGauge: boolean; hasDetails: boolean }
@@ -51,7 +51,7 @@ const untilReset = (resetsAt: string | undefined, at: number) => {
   }
 
   if (left <= 0) {
-    return '(resetting)'
+    return '(now)'
   }
 
   const days = Math.floor(left / DAY)
@@ -59,10 +59,10 @@ const untilReset = (resetsAt: string | undefined, at: number) => {
   const minutes = Math.max(1, Math.floor((left % HOUR) / MINUTE))
 
   if (days > 0) {
-    return `(${days}d ${hours}h left)`
+    return `(${days}d ${hours}h)`
   }
 
-  return hours > 0 ? `(${hours}h ${minutes}m left)` : `(${minutes}m left)`
+  return hours > 0 ? `(${hours}h ${minutes}m)` : `(${minutes}m)`
 }
 
 const meter = ({ Box, Text }: Tags, layout: Layout, one: Cell) => {
@@ -154,7 +154,7 @@ export const register: Register = (on, options) => {
         {list.length === 0 ? (
           <Text dimColor>Usage limits: no reading yet</Text>
         ) : (
-          <Box flexDirection="row">
+          <Box flexDirection="row" flexWrap="wrap">
             {list.map((one, column) =>
               meter({ Box, Text }, layout, {
                 label: labelOf(one.kind),

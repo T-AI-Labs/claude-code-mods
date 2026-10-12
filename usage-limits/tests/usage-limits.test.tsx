@@ -41,15 +41,15 @@ test('shows the 5-hour and weekly limits in percent with their resets', async ($
 
   for (const surface of SURFACES) {
     const ui = await $.ui.mount({ ...BAND, surface })
-    const labels = (await ui.findAll({ type: 'Text', text: /limit/ })).map(
+    const labels = (await ui.findAll({ type: 'Text', text: /^(5h|Week)$/ })).map(
       one => one.text.trim(),
     )
 
-    expect(labels).toEqual(['5h limit', 'Weekly limit'])
+    expect(labels).toEqual(['5h', 'Week'])
     expect(await ui.find({ type: 'Text', text: '42%' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: '18%' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: '(2h 13m left)' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: '(3d 4h left)' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '(2h 13m)' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '(3d 4h)' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: 'below' })).toBeDefined()
     await ui.unmount()
   }
