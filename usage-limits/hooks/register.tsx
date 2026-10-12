@@ -1,5 +1,5 @@
 import { atom, read, update } from 'claude-code'
-import type { Color, EngineInterface, Register } from 'claude-code'
+import type { Color, Elements, EngineInterface, Register } from 'claude-code'
 
 import type { UsageWindow } from '../types'
 
@@ -9,10 +9,25 @@ const LABELS: Record<string, string> = {
   spend_limit: 'Spend limit',
 }
 const ORDER = ['five_hour', 'seven_day', 'spend_limit']
-const MAX_BAR = 12
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
 const DAY = 24 * HOUR
+
+// Shared with context-bar so the columns of both rows line up.
+const LABEL_WIDTHS = [8, 12]
+const SEGMENTS = 5
+const PERCENT_WIDTH = 4
+const DETAIL_WIDTH = 14
+
+type Tags = Pick<Elements['terminal'], 'Box' | 'Text'>
+type Layout = { hasGauge: boolean; hasDetails: boolean }
+type Cell = {
+  label: string
+  column: number
+  percent: number | null
+  tone: Color
+  detail: string
+}
 
 const windows = atom({ plugin: 'usage-limits', key: 'windows' } as const, [])
 const now = atom({ plugin: 'usage-limits', key: 'now' } as const, 0)
@@ -25,18 +40,18 @@ const rankOf = (kind: string) => {
   return rank === -1 ? ORDER.length : rank
 }
 
-const colorOf = (percent: number): Color =>
-  percent >= 85 ? 'error' : percent >= 60 ? 'warning' : 'success'
+const toneOf = (percent: number): Color =>
+  percent >= 90 ? 'error' : percent >= 75 ? 'warning' : 'text'
 
-const untilReset = (resetsAt: string, at: number) => {
-  const left = Date.parse(resetsAt) - at
+const untilReset = (resetsAt: string | undefined, at: number) => {
+  const left = resetsAt === undefined ? Number.NaN : Date.parse(resetsAt) - at
 
   if (Number.isNaN(left)) {
-    return undefined
+    return ''
   }
 
   if (left <= 0) {
-    return 'resetting now'
+    return '(resetting)'
   }
 
   const days = Math.floor(left / DAY)
@@ -44,12 +59,53 @@ const untilReset = (resetsAt: string, at: number) => {
   const minutes = Math.max(1, Math.floor((left % HOUR) / MINUTE))
 
   if (days > 0) {
-    return `resets in ${days}d ${hours}h`
+    return `(${days}d ${hours}h left)`
   }
 
-  return hours > 0
-    ? `resets in ${hours}h ${minutes}m`
-    : `resets in ${minutes}m`
+  return hours > 0 ? `(${hours}h ${minutes}m left)` : `(${minutes}m left)`
+}
+
+const meter = ({ Box, Text }: Tags, layout: Layout, one: Cell) => {
+  const filled =
+    one.percent === null
+      ? 0
+      : Math.max(
+          0,
+          Math.min(SEGMENTS, Math.round((one.percent / 100) * SEGMENTS)),
+        )
+
+  return (
+    <Box flexDirection="row" flexShrink={0}>
+      <Box
+        minWidth={LABEL_WIDTHS[one.column] ?? LABEL_WIDTHS[1]}
+        marginRight={1}
+        flexShrink={0}
+      >
+        <Text dimColor>{one.label}</Text>
+      </Box>
+      {layout.hasGauge && (
+        <Box minWidth={SEGMENTS} marginRight={1} flexShrink={0}>
+          <Text color={one.tone}>{'▮'.repeat(filled)}</Text>
+          <Text dimColor>{'▯'.repeat(SEGMENTS - filled)}</Text>
+        </Box>
+      )}
+      <Box
+        minWidth={PERCENT_WIDTH}
+        marginRight={1}
+        flexShrink={0}
+        justifyContent="flex-end"
+      >
+        <Text color={one.percent === null ? 'inactive' : one.tone}>
+          {one.percent === null ? '–' : `${Math.round(one.percent)}%`}
+        </Text>
+      </Box>
+      {layout.hasDetails && (
+        <Box minWidth={DETAIL_WIDTH} marginRight={1} flexShrink={0}>
+          <Text dimColor>{one.detail}</Text>
+        </Box>
+      )}
+    </Box>
+  )
 }
 
 const refresh = async ($: EngineInterface, list?: readonly UsageWindow[]) => {
@@ -62,7 +118,12 @@ const refresh = async ($: EngineInterface, list?: readonly UsageWindow[]) => {
   }
 }
 
-export const register: Register = on => {
+export const register: Register = (on, options) => {
+  const layout: Layout = {
+    hasGauge: options.display !== 'text',
+    hasDetails: options.details !== false,
+  }
+
   on('session.start', async ($, e, next) => {
     const usage = await $.session.usage()
     await refresh($, usage.rateLimits)
@@ -87,44 +148,22 @@ export const register: Register = on => {
     const { Box, Text } = $.ui.resolve(e)
     const list = await read($, windows)
     const at = await read($, now)
-    const columns = e.props.bodyColumns
-    const perWindow = Math.floor(columns / Math.max(1, list.length))
-    const hasResets = perWindow >= 38
-    const width = Math.max(
-      0,
-      Math.min(MAX_BAR, perWindow - (hasResets ? 40 : 21)),
-    )
 
     return (
       <Box flexDirection="column">
         {list.length === 0 ? (
           <Text dimColor>Usage limits: no reading yet</Text>
         ) : (
-          <Box flexDirection="row" gap={3}>
-            {list.map(one => {
-              const filled = Math.max(
-                0,
-                Math.min(width, Math.round((one.percentUsed / 100) * width)),
-              )
-              const color = colorOf(one.percentUsed)
-              const reset =
-                hasResets && one.resetsAt !== undefined
-                  ? untilReset(one.resetsAt, at)
-                  : undefined
-
-              return (
-                <Box flexDirection="row">
-                  <Text dimColor>{labelOf(one.kind)} </Text>
-                  <Text color={color}>{'━'.repeat(filled)}</Text>
-                  <Text dimColor>{'━'.repeat(width - filled)}</Text>
-                  <Text bold color={color}>
-                    {width > 0 ? ' ' : ''}
-                    {Math.round(one.percentUsed)}%
-                  </Text>
-                  {reset !== undefined && <Text dimColor> · {reset}</Text>}
-                </Box>
-              )
-            })}
+          <Box flexDirection="row">
+            {list.map((one, column) =>
+              meter({ Box, Text }, layout, {
+                label: labelOf(one.kind),
+                column,
+                percent: one.percentUsed,
+                tone: toneOf(one.percentUsed),
+                detail: untilReset(one.resetsAt, at),
+              }),
+            )}
           </Box>
         )}
         {below}

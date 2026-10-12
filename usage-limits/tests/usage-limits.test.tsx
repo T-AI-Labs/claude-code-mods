@@ -48,9 +48,26 @@ test('shows the 5-hour and weekly limits in percent with their resets', async ($
     expect(labels).toEqual(['5h limit', 'Weekly limit'])
     expect(await ui.find({ type: 'Text', text: '42%' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: '18%' })).toBeDefined()
-    expect(await ui.find({ text: 'resets in 2h 13m' })).toBeDefined()
-    expect(await ui.find({ text: 'resets in 3d 4h' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '(2h 13m left)' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '(3d 4h left)' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: 'below' })).toBeDefined()
+    await ui.unmount()
+  }
+})
+
+test('draws five-segment gauges by default', async ($, on) => {
+  world(on)
+  await $.session.measure({
+    context: { window: 200_000 },
+    rateLimits: [{ kind: 'five_hour', percentUsed: 42 }],
+    changed: ['rateLimits'],
+  })
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+
+    expect(await ui.find({ type: 'Text', text: /^▮{2}$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^▯{3}$/ })).toBeDefined()
     await ui.unmount()
   }
 })

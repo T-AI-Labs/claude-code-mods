@@ -1,8 +1,28 @@
 {
   "name": "usage-limits",
-  "version": "0.1.0",
-  "author": { "name": "thorstenalpers" },
+  "version": "0.2.0",
+  "author": {
+    "name": "thorstenalpers"
+  },
   "license": "MIT",
   "description": "One row above the prompt: how much of the 5-hour and weekly usage limits is used, in percent, with the time until each resets.",
-  "types": "./types/index.d.ts"
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "display": {
+      "type": "string",
+      "title": "Display",
+      "description": "gauge shows a five-segment fill level before each percentage; text shows the percentage alone.",
+      "options": [
+        "gauge",
+        "text"
+      ],
+      "default": "gauge"
+    },
+    "details": {
+      "type": "boolean",
+      "title": "Details",
+      "description": "Show the time left until each limit resets in parentheses.",
+      "default": true
+    }
+  }
 }

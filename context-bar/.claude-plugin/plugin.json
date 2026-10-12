@@ -1,8 +1,28 @@
 {
   "name": "context-bar",
-  "version": "0.1.0",
-  "author": { "name": "thorstenalpers" },
+  "version": "0.2.0",
+  "author": {
+    "name": "thorstenalpers"
+  },
   "license": "MIT",
   "description": "One row above the prompt: cache hit rate, context fill, a switchable auto-compact threshold, and Compact and Clear buttons.",
-  "types": "./types/index.d.ts"
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "display": {
+      "type": "string",
+      "title": "Display",
+      "description": "gauge shows a five-segment fill level before each percentage; text shows the percentage alone.",
+      "options": [
+        "gauge",
+        "text"
+      ],
+      "default": "gauge"
+    },
+    "details": {
+      "type": "boolean",
+      "title": "Details",
+      "description": "Show the token counts, such as (100k/1M) in parentheses.",
+      "default": true
+    }
+  }
 }

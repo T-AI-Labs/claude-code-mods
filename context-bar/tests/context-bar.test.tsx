@@ -71,8 +71,66 @@ test('shows the cache hit rate and the context fill in one row', async ($, on) =
 
     expect(await ui.find({ type: 'Text', text: '80%' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: '41%' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '(80/100)' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '(82k/200k)' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: 'below' })).toBeDefined()
     expect(await ui.findAll({ type: 'Button' })).toHaveLength(3)
+    await ui.unmount()
+  }
+})
+
+test('draws five-segment gauges by default', async ($, on) => {
+  world(on)
+  await $.session.measure(measured(41))
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+
+    expect(await ui.find({ type: 'Text', text: /^▮{2}$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^▯{3}$/ })).toBeDefined()
+    await ui.unmount()
+  }
+})
+
+test('keeps the details and gauges on a narrow band', async ($, on) => {
+  world(on)
+  await $.session.measure(measured(41))
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({
+      ...BAND,
+      props: { ...BAND.props, bodyColumns: 60 },
+      surface,
+    })
+
+    expect(await ui.find({ type: 'Text', text: '(82k/200k)' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^▮{2}$/ })).toBeDefined()
+    await ui.unmount()
+  }
+})
+
+test('shows no gauge when display is text', { options: { display: 'text' } }, async ($, on) => {
+  world(on)
+  await $.session.measure(measured(41))
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+
+    expect(await ui.find({ type: 'Text', text: '41%' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /[▮▯]/ })).toBeUndefined()
+    await ui.unmount()
+  }
+})
+
+test('leaves the token counts out when details is off', { options: { details: false } }, async ($, on) => {
+  world(on)
+  await $.session.measure(measured(41))
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+
+    expect(await ui.find({ type: 'Text', text: '41%' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '(82k/200k)' })).toBeUndefined()
     await ui.unmount()
   }
 })

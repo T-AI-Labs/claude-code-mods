@@ -1,11 +1,10 @@
 import { atom, read, update } from 'claude-code'
 import type {
   Color,
-  ElementConstructor,
+  Elements,
   EngineInterface,
   Register,
   SessionContextUsage,
-  TextProps,
 } from 'claude-code'
 
 import type { ContextFill } from '../types'
@@ -13,8 +12,22 @@ import type { ContextFill } from '../types'
 const STEPS = [97, 90, 70, 60, 50]
 const DEFAULT_THRESHOLD = 97
 const STORE_KEY = 'threshold'
-const MAX_BAR = 12
-const ROW_WITHOUT_BARS = 72
+
+// Shared with usage-limits so the columns of both rows line up.
+const LABEL_WIDTHS = [8, 12]
+const SEGMENTS = 5
+const PERCENT_WIDTH = 4
+const DETAIL_WIDTH = 14
+
+type Tags = Pick<Elements['terminal'], 'Box' | 'Text'>
+type Layout = { hasGauge: boolean; hasDetails: boolean }
+type Cell = {
+  label: string
+  column: number
+  percent: number | null
+  tone: Color
+  detail: string
+}
 
 const cache = atom({ plugin: 'context-bar', key: 'cache' } as const, null)
 const context = atom({ plugin: 'context-bar', key: 'context' } as const, null)
@@ -28,36 +41,65 @@ const toFill = (live: SessionContextUsage): ContextFill | null =>
     ? null
     : { percent: live.percent, tokens: live.tokens, window: live.window }
 
-const barWidth = (columns: number) =>
-  Math.max(0, Math.min(MAX_BAR, Math.floor((columns - ROW_WITHOUT_BARS) / 2)))
+const tokens = (count: number) => {
+  const thousands = Math.round(count / 1000)
 
-const cacheColor = (percent: number): Color =>
-  percent >= 70 ? 'success' : percent >= 40 ? 'warning' : 'error'
+  if (count < 1000) {
+    return String(count)
+  }
 
-const contextColor = (percent: number, limit: number): Color =>
-  percent >= limit ? 'error' : percent >= limit - 15 ? 'warning' : 'success'
+  return thousands < 1000
+    ? `${thousands}k`
+    : `${Number((count / 1_000_000).toFixed(1))}M`
+}
 
-const meter = (
-  Text: ElementConstructor<TextProps>,
-  label: string,
-  percent: number | null,
-  color: Color,
-  width: number,
-) => {
+const cacheTone = (percent: number): Color =>
+  percent < 40 ? 'warning' : 'text'
+
+const contextTone = (percent: number, limit: number): Color =>
+  percent >= limit ? 'error' : percent >= limit - 15 ? 'warning' : 'text'
+
+const meter = ({ Box, Text }: Tags, layout: Layout, one: Cell) => {
   const filled =
-    percent === null
+    one.percent === null
       ? 0
-      : Math.max(0, Math.min(width, Math.round((percent / 100) * width)))
+      : Math.max(
+          0,
+          Math.min(SEGMENTS, Math.round((one.percent / 100) * SEGMENTS)),
+        )
 
-  return [
-    <Text dimColor>{label} </Text>,
-    <Text color={color}>{'━'.repeat(filled)}</Text>,
-    <Text dimColor>{'━'.repeat(width - filled)}</Text>,
-    <Text bold color={percent === null ? 'inactive' : color}>
-      {width > 0 ? ' ' : ''}
-      {percent === null ? '–' : `${Math.round(percent)}%`}
-    </Text>,
-  ]
+  return (
+    <Box flexDirection="row" flexShrink={0}>
+      <Box
+        minWidth={LABEL_WIDTHS[one.column] ?? LABEL_WIDTHS[1]}
+        marginRight={1}
+        flexShrink={0}
+      >
+        <Text dimColor>{one.label}</Text>
+      </Box>
+      {layout.hasGauge && (
+        <Box minWidth={SEGMENTS} marginRight={1} flexShrink={0}>
+          <Text color={one.tone}>{'▮'.repeat(filled)}</Text>
+          <Text dimColor>{'▯'.repeat(SEGMENTS - filled)}</Text>
+        </Box>
+      )}
+      <Box
+        minWidth={PERCENT_WIDTH}
+        marginRight={1}
+        flexShrink={0}
+        justifyContent="flex-end"
+      >
+        <Text color={one.percent === null ? 'inactive' : one.tone}>
+          {one.percent === null ? '–' : `${Math.round(one.percent)}%`}
+        </Text>
+      </Box>
+      {layout.hasDetails && (
+        <Box minWidth={DETAIL_WIDTH} marginRight={1} flexShrink={0}>
+          <Text dimColor>{one.detail}</Text>
+        </Box>
+      )}
+    </Box>
+  )
 }
 
 const runCommand = ($: EngineInterface, command: string) => {
@@ -75,7 +117,11 @@ const cycleThreshold = async ($: EngineInterface) => {
   await $.store.set(STORE_KEY, value)
 }
 
-export const register: Register = on => {
+export const register: Register = (on, options) => {
+  const layout: Layout = {
+    hasGauge: options.display !== 'text',
+    hasDetails: options.details !== false,
+  }
   // Re-armed only once the fill drops below the threshold, so a compaction that lands above it does not loop.
   let isArmed = true
 
@@ -139,14 +185,14 @@ export const register: Register = on => {
     const isLive = e.agentId === undefined && e.trigger !== 'precompute'
 
     if (isLive && compacted.skip === undefined) {
-      const tokens = compacted.tokensAfter
+      const after = compacted.tokensAfter
       await update($, context, held =>
-        held === null || tokens === undefined
+        held === null || after === undefined
           ? null
           : {
-              tokens,
+              tokens: after,
               window: held.window,
-              percent: Math.round((tokens / held.window) * 100),
+              percent: Math.round((after / held.window) * 100),
             },
       )
     }
@@ -165,46 +211,46 @@ export const register: Register = on => {
     const hit = await read($, cache)
     const fill = await read($, context)
     const limit = await read($, threshold)
-    const width = barWidth(e.props.bodyColumns)
     const hitPercent = hit === null ? null : (hit.read / hit.total) * 100
-    const fillPercent = fill === null ? null : fill.percent
 
     return (
       <Box flexDirection="column">
-        <Box flexDirection="row" gap={2}>
-          <Box flexDirection="row">
-            {meter(
-              Text,
-              'Cache',
-              hitPercent,
-              cacheColor(hitPercent ?? 0),
-              width,
-            )}
+        <Box flexDirection="row">
+          {meter({ Box, Text }, layout, {
+            label: 'Cache',
+            column: 0,
+            percent: hitPercent,
+            tone: cacheTone(hitPercent ?? 100),
+            detail:
+              hit === null ? '' : `(${tokens(hit.read)}/${tokens(hit.total)})`,
+          })}
+          {meter({ Box, Text }, layout, {
+            label: 'Context',
+            column: 1,
+            percent: fill === null ? null : fill.percent,
+            tone: contextTone(fill === null ? 0 : fill.percent, limit),
+            detail:
+              fill === null
+                ? ''
+                : `(${tokens(fill.tokens)}/${tokens(fill.window)})`,
+          })}
+          <Box flexDirection="row" gap={1} flexShrink={0}>
+            <Button
+              key="threshold"
+              label={`Auto-compact ${limit}%`}
+              onPress={() => void cycleThreshold($)}
+            />
+            <Button
+              key="compact"
+              label="Compact"
+              onPress={() => runCommand($, 'compact')}
+            />
+            <Button
+              key="clear"
+              label="Clear"
+              onPress={() => runCommand($, 'clear')}
+            />
           </Box>
-          <Box flexDirection="row">
-            {meter(
-              Text,
-              'Context',
-              fillPercent,
-              contextColor(fillPercent ?? 0, limit),
-              width,
-            )}
-          </Box>
-          <Button
-            key="threshold"
-            label={`Auto-compact ${limit}%`}
-            onPress={() => void cycleThreshold($)}
-          />
-          <Button
-            key="compact"
-            label="Compact"
-            onPress={() => runCommand($, 'compact')}
-          />
-          <Button
-            key="clear"
-            label="Clear"
-            onPress={() => runCommand($, 'clear')}
-          />
         </Box>
         {below}
       </Box>
