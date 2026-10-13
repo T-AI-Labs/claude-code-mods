@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { Color, Elements, EngineInterface, Register } from 'claude-code'
 
-import type { UsageWindow } from '../types'
+import type { Reading, UsageWindow } from '../types'
 
 const LABELS: Record<string, string> = {
   five_hour: '5h',
@@ -12,6 +12,7 @@ const ORDER = ['five_hour', 'seven_day', 'spend_limit']
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
 const DAY = 24 * HOUR
+const STORE_KEY = 'reading'
 
 // Shared with cache-meter so the columns of both rows line up.
 const LABEL_WIDTHS = [5, 7]
@@ -31,6 +32,10 @@ type Cell = {
 
 const windows = atom({ plugin: 'usage-limits', key: 'windows' } as const, [])
 const now = atom({ plugin: 'usage-limits', key: 'now' } as const, 0)
+const staleSince = atom(
+  { plugin: 'usage-limits', key: 'staleSince' } as const,
+  null,
+)
 
 const labelOf = (kind: string) => LABELS[kind] ?? kind.replaceAll('_', ' ')
 
@@ -43,6 +48,18 @@ const rankOf = (kind: string) => {
 const toneOf = (percent: number): Color =>
   percent >= 90 ? 'error' : percent >= 75 ? 'warning' : 'text'
 
+const span = (duration: number) => {
+  const days = Math.floor(duration / DAY)
+  const hours = Math.floor((duration % DAY) / HOUR)
+  const minutes = Math.max(1, Math.floor((duration % HOUR) / MINUTE))
+
+  if (days > 0) {
+    return `${days}d ${hours}h`
+  }
+
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`
+}
+
 const untilReset = (resetsAt: string | undefined, at: number) => {
   const left = resetsAt === undefined ? Number.NaN : Date.parse(resetsAt) - at
 
@@ -50,20 +67,11 @@ const untilReset = (resetsAt: string | undefined, at: number) => {
     return ''
   }
 
-  if (left <= 0) {
-    return '(now)'
-  }
-
-  const days = Math.floor(left / DAY)
-  const hours = Math.floor((left % DAY) / HOUR)
-  const minutes = Math.max(1, Math.floor((left % HOUR) / MINUTE))
-
-  if (days > 0) {
-    return `(${days}d ${hours}h)`
-  }
-
-  return hours > 0 ? `(${hours}h ${minutes}m)` : `(${minutes}m)`
+  return left <= 0 ? '(now)' : `(${span(left)})`
 }
+
+const isOpen = (one: UsageWindow, at: number) =>
+  one.resetsAt === undefined || Date.parse(one.resetsAt) > at
 
 const meter = ({ Box, Text }: Tags, layout: Layout, one: Cell) => {
   const filled =
@@ -112,9 +120,27 @@ const refresh = async ($: EngineInterface, list?: readonly UsageWindow[]) => {
   const at = await $.clock.now()
   await update($, now, () => at)
 
-  if (list !== undefined) {
-    const sorted = [...list].sort((a, b) => rankOf(a.kind) - rankOf(b.kind))
-    await update($, windows, () => sorted)
+  if (list === undefined) {
+    return
+  }
+
+  const sorted = [...list].sort((a, b) => rankOf(a.kind) - rankOf(b.kind))
+  await update($, windows, () => sorted)
+  await update($, staleSince, () => null)
+
+  if (sorted.length > 0) {
+    await $.store.set(STORE_KEY, { windows: sorted, at })
+  }
+}
+
+const restore = async ($: EngineInterface) => {
+  const at = await $.clock.now()
+  const stored = (await $.store.get(STORE_KEY)) as Reading | undefined
+  await update($, now, () => at)
+
+  if (stored !== undefined) {
+    await update($, windows, () => stored.windows.filter(one => isOpen(one, at)))
+    await update($, staleSince, () => stored.at)
   }
 }
 
@@ -126,7 +152,14 @@ export const register: Register = (on, options) => {
 
   on('session.start', async ($, e, next) => {
     const usage = await $.session.usage()
-    await refresh($, usage.rateLimits)
+
+    // The engine has no reading before the first response of a session.
+    if (usage.rateLimits.length > 0) {
+      await refresh($, usage.rateLimits)
+    } else {
+      await restore($)
+    }
+
     $.clock.every(MINUTE, () => void refresh($))
 
     return next(e)
@@ -148,6 +181,7 @@ export const register: Register = (on, options) => {
     const { Box, Text } = $.ui.resolve(e)
     const list = await read($, windows)
     const at = await read($, now)
+    const since = await read($, staleSince)
 
     return (
       <Box flexDirection="column">
@@ -163,6 +197,9 @@ export const register: Register = (on, options) => {
                 tone: toneOf(one.percentUsed),
                 detail: untilReset(one.resetsAt, at),
               }),
+            )}
+            {since !== null && (
+              <Text dimColor>{`as of ${span(at - since)} ago`}</Text>
             )}
           </Box>
         )}
