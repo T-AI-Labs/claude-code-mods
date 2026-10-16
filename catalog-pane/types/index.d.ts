@@ -35,17 +35,32 @@ export type Daily = Record<string, Record<string, number>>
 
 export type Stat = Mark & { week: number; month: number; cost?: Cost }
 
+export type StarPoint = { day: string; stars: number }
+
 export type RepoStats = {
   stars: number
+  forks: number
   issues: number
   pushedAt: string
+  createdAt: string
   license?: string
+  history: StarPoint[]
   fetchedAt: number
 }
 
 export type KnownAgent = { name: string; description: string; source: string }
 
-export type Sort = 'usage' | 'name' | 'cleanup'
+export type Sort =
+  | 'usage'
+  | 'recent'
+  | 'name'
+  | 'cleanup'
+  | 'stars'
+  | 'trending'
+  | 'forks'
+  | 'pushed'
+  | 'installs'
+  | 'installed'
 
 export type View = {
   kind: Kind

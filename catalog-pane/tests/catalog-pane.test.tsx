@@ -55,14 +55,22 @@ const FILES: Record<string, unknown> = {
         },
       ],
       'meter@T-AI-Labs': [{ installPath: 'C:/plugins/meter', version: '0.3.4' }],
+      'agents-kit@workflows': [
+        { installPath: 'C:/plugins/agents-kit', version: '1.2.3', installedAt: '2026-08-01T10:00:00.000Z' },
+      ],
     },
   },
   'C:/home/.claude/plugins/known_marketplaces.json': {
     'thor-skills': { source: { source: 'github', repo: 'thor/skills' }, installLocation: 'C:/markets/thor' },
+    workflows: { source: { source: 'github', repo: 'wshobson/agents' }, installLocation: 'C:/markets/workflows' },
+  },
+  'C:/home/.claude/plugins/plugin-catalog-cache.json': {
+    catalog: { plugins: { 'agents-kit@workflows': { unique_installs: 3474 } } },
   },
   'C:/markets/thor/.claude-plugin/marketplace.json': { plugins: [{ name: 'auto', source: './auto' }] },
   'C:/markets/thor/auto/.claude-plugin/plugin.json': { version: '0.4.0' },
   'C:/plugins/auto/.claude-plugin/plugin.json': { description: 'Ticket to PR automation' },
+  'C:/plugins/agents-kit/.claude-plugin/plugin.json': { description: 'Python agents' },
   'C:/plugins/meter/.claude-plugin/plugin.json': { description: 'Cache hit rate above the prompt' },
   'C:/plugins/meter/hooks/hooks.json': { modules: ['./register.tsx'] },
   'C:/mods/catalog/.claude-plugin/plugin.json': { name: 'catalog-pane', description: 'The catalog', version: '0.3.0' },
@@ -74,16 +82,35 @@ const DIRS: Record<string, string[]> = {
   'C:/plugins/auto/skills': ['fix'],
 }
 
+const REPOS: Record<string, Record<string, unknown>> = {
+  'thor/skills': {
+    stargazers_count: 1234,
+    forks_count: 12,
+    open_issues_count: 5,
+    pushed_at: '2026-10-10T08:00:00Z',
+    created_at: '2024-10-16T00:00:00Z',
+    license: { spdx_id: 'MIT' },
+  },
+  'wshobson/agents': {
+    stargazers_count: 40911,
+    forks_count: 4000,
+    open_issues_count: 2,
+    pushed_at: '2026-10-15T15:11:55Z',
+    created_at: '2025-07-16T00:00:00Z',
+    license: { spdx_id: 'MIT' },
+  },
+}
+
 const slash = (path: string) => path.replaceAll('\\', '/')
 
-const world = (on: On) => {
+const world = (on: On, stored: Record<string, unknown> = {}) => {
   const filled: string[] = []
   const ran: string[] = []
   const opened: string[] = []
   const commands: string[] = []
   const fetched: string[] = []
   const clock = mock.clock(on, { now: Date.parse('2026-10-16T10:00:00Z') })
-  mock.store(on, {})
+  mock.store(on, stored)
   mock.env(on, { USERPROFILE: 'C:/home', CLAUDE_CODE_PLUGIN_DIRS: 'C:/mods/catalog' })
   on('session.start', ($, e) => ({ cwd: e.cwd }))
   on('session.attach', ($, e) => ({ clientId: e.clientId }))
@@ -128,7 +155,7 @@ const world = (on: On) => {
   })
   on('http.fetch', ($, e) => {
     fetched.push(e.url)
-    const body = { stargazers_count: 1234, open_issues_count: 5, pushed_at: '2026-10-10T08:00:00Z', license: { spdx_id: 'MIT' } }
+    const body = REPOS[e.url.replace('https://api.github.com/repos/', '')] ?? {}
 
     return { value: { status: 200, ok: true, headers: {}, text: JSON.stringify(body) } }
   })
@@ -265,11 +292,11 @@ test('shows a plugin with its token cost, update, installs and GitHub stats', as
   await ui.press({ key: 'open-plugin:auto' })
 
   expect(commands).toContain('claude plugin details auto@thor-skills')
-  expect(fetched).toEqual(['https://api.github.com/repos/thor/skills'])
+  expect(fetched).toContain('https://api.github.com/repos/thor/skills')
   expect(await ui.find({ type: 'Text', text: /~1.6k tokens in every session/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /v0.3.0 · enabled · installed 2026-09-30/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /Update available: v0.4.0/ })).toBeDefined()
-  expect(await ui.find({ type: 'Text', text: /★ 1,234 · 5 open issues · last push 2026-10-10 · MIT/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /★ 1,234 · ~51 ★ a month on average · 12 forks · 5 open issues · last push 2026-10-10 · MIT/ })).toBeDefined()
   expect((await ui.find({ key: 'item-skill:auto:fix' }))?.text).toMatch(/~80 tok\/session/)
   await ui.unmount()
 })
@@ -369,7 +396,7 @@ test('lists mods apart from plugins with what each one hooks and calls', async (
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
 
   expect((await ui.find({ key: 'tab-mod' }))?.props.label).toBe('Mods 2')
-  expect((await ui.find({ key: 'tab-plugin' }))?.props.label).toBe('Plugins 1')
+  expect((await ui.find({ key: 'tab-plugin' }))?.props.label).toBe('Plugins 2')
   expect(await ui.find({ key: 'open-mod:meter' })).toBeDefined()
 
   await ui.press({ key: 'open-mod:catalog-pane' })
@@ -391,5 +418,64 @@ test('lists the hooks from the settings with their command', async ($, on) => {
   expect(await ui.find({ type: 'Text', text: 'PreToolUse · Bash|PowerShell' })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /command hook from the user settings/ })).toBeDefined()
   expect((await ui.find({ key: 'about' }))?.props.text).toBe('`rtk hook claude`')
+  await ui.unmount()
+})
+
+const rowKeys = async (ui: { findAll: (query: { type: string }) => Promise<{ key: string | undefined }[]> }) =>
+  (await ui.findAll({ type: 'Button' })).flatMap(one => (one.key?.startsWith('open-') ? [one.key] : []))
+
+test('sorts plugins by GitHub stars, installs and install date', async ($, on) => {
+  const { clock } = world(on)
+  await openCatalog($, 'plugins')
+  await clock.settle()
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await ui.select({ key: 'sort', value: 'stars' })
+
+  expect(await rowKeys(ui)).toEqual(['open-plugin:agents-kit', 'open-plugin:auto'])
+  expect((await ui.find({ key: 'open-plugin:agents-kit' }))?.text).toMatch(/★ 40.9k/)
+
+  await ui.select({ key: 'sort', value: 'installed' })
+
+  expect(await rowKeys(ui)).toEqual(['open-plugin:auto', 'open-plugin:agents-kit'])
+  expect((await ui.find({ key: 'open-plugin:auto' }))?.text).toMatch(/installed 2026-09-30/)
+
+  await ui.select({ key: 'sort', value: 'installs' })
+
+  expect(await rowKeys(ui)).toEqual(['open-plugin:agents-kit', 'open-plugin:auto'])
+  expect((await ui.find({ key: 'open-plugin:agents-kit' }))?.text).toMatch(/3.5k installs/)
+  await ui.unmount()
+})
+
+test('ranks skills by the stars of the plugin they come from', async ($, on) => {
+  const { clock } = world(on)
+  await openCatalog($, 'skills')
+  await clock.settle()
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await ui.select({ key: 'sort', value: 'stars' })
+
+  expect(await rowKeys(ui)).toEqual(['open-skill:auto:fix', 'open-skill:find-skills'])
+  expect((await ui.find({ key: 'open-skill:auto:fix' }))?.text).toMatch(/★ 1.2k/)
+  await ui.unmount()
+})
+
+test('measures trending from the stored star history, else from the repo age', async ($, on) => {
+  const history = {
+    stars: 1000,
+    forks: 0,
+    issues: 0,
+    pushedAt: '',
+    createdAt: '2024-10-16T00:00:00Z',
+    history: [{ day: '2026-09-16', stars: 1000 }],
+    fetchedAt: 0,
+  }
+  const { clock } = world(on, { repos: { 'thor/skills': history } })
+  await openCatalog($, 'plugins')
+  await clock.settle()
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await ui.select({ key: 'sort', value: 'trending' })
+
+  expect(await rowKeys(ui)).toEqual(['open-plugin:agents-kit', 'open-plugin:auto'])
+  expect((await ui.find({ key: 'open-plugin:auto' }))?.text).toMatch(/\+231 ★ a month/)
+  expect((await ui.find({ key: 'open-plugin:agents-kit' }))?.text).toMatch(/~2.7k ★ a month on average/)
   await ui.unmount()
 })

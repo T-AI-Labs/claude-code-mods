@@ -4,11 +4,13 @@ import type { EngineInterface, Register } from 'claude-code'
 import {
   EVERYWHERE,
   KINDS,
+  SORTS,
   detail,
   explainInto,
   explanationKey,
   firstLine,
   labelOf,
+  metricText,
   originsOf,
   refresh,
   rowText,
@@ -21,6 +23,7 @@ import type { Sort, View } from '../types'
 
 const PANE = 'catalog'
 const PAGE = 20
+const EMPTY = { count: 0, lastAt: 0, week: 0, month: 0 }
 
 const START: View = {
   kind: 'skill',
@@ -87,7 +90,7 @@ export const register: Register = (on, options) => {
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const tags = $.ui.resolve(e)
     const { Box, Button, Text } = tags
-    const { list, stats, repos, scans, notes, busy, confirming, working, isLoading: loading } = await snapshot($)
+    const { list, stats, repos, scans, now, notes, busy, confirming, working, isLoading: loading } = await snapshot($)
     const state = await read($, view)
     const selected = state.selected === null ? undefined : list.find(one => one.id === state.selected)
 
@@ -144,6 +147,7 @@ export const register: Register = (on, options) => {
             stats,
             repos,
             scans,
+            now,
             confirming,
             working,
             explanation: notes[explanationKey(language, selected.id)],
@@ -155,7 +159,7 @@ export const register: Register = (on, options) => {
       )
     }
 
-    const rows = visible(list, stats, state)
+    const rows = visible(list, stats, state, repos, now)
     const pages = Math.max(1, Math.ceil(rows.length / PAGE))
     const page = Math.min(state.page, pages - 1)
     const shown = rows.slice(page * PAGE, (page + 1) * PAGE)
@@ -175,11 +179,7 @@ export const register: Register = (on, options) => {
             key="sort"
             label="Sort"
             value={state.sort}
-            options={[
-              { value: 'usage', label: 'Most used' },
-              { value: 'name', label: 'Name' },
-              { value: 'cleanup', label: 'Clean-up: costly and unused first' },
-            ]}
+            options={SORTS.map(({ sort, label }) => ({ value: sort, label }))}
             onSelect={sort => void go({ sort: sort as Sort, page: 0 })}
           />
           <tags.Select
@@ -205,7 +205,15 @@ export const register: Register = (on, options) => {
           {shown.map(one => (
             <Box key={`row-${one.id}`} flexDirection="column">
               <Button key={`open-${one.id}`} plain onPress={() => open(one.id)}>
-                {one.name} <Text dimColor>{rowText(one, stats[one.id] ?? { count: 0, lastAt: 0, week: 0, month: 0 }, repos)}</Text>
+                {one.name}{' '}
+                <Text dimColor>
+                  {[
+                    rowText(one, stats[one.id] ?? EMPTY, repos),
+                    metricText(state.sort, one, list, stats[one.id] ?? EMPTY, repos, now),
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </Text>
               </Button>
               {one.description !== '' && (
                 <Text dimColor wrap="truncate-end">

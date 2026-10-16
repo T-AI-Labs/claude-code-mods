@@ -48,6 +48,8 @@ const FLUSH_MS = 10_000
 const DAY_MS = 86_400_000
 const KEPT_DAYS = 31
 const REPO_TTL_MS = DAY_MS
+const KEPT_STAR_POINTS = 120
+const MONTH_DAYS = 30
 const CLI_TIMEOUT_MS = 120_000
 const MCP_PREVIEW = 8
 
@@ -103,6 +105,7 @@ export type DetailProps = {
   stats: Record<string, Stat>
   repos: Record<string, RepoStats>
   scans: Record<string, Scan>
+  now: number
   confirming: string | null
   working: string | null
   explanation: string | undefined
@@ -231,15 +234,135 @@ export const isContainer = (kind: Kind) => kind === 'plugin' || kind === 'mod'
 const statOf = (stats: Record<string, Stat>, id: string): Stat =>
   stats[id] ?? { count: 0, lastAt: 0, week: 0, month: 0 }
 
+const ownerOf = (entry: Entry, list: readonly Entry[]) =>
+  entry.plugin === undefined ? list.find(one => isContainer(one.kind) && one.name === entry.origin) : entry
+
+const infoOf = (entry: Entry, list: readonly Entry[]) => ownerOf(entry, list)?.plugin
+
+const repoOf = (entry: Entry, list: readonly Entry[], known: Record<string, RepoStats>) => {
+  const repo = infoOf(entry, list)?.repo
+
+  return repo === undefined ? undefined : known[repo]
+}
+
+// Stars gained per month: measured from the stored history once it spans a day, else averaged over the repo's age.
+export const trendOf = (repo: RepoStats, now: number) => {
+  const oldest = dayOf(now - MONTH_DAYS * DAY_MS)
+  const base = [...(repo.history ?? [])].reverse().find(point => point.day <= oldest) ?? (repo.history ?? [])[0]
+  const span = base === undefined ? 0 : (now - Date.parse(base.day)) / DAY_MS
+
+  if (base !== undefined && span >= 1) {
+    return { perMonth: ((repo.stars - base.stars) / span) * MONTH_DAYS, isMeasured: true }
+  }
+
+  const months = Math.max(1, (now - Date.parse(repo.createdAt || '1970-01-01')) / DAY_MS / MONTH_DAYS)
+
+  return { perMonth: repo.stars / months, isMeasured: false }
+}
+
+const timeOf = (value: string | undefined) => {
+  const at = value === undefined ? Number.NaN : Date.parse(value)
+
+  return Number.isNaN(at) ? undefined : at
+}
+
+export const SORTS: readonly { sort: Sort; label: string }[] = [
+  { sort: 'usage', label: 'Most used' },
+  { sort: 'recent', label: 'Recently used' },
+  { sort: 'name', label: 'Name' },
+  { sort: 'cleanup', label: 'Clean-up: costly and unused first' },
+  { sort: 'stars', label: 'GitHub stars' },
+  { sort: 'trending', label: 'Trending: stars gained per month' },
+  { sort: 'forks', label: 'GitHub forks' },
+  { sort: 'pushed', label: 'Latest GitHub push' },
+  { sort: 'installs', label: 'Installs in the official directory' },
+  { sort: 'installed', label: 'Newest installed' },
+]
+
+const metricOf = (
+  sort: Sort,
+  entry: Entry,
+  list: readonly Entry[],
+  stat: Stat,
+  known: Record<string, RepoStats>,
+  now: number,
+) => {
+  const repo = repoOf(entry, list, known)
+  const info = infoOf(entry, list)
+
+  switch (sort) {
+    case 'recent':
+      return stat.lastAt === 0 ? undefined : stat.lastAt
+    case 'stars':
+      return repo?.stars
+    case 'trending':
+      return repo === undefined ? undefined : trendOf(repo, now).perMonth
+    case 'forks':
+      return repo?.forks
+    case 'pushed':
+      return timeOf(repo?.pushedAt)
+    case 'installs':
+      return info?.installs
+    case 'installed':
+      return timeOf(info?.installedAt)
+    default:
+      return undefined
+  }
+}
+
+// What the active sort ranks by, for the row; undefined where the row already says it.
+export const metricText = (
+  sort: Sort,
+  entry: Entry,
+  list: readonly Entry[],
+  stat: Stat,
+  known: Record<string, RepoStats>,
+  now: number,
+) => {
+  const repo = repoOf(entry, list, known)
+  const info = infoOf(entry, list)
+
+  switch (sort) {
+    case 'trending':
+      return repo === undefined ? undefined : trendText(repo, now)
+    case 'forks':
+      return repo === undefined ? undefined : `${shortNumber(repo.forks)} forks`
+    case 'pushed':
+      return repo === undefined || repo.pushedAt === '' ? undefined : `pushed ${dateOf(repo.pushedAt)}`
+    case 'installs':
+      return info?.installs === undefined ? undefined : `${shortNumber(info.installs)} installs`
+    case 'installed':
+      return info?.installedAt === undefined ? undefined : `installed ${dateOf(info.installedAt)}`
+    case 'recent':
+      return stat.lastAt === 0 ? undefined : `last ${dateOf(stat.lastAt)}`
+    case 'stars':
+      return entry.plugin === undefined && repo !== undefined ? `★ ${shortNumber(repo.stars)}` : undefined
+    default:
+      return undefined
+  }
+}
+
 export const visible = (
   list: readonly Entry[],
   stats: Record<string, Stat>,
   filter: { kind: Kind; query: string; origin: string; sort: Sort },
+  known: Record<string, RepoStats> = {},
+  now = 0,
 ) => {
   const query = filter.query.trim().toLowerCase()
   const order = (a: Entry, b: Entry) => {
     const one = statOf(stats, a.id)
     const two = statOf(stats, b.id)
+    const first = metricOf(filter.sort, a, list, one, known, now)
+    const second = metricOf(filter.sort, b, list, two, known, now)
+
+    if (first !== second) {
+      if (first === undefined || second === undefined) {
+        return first === undefined ? 1 : -1
+      }
+
+      return second - first
+    }
 
     if (filter.sort === 'usage' && one.count !== two.count) {
       return two.count - one.count
@@ -760,7 +883,8 @@ async function fetchRepos($: EngineInterface, list: readonly Entry[]) {
   for (const repo of wanted) {
     const cached = cache[repo]
 
-    if (cached !== undefined && now - cached.fetchedAt < REPO_TTL_MS) {
+    // Entries saved before forks, creation date and history were kept are fetched again.
+    if (cached?.history !== undefined && now - cached.fetchedAt < REPO_TTL_MS) {
       continue
     }
 
@@ -776,15 +900,23 @@ async function fetchRepos($: EngineInterface, list: readonly Entry[]) {
 
     const body = JSON.parse(response.text) as {
       stargazers_count?: number
+      forks_count?: number
       open_issues_count?: number
       pushed_at?: string
+      created_at?: string
       license?: { spdx_id?: string } | null
     }
+    const stars = body.stargazers_count ?? 0
+    const day = dayOf(now)
+    const history = (cached?.history ?? []).filter(point => point.day !== day)
     cache[repo] = {
-      stars: body.stargazers_count ?? 0,
+      stars,
+      forks: body.forks_count ?? 0,
       issues: body.open_issues_count ?? 0,
       pushedAt: body.pushed_at ?? '',
+      createdAt: body.created_at ?? '',
       license: body.license?.spdx_id,
+      history: [...history, { day, stars }].slice(-KEPT_STAR_POINTS),
       fetchedAt: now,
     }
   }
@@ -884,6 +1016,7 @@ export async function snapshot($: EngineInterface) {
     stats: statsOf(list, merge(await read($, usage), waiting), waiting, await read($, daily), await read($, costs), now),
     repos: await read($, repos),
     scans: await read($, scans),
+    now,
     notes: await read($, explanations),
     busy: await read($, explaining),
     confirming: await read($, confirming),
@@ -1216,9 +1349,19 @@ const pluginLine = (info: PluginInfo | undefined) =>
         .filter(Boolean)
         .join(' · ')
 
-const repoLine = (repo: RepoStats) =>
+const trendText = (repo: RepoStats, now: number) => {
+  const trend = trendOf(repo, now)
+  const amount = shortNumber(Math.round(Math.abs(trend.perMonth)))
+  const sign = trend.perMonth < 0 ? '−' : '+'
+
+  return trend.isMeasured ? `${sign}${amount} ★ a month` : `~${amount} ★ a month on average`
+}
+
+const repoLine = (repo: RepoStats, now: number) =>
   [
     `★ ${repo.stars.toLocaleString('en-US')}`,
+    trendText(repo, now),
+    `${(repo.forks ?? 0).toLocaleString('en-US')} forks`,
     `${repo.issues} open issues`,
     repo.pushedAt === '' ? undefined : `last push ${dateOf(repo.pushedAt)}`,
     repo.license === undefined || repo.license === 'NOASSERTION' ? undefined : repo.license,
@@ -1260,7 +1403,7 @@ export function detail($: EngineInterface, tags: DetailTags, props: DetailProps)
         {info?.repo !== undefined && (
           <Box flexDirection="row" gap={1} flexWrap="wrap">
             <Link href={`https://github.com/${info.repo}`} label={info.repo} />
-            {repo !== undefined && <Text dimColor>{repoLine(repo)}</Text>}
+            {repo !== undefined && <Text dimColor>{repoLine(repo, props.now)}</Text>}
           </Box>
         )}
       </Box>
