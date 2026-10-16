@@ -114,7 +114,7 @@ A compaction does cost tokens, whether you press Compact or the threshold trigge
 
 Each rate-limit window Claude Code reports gets a gauge, the percentage used and, in parentheses, the time left until it resets. `5h` is the 5-hour limit, `Week` the weekly one. A figure turns yellow from 75 % and red from 90 %.
 
-The readings arrive with the first response of a session and are only reported on a subscription plan. Until then the row reads `Usage limits: no reading yet`.
+The readings arrive with the first response of a session and are only reported on a subscription plan. Until then the row shows the last reading of the previous session, marked with its age (`as of 3h 20m ago`) and without the windows that have reset since. With nothing to show it reads `Usage limits: no reading yet`.
 
 ## Configure
 
