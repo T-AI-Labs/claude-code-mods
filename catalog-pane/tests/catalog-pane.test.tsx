@@ -24,7 +24,8 @@ const PANE = {
 const world = (on: On) => {
   const filled: string[] = []
   const ran: string[] = []
-  mock.clock(on, { now: Date.parse('2026-10-16T10:00:00Z') })
+  const opened: string[] = []
+  const clock = mock.clock(on, { now: Date.parse('2026-10-16T10:00:00Z') })
   mock.store(on, {})
   mock.env(on, { USERPROFILE: 'C:/home' })
   on('session.start', ($, e) => ({ cwd: e.cwd }))
@@ -49,7 +50,12 @@ const world = (on: On) => {
       : { deny: 'ENOENT' },
   )
   on('fs.read', () => ({ deny: 'ENOENT' }))
-  on('ui.open', () => ({ value: { isPlaced: true } }))
+  on('ui.open', ($, e) => {
+    opened.push(e.id)
+
+    return { value: { isPlaced: true } }
+  })
+  on('session.attach', ($, e) => ({ clientId: e.clientId }))
   on('prompt.fill', ($, e) => {
     filled.push(e.text)
 
@@ -61,7 +67,7 @@ const world = (on: On) => {
     return { text: '' }
   })
 
-  return { filled, ran }
+  return { filled, ran, opened, clock }
 }
 
 test('lists each category with its count and describes the entries', async ($, on) => {
@@ -129,4 +135,16 @@ test('filters the list on the desktop', async ($, on) => {
   expect(await ui.find({ key: 'open-command:review' })).toBeDefined()
   expect(await ui.find({ key: 'open-command:simplify' })).toBeUndefined()
   await ui.unmount()
+})
+
+test('opens the pane by itself when the desktop app attaches, not in the terminal', async ($, on) => {
+  const { opened, clock } = world(on)
+  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true })
+
+  expect(opened).toEqual([])
+
+  await $.session.attach({ surface: 'desktop', clientId: 'desktop:default' })
+
+  expect(opened).toEqual(['catalog'])
+  await clock.settle()
 })

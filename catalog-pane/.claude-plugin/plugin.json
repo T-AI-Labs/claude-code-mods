@@ -1,12 +1,12 @@
 {
   "name": "catalog-pane",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "Claude",
     "email": "noreply@anthropic.com"
   },
   "license": "MIT",
-  "description": "A pane listing every skill, command, agent, plugin, MCP server and tool by category, with descriptions, usage counts, a model-written note on what each is for, and buttons to run or insert it.",
+  "description": "A pane that opens with each desktop session and lists every skill, command, agent, plugin, MCP server and tool by category, with descriptions, usage counts, a model-written note on what each is for, and buttons to run or insert it.",
   "types": "./types/index.d.ts",
   "userConfig": {
     "language": {

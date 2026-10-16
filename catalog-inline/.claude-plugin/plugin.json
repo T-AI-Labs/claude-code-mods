@@ -1,12 +1,12 @@
 {
   "name": "catalog-inline",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "Claude",
     "email": "noreply@anthropic.com"
   },
   "license": "MIT",
-  "description": "A /catalog-inline command that draws an interactive catalog in the chat: pick a category and an entry from dropdowns to see its description, usage count and a model-written note on what it is for, then run or insert it.",
+  "description": "A row above the prompt with dropdowns for every skill, command, agent, plugin, MCP server and tool: pick one to see its description and usage count, run or insert it, and expand it for a model-written note on what it is for. /catalog-inline draws the same in the chat.",
   "types": "./types/index.d.ts",
   "userConfig": {
     "language": {

@@ -4,15 +4,18 @@ import type { Register } from 'claude-code'
 import {
   EVERYWHERE,
   KINDS,
+  actions,
   detail,
   explainInto,
   explanationKey,
+  firstLine,
   labelOf,
   refresh,
   snapshot,
   startCatalog,
   trackCatalog,
   usageOf,
+  usageText,
   visible,
 } from './catalog'
 import type { Kind, View } from '../types'
@@ -30,6 +33,8 @@ const START: View = {
 }
 
 const views = atom({ plugin: 'catalog-inline', key: 'views' } as const, null)
+const band = atom({ plugin: 'catalog-inline', key: 'band' } as const, START)
+const isBandOpen = atom({ plugin: 'catalog-inline', key: 'isBandOpen' } as const, false)
 
 const startFrom = (args: string): View => {
   const word = args.trim().toLowerCase()
@@ -159,6 +164,82 @@ export const register: Register = (on, options) => {
             onExplain: () => void explainInto($, selected, language),
           })
         )}
+      </Box>
+    )
+  })
+
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    const below = await next(e)
+    const tags = $.ui.resolve(e)
+
+    if (e.props.hasSurvey || !('Select' in tags)) {
+      return below
+    }
+
+    const { Box, Button, Select, Text } = tags
+    const { list, totals, notes, busy } = await snapshot($)
+    const state = await read($, band)
+    const isOpen = await read($, isBandOpen)
+    const rows = visible(list, totals, state)
+    const chosen = state.selected === null ? undefined : list.find(one => one.id === state.selected)
+    const selected = chosen ?? rows[0]
+    const isListed = selected !== undefined && rows.some(one => one.id === selected.id)
+    const go = (patch: Partial<View>) => update($, band, current => ({ ...current, ...patch }))
+
+    return (
+      <Box flexDirection="column">
+        <Box flexDirection="row" flexWrap="wrap" gap={1} alignItems="center">
+          <Text dimColor>Catalog</Text>
+          <Select
+            key="band-kind"
+            value={state.kind}
+            options={KINDS.map(({ kind, label }) => ({
+              value: kind,
+              label: `${label} (${list.filter(one => one.kind === kind).length})`,
+            }))}
+            onSelect={kind => void go({ kind: kind as Kind, selected: null, trail: [] })}
+          />
+          {rows.length > 0 && (
+            <Select
+              key="band-entry"
+              value={isListed ? selected.id : undefined}
+              options={rows.map(one => ({
+                value: one.id,
+                label: `${one.name} · ${usageOf(one, list, totals).count}×`,
+              }))}
+              onSelect={id => void go({ selected: id, trail: [] })}
+            />
+          )}
+          {selected !== undefined && !isOpen && actions($, tags, selected)}
+          {selected !== undefined && (
+            <Button
+              key="band-more"
+              plain
+              label={isOpen ? 'Less' : 'More'}
+              onPress={() => update($, isBandOpen, open => !open)}
+            />
+          )}
+        </Box>
+        {selected !== undefined && !isOpen && (
+          <Text dimColor wrap="truncate-end">
+            {firstLine(selected.description) || labelOf(selected.kind)} · {usageText(usageOf(selected, list, totals))}
+          </Text>
+        )}
+        {selected !== undefined &&
+          isOpen &&
+          detail($, tags, {
+            entry: selected,
+            list,
+            totals,
+            explanation: notes[explanationKey(language, selected.id)],
+            isExplaining: busy.includes(selected.id),
+            onOpen: id => {
+              const target = list.find(one => one.id === id)
+              void go({ kind: target?.kind ?? state.kind, selected: id, trail: [] })
+            },
+            onExplain: () => void explainInto($, selected, language),
+          })}
+        {below}
       </Box>
     )
   })

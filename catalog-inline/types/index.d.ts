@@ -35,6 +35,8 @@ declare module 'claude-code' {
       usage: Usage
       pending: Usage
       views: StateFamily<View | null>
+      band: View
+      isBandOpen: boolean
       explanations: Record<string, string>
       explaining: string[]
     }

@@ -586,7 +586,7 @@ async function run($: EngineInterface, name: string) {
   }
 }
 
-function actions($: EngineInterface, { Box, Button }: DetailTags, entry: Entry) {
+export function actions($: EngineInterface, { Box, Button }: DetailTags, entry: Entry) {
   if (entry.kind === 'skill' || entry.kind === 'command') {
     return (
       <Box flexDirection="row" gap={1}>

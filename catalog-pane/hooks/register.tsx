@@ -60,6 +60,19 @@ export const register: Register = (on, options) => {
     })
     void refresh($)
 
+    if (e.surface === 'desktop') {
+      void $.ui.open({ id: PANE, title: 'Catalog' })
+    }
+
+    return next(e)
+  })
+
+  // The desktop app attaches after the session started, so session.start sees no surface there.
+  on('session.attach', async ($, e, next) => {
+    if (e.surface === 'desktop') {
+      void $.ui.open({ id: PANE, title: 'Catalog' })
+    }
+
     return next(e)
   })
 

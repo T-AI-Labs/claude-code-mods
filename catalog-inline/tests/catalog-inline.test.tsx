@@ -16,6 +16,19 @@ const row = (args: string) =>
     props: { command: 'catalog-inline', args, text: 'Catalog', isErrored: false },
   }) as const
 
+const BAND = {
+  plugin: 'catalog-inline',
+  component: 'AbovePrompt',
+  props: {
+    hasSurvey: false,
+    isWorking: false,
+    maxRows: 10,
+    bodyColumns: 120,
+    scroll: { offset: 0, bodyRows: 10 },
+    view: {},
+  },
+} as const
+
 const world = (on: On) => {
   const filled: string[] = []
   const ran: string[] = []
@@ -39,6 +52,11 @@ const world = (on: On) => {
     filled.push(e.text)
 
     return { isFilled: true }
+  })
+  on('ui.render', { component: 'AbovePrompt' }, ($, e) => {
+    const { Text } = $.ui.resolve(e)
+
+    return <Text>below</Text>
   })
   on('command.run', ($, e) => {
     ran.push(e.command)
@@ -95,4 +113,29 @@ test('navigates from a plugin to what it provides and back', async ($, on) => {
   }
 
   expect(ran.filter(name => name === 'auto:fix')).toHaveLength(2)
+})
+
+test('shows a row above the prompt from the start, above the other bands', async ($, on) => {
+  const { filled } = world(on)
+  await $.session.start({ cwd: '/work', surface: 'desktop', isInteractive: true })
+  await $.command.run({ ...TYPED, command: 'catalog-inline' })
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+    await ui.select({ key: 'band-kind', value: 'command' })
+    await ui.select({ key: 'band-entry', value: 'command:review' })
+
+    expect(await ui.find({ type: 'Text', text: /Review a pull request/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'below' })).toBeDefined()
+
+    await ui.press({ key: 'insert' })
+    await ui.press({ key: 'band-more' })
+
+    expect(await ui.find({ key: 'explain' })).toBeDefined()
+
+    await ui.press({ key: 'band-more' })
+    await ui.unmount()
+  }
+
+  expect(filled).toEqual(['/review ', '/review '])
 })
