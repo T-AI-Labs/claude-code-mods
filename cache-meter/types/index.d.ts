@@ -1,13 +1,16 @@
 export type CacheHit = { read: number; total: number }
 
-export type ContextFill = { percent: number; tokens: number; window: number }
+export type Warmth = { sentAt: number | null; ttlMs: number }
+
+export type KeepWarm = { isOn: boolean; until: number | null; refreshes: number }
 
 declare module 'claude-code' {
   interface PluginState {
     'cache-meter': {
       cache: CacheHit | null
-      context: ContextFill | null
-      threshold: number
+      warmth: Warmth
+      keepWarm: KeepWarm
+      now: number
     }
   }
 }
