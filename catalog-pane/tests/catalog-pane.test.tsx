@@ -260,7 +260,7 @@ test('shows a plugin with its token cost, update, installs and GitHub stats', as
   await clock.settle()
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
 
-  expect((await ui.find({ key: 'open-plugin:auto' }))?.text).toMatch(/~1.6k tok\/session · update/)
+  expect((await ui.find({ key: 'open-plugin:auto' }))?.text).toMatch(/~1.6k tok\/session · ★ 1.2k · update/)
 
   await ui.press({ key: 'open-plugin:auto' })
 

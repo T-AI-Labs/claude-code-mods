@@ -130,7 +130,7 @@ const dayOf = (at: number) => new Date(at).toISOString().slice(0, 10)
 
 const dateOf = (value: string | number) => new Date(value).toISOString().slice(0, 10)
 
-export const tokensText = (count: number) =>
+export const shortNumber = (count: number) =>
   count >= 1000 ? `${(count / 1000).toFixed(1).replace(/\.0$/, '')}k` : `${count}`
 
 const addMark = (marks: Usage, id: string, mark: Mark): Usage => {
@@ -274,11 +274,14 @@ export const originsOf = (list: readonly Entry[], kind: Kind) =>
 
 export const firstLine = (text: string) => text.split(/\r?\n/).find(line => line.trim() !== '') ?? ''
 
-export const rowText = (entry: Entry, stat: Stat) =>
+export const rowText = (entry: Entry, stat: Stat, known: Record<string, RepoStats> = {}) =>
   [
     entry.origin,
     stat.count === 0 ? 'never used' : `${stat.count}× (${stat.month} in 30d)`,
-    stat.cost === undefined ? undefined : `~${tokensText(stat.cost.alwaysOn)} tok/session`,
+    stat.cost === undefined ? undefined : `~${shortNumber(stat.cost.alwaysOn)} tok/session`,
+    entry.plugin?.repo === undefined || known[entry.plugin.repo] === undefined
+      ? undefined
+      : `★ ${shortNumber(known[entry.plugin.repo]?.stars ?? 0)}`,
     entry.plugin?.latest !== undefined && entry.plugin.latest !== entry.plugin.version ? 'update' : undefined,
   ]
     .filter(Boolean)
@@ -1198,8 +1201,8 @@ const usageLine = (stat: Stat) =>
 const costLine = (cost: Cost | undefined) =>
   cost === undefined
     ? undefined
-    : `~${tokensText(cost.alwaysOn)} tokens in every session` +
-      (cost.onInvoke === undefined ? '' : ` · ~${tokensText(cost.onInvoke)} per use`)
+    : `~${shortNumber(cost.alwaysOn)} tokens in every session` +
+      (cost.onInvoke === undefined ? '' : ` · ~${shortNumber(cost.onInvoke)} per use`)
 
 const pluginLine = (info: PluginInfo | undefined) =>
   info === undefined

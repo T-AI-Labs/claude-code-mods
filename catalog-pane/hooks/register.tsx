@@ -205,7 +205,7 @@ export const register: Register = (on, options) => {
           {shown.map(one => (
             <Box key={`row-${one.id}`} flexDirection="column">
               <Button key={`open-${one.id}`} plain onPress={() => open(one.id)}>
-                {one.name} <Text dimColor>{rowText(one, stats[one.id] ?? { count: 0, lastAt: 0, week: 0, month: 0 })}</Text>
+                {one.name} <Text dimColor>{rowText(one, stats[one.id] ?? { count: 0, lastAt: 0, week: 0, month: 0 }, repos)}</Text>
               </Button>
               {one.description !== '' && (
                 <Text dimColor wrap="truncate-end">
