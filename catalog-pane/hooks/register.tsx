@@ -11,11 +11,10 @@ import {
   labelOf,
   originsOf,
   refresh,
+  rowText,
   snapshot,
   startCatalog,
   trackCatalog,
-  usageOf,
-  usageText,
   visible,
 } from './catalog'
 import type { Sort, View } from '../types'
@@ -48,11 +47,12 @@ const startFrom = (args: string): Partial<View> => {
 
 export const register: Register = (on, options) => {
   const language = typeof options.language === 'string' && options.language !== '' ? options.language : 'English'
+  const github = options.githubStats !== false
 
   trackCatalog(on)
 
   on('session.start', async ($, e, next) => {
-    await startCatalog($)
+    await startCatalog($, { github })
     await $.command.register({
       name: 'catalog',
       description: 'Browse skills, commands, agents, plugins, MCP servers and tools in a pane',
@@ -87,7 +87,7 @@ export const register: Register = (on, options) => {
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const tags = $.ui.resolve(e)
     const { Box, Button, Text } = tags
-    const { list, totals, notes, busy, isLoading: loading } = await snapshot($)
+    const { list, stats, repos, notes, busy, confirming, working, isLoading: loading } = await snapshot($)
     const state = await read($, view)
     const selected = state.selected === null ? undefined : list.find(one => one.id === state.selected)
 
@@ -141,7 +141,10 @@ export const register: Register = (on, options) => {
           {detail($, tags, {
             entry: selected,
             list,
-            totals,
+            stats,
+            repos,
+            confirming,
+            working,
             explanation: notes[explanationKey(language, selected.id)],
             isExplaining: busy.includes(selected.id),
             onOpen: id => void open(id),
@@ -151,7 +154,7 @@ export const register: Register = (on, options) => {
       )
     }
 
-    const rows = visible(list, totals, state)
+    const rows = visible(list, stats, state)
     const pages = Math.max(1, Math.ceil(rows.length / PAGE))
     const page = Math.min(state.page, pages - 1)
     const shown = rows.slice(page * PAGE, (page + 1) * PAGE)
@@ -174,6 +177,7 @@ export const register: Register = (on, options) => {
             options={[
               { value: 'usage', label: 'Most used' },
               { value: 'name', label: 'Name' },
+              { value: 'cleanup', label: 'Clean-up: costly and unused first' },
             ]}
             onSelect={sort => void go({ sort: sort as Sort, page: 0 })}
           />
@@ -200,7 +204,7 @@ export const register: Register = (on, options) => {
           {shown.map(one => (
             <Box key={`row-${one.id}`} flexDirection="column">
               <Button key={`open-${one.id}`} plain onPress={() => open(one.id)}>
-                {one.name} <Text dimColor>{one.origin} · {usageText(usageOf(one, list, totals))}</Text>
+                {one.name} <Text dimColor>{rowText(one, stats[one.id] ?? { count: 0, lastAt: 0, week: 0, month: 0 })}</Text>
               </Button>
               {one.description !== '' && (
                 <Text dimColor wrap="truncate-end">

@@ -8,7 +8,19 @@ import type {
   ToolInfo,
 } from 'claude-code'
 
-import type { Entry, Kind, KnownAgent, Mark, Sort, Usage } from '../types'
+import type {
+  Cost,
+  Daily,
+  Entry,
+  Kind,
+  KnownAgent,
+  Mark,
+  PluginInfo,
+  RepoStats,
+  Sort,
+  Stat,
+  Usage,
+} from '../types'
 
 export const KINDS: readonly { kind: Kind; label: string; noun: string }[] = [
   { kind: 'skill', label: 'Skills', noun: 'skill' },
@@ -22,45 +34,76 @@ export const KINDS: readonly { kind: Kind; label: string; noun: string }[] = [
 export const EVERYWHERE = '*'
 
 const USAGE_KEY = 'usage'
+const DAILY_KEY = 'daily'
+const COSTS_KEY = 'costs'
+const REPOS_KEY = 'repos'
 const SKILLS_KEY = 'skills'
 const AGENTS_KEY = 'agents'
 const EXPLANATIONS_KEY = 'explanations'
 const FLUSH_MS = 10_000
+const DAY_MS = 86_400_000
+const KEPT_DAYS = 31
+const REPO_TTL_MS = DAY_MS
+const CLI_TIMEOUT_MS = 120_000
 const MCP_PREVIEW = 8
 
 const entries = atom({ plugin: 'catalog-pane', key: 'entries' } as const, [])
 const isLoading = atom({ plugin: 'catalog-pane', key: 'isLoading' } as const, false)
 const usage = atom({ plugin: 'catalog-pane', key: 'usage' } as const, {})
 const pending = atom({ plugin: 'catalog-pane', key: 'pending' } as const, {})
+const daily = atom({ plugin: 'catalog-pane', key: 'daily' } as const, {})
+const costs = atom({ plugin: 'catalog-pane', key: 'costs' } as const, {})
+const repos = atom({ plugin: 'catalog-pane', key: 'repos' } as const, {})
 const explanations = atom({ plugin: 'catalog-pane', key: 'explanations' } as const, {})
 const explaining = atom({ plugin: 'catalog-pane', key: 'explaining' } as const, [])
+const confirming = atom({ plugin: 'catalog-pane', key: 'confirming' } as const, null)
+const working = atom({ plugin: 'catalog-pane', key: 'working' } as const, null)
 
 type Installed = {
-  plugins?: Record<string, { installPath: string; version?: string }[]>
+  plugins?: Record<
+    string,
+    { installPath: string; version?: string; installedAt?: string; lastUpdated?: string }[]
+  >
 }
 
-type PluginDir = {
-  name: string
-  marketplace: string
-  root: string
-  version?: string
-  isEnabled: boolean
+type Marketplaces = Record<
+  string,
+  { source?: { source?: string; repo?: string }; installLocation?: string }
+>
+
+type MarketplaceFile = {
+  plugins?: { name: string; version?: string; source?: unknown }[]
 }
+
+type Manifest = { description?: string; version?: string; repository?: unknown }
+
+type PluginDir = { name: string; root: string; info: PluginInfo }
+
+type MeasuredPlugin = { total: Cost; parts: Record<string, Cost> }
 
 export type DetailTags = Pick<
   Elements['terminal'],
-  'Box' | 'Text' | 'Button' | 'Markdown'
+  'Box' | 'Text' | 'Button' | 'Markdown' | 'Link'
 >
 
 export type DetailProps = {
   entry: Entry
   list: readonly Entry[]
-  totals: Usage
+  stats: Record<string, Stat>
+  repos: Record<string, RepoStats>
+  confirming: string | null
+  working: string | null
   explanation: string | undefined
   isExplaining: boolean
   onOpen: (id: string) => void
   onExplain: () => void
 }
+
+let isFlushing = false
+let skills = new Set<string>()
+let agents: Record<string, KnownAgent> = {}
+let showsGithub = true
+let enriching: Promise<void> = Promise.resolve()
 
 export const idOf = (kind: Kind, name: string) => `${kind}:${name}`
 
@@ -70,6 +113,13 @@ export const labelOf = (kind: Kind) =>
 const nounOf = (kind: Kind) => KINDS.find(one => one.kind === kind)?.noun ?? kind
 
 export const explanationKey = (language: string, id: string) => `${language}|${id}`
+
+const dayOf = (at: number) => new Date(at).toISOString().slice(0, 10)
+
+const dateOf = (value: string | number) => new Date(value).toISOString().slice(0, 10)
+
+export const tokensText = (count: number) =>
+  count >= 1000 ? `${(count / 1000).toFixed(1).replace(/\.0$/, '')}k` : `${count}`
 
 const addMark = (marks: Usage, id: string, mark: Mark): Usage => {
   const seen = marks[id]
@@ -100,32 +150,98 @@ const subtract = (marks: Usage, flushed: Usage): Usage => {
   return left
 }
 
-export const usageOf = (entry: Entry, list: readonly Entry[], totals: Usage) => {
-  if (entry.kind !== 'plugin') {
-    return totals[entry.id] ?? { count: 0, lastAt: 0 }
+const addDay = (days: Daily, day: string, delta: Usage, now: number): Daily => {
+  const oldest = dayOf(now - KEPT_DAYS * DAY_MS)
+  const kept: Daily = Object.fromEntries(Object.entries(days).filter(([one]) => one >= oldest))
+  const counts = { ...(kept[day] ?? {}) }
+
+  for (const [id, mark] of Object.entries(delta)) {
+    counts[id] = (counts[id] ?? 0) + mark.count
   }
 
-  return list
-    .filter(one => one.kind !== 'plugin' && one.origin === entry.name)
-    .reduce<Mark>(
-      (sum, one) => {
-        const mark = totals[one.id]
-
-        return mark === undefined
-          ? sum
-          : { count: sum.count + mark.count, lastAt: Math.max(sum.lastAt, mark.lastAt) }
-      },
-      { count: 0, lastAt: 0 },
-    )
+  return { ...kept, [day]: counts }
 }
+
+const sinceDays = (days: Daily, id: string, span: number, now: number) => {
+  const oldest = dayOf(now - (span - 1) * DAY_MS)
+
+  return Object.entries(days)
+    .filter(([day]) => day >= oldest)
+    .reduce((sum, [, counts]) => sum + (counts[id] ?? 0), 0)
+}
+
+export const statsOf = (
+  list: readonly Entry[],
+  totals: Usage,
+  waiting: Usage,
+  days: Daily,
+  measured: Record<string, Cost>,
+  now: number,
+): Record<string, Stat> => {
+  const stats: Record<string, Stat> = {}
+
+  for (const one of list.filter(entry => entry.kind !== 'plugin')) {
+    const mark = totals[one.id] ?? { count: 0, lastAt: 0 }
+    const fresh = waiting[one.id]?.count ?? 0
+    stats[one.id] = {
+      ...mark,
+      week: sinceDays(days, one.id, 7, now) + fresh,
+      month: sinceDays(days, one.id, 30, now) + fresh,
+      cost: measured[one.id],
+    }
+  }
+
+  for (const one of list.filter(entry => entry.kind === 'plugin')) {
+    const items = list.filter(item => item.kind !== 'plugin' && item.origin === one.name)
+    stats[one.id] = items.reduce<Stat>(
+      (sum, item) => {
+        const stat = stats[item.id]
+
+        return stat === undefined
+          ? sum
+          : {
+              ...sum,
+              count: sum.count + stat.count,
+              lastAt: Math.max(sum.lastAt, stat.lastAt),
+              week: sum.week + stat.week,
+              month: sum.month + stat.month,
+            }
+      },
+      { count: 0, lastAt: 0, week: 0, month: 0, cost: measured[one.id] },
+    )
+  }
+
+  return stats
+}
+
+const statOf = (stats: Record<string, Stat>, id: string): Stat =>
+  stats[id] ?? { count: 0, lastAt: 0, week: 0, month: 0 }
 
 export const visible = (
   list: readonly Entry[],
-  totals: Usage,
+  stats: Record<string, Stat>,
   filter: { kind: Kind; query: string; origin: string; sort: Sort },
 ) => {
   const query = filter.query.trim().toLowerCase()
-  const count = (one: Entry) => usageOf(one, list, totals).count
+  const order = (a: Entry, b: Entry) => {
+    const one = statOf(stats, a.id)
+    const two = statOf(stats, b.id)
+
+    if (filter.sort === 'usage' && one.count !== two.count) {
+      return two.count - one.count
+    }
+
+    if (filter.sort === 'cleanup') {
+      const unused = Number(two.month === 0) - Number(one.month === 0)
+      const weight = (two.cost?.alwaysOn ?? 0) - (one.cost?.alwaysOn ?? 0)
+
+      if (unused !== 0 || weight !== 0 || one.count !== two.count) {
+        return unused || weight || one.count - two.count
+      }
+    }
+
+    return a.name.localeCompare(b.name)
+  }
 
   return list
     .filter(one => one.kind === filter.kind)
@@ -136,11 +252,7 @@ export const visible = (
         one.name.toLowerCase().includes(query) ||
         one.description.toLowerCase().includes(query),
     )
-    .sort((a, b) =>
-      filter.sort === 'usage' && count(a) !== count(b)
-        ? count(b) - count(a)
-        : a.name.localeCompare(b.name),
-    )
+    .sort(order)
 }
 
 export const originsOf = (list: readonly Entry[], kind: Kind) =>
@@ -148,10 +260,15 @@ export const originsOf = (list: readonly Entry[], kind: Kind) =>
 
 export const firstLine = (text: string) => text.split(/\r?\n/).find(line => line.trim() !== '') ?? ''
 
-export const usageText = (mark: Mark) =>
-  mark.count === 0
-    ? 'never used'
-    : `${mark.count}× · last ${new Date(mark.lastAt).toISOString().slice(0, 10)}`
+export const rowText = (entry: Entry, stat: Stat) =>
+  [
+    entry.origin,
+    stat.count === 0 ? 'never used' : `${stat.count}× (${stat.month} in 30d)`,
+    stat.cost === undefined ? undefined : `~${tokensText(stat.cost.alwaysOn)} tok/session`,
+    entry.plugin?.latest !== undefined && entry.plugin.latest !== entry.plugin.version ? 'update' : undefined,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 
 const firstParagraph = (text: string) => text.trim().split(/\r?\n\s*\r?\n/)[0] ?? ''
 
@@ -165,6 +282,54 @@ const frontmatter = (text: string) => {
       .replaceAll('\\n', '\n')
 
   return { name: field('name'), description: field('description') }
+}
+
+const githubRepo = (value: unknown) => {
+  const url =
+    typeof value === 'string'
+      ? value
+      : typeof value === 'object' && value !== null && 'url' in value
+        ? String(value.url)
+        : ''
+  const match = /github\.com[/:]([^/\s]+)\/([^/\s#?]+?)(?:\.git)?(?:[/#?]|$)/.exec(url)
+
+  return match === null ? undefined : `${match[1]}/${match[2]}`
+}
+
+const sourceRepo = (source: unknown) =>
+  typeof source === 'object' && source !== null && 'repo' in source && typeof source.repo === 'string'
+    ? source.repo
+    : undefined
+
+const tokenCount = (text: string) => {
+  const match = /^~?([\d.,]+)(k?)$/.exec(text.trim())
+
+  if (match === null) {
+    return undefined
+  }
+
+  const count = Number((match[1] ?? '').replaceAll(',', ''))
+
+  return Math.round(match[2] === 'k' ? count * 1000 : count)
+}
+
+export const parseDetails = (text: string): MeasuredPlugin => {
+  const parts: Record<string, Cost> = {}
+  const table = text.split(/Per-component[^\n]*\n/)[1] ?? ''
+
+  for (const line of table.split(/\r?\n/)) {
+    const match = /^\s+(\S+)\s+(\S+)\s+(\S+)\s*$/.exec(line)
+    const alwaysOn = match === null ? undefined : tokenCount(match[2] ?? '')
+
+    if (match?.[1] !== undefined && alwaysOn !== undefined) {
+      parts[match[1]] = { alwaysOn, onInvoke: tokenCount(match[3] ?? '') }
+    }
+  }
+
+  const total = /Always-on:\s+(\S+)\s+tok/.exec(text)?.[1]
+  const sum = Object.values(parts).reduce((all, part) => all + part.alwaysOn, 0)
+
+  return { total: { alwaysOn: (total === undefined ? undefined : tokenCount(total)) ?? sum }, parts }
 }
 
 async function configDir($: EngineInterface) {
@@ -219,27 +384,69 @@ async function agentsIn(
   )
 }
 
-async function pluginDirs($: EngineInterface, config: string): Promise<PluginDir[]> {
+async function latestOf($: EngineInterface, marketplace: Marketplaces[string] | undefined, name: string) {
+  const location = marketplace?.installLocation
+
+  if (location === undefined) {
+    return {}
+  }
+
+  const listed = (await readJson<MarketplaceFile>($, `${location}/.claude-plugin/marketplace.json`))?.plugins?.find(
+    one => one.name === name,
+  )
+
+  if (listed === undefined) {
+    return {}
+  }
+
+  const local =
+    typeof listed.source === 'string'
+      ? await readJson<Manifest>($, `${location}/${listed.source}/.claude-plugin/plugin.json`)
+      : undefined
+
+  return { version: listed.version ?? local?.version, repo: sourceRepo(listed.source) }
+}
+
+async function pluginDirs($: EngineInterface, config: string): Promise<(PluginDir & { manifest?: Manifest })[]> {
   const installed = await readJson<Installed>($, `${config}/plugins/installed_plugins.json`)
+  const marketplaces = (await readJson<Marketplaces>($, `${config}/plugins/known_marketplaces.json`)) ?? {}
+  const catalog = await readJson<{ catalog?: { plugins?: Record<string, { unique_installs?: number }> } }>(
+    $,
+    `${config}/plugins/plugin-catalog-cache.json`,
+  )
   const settings = await $.settings.read()
   const enabled = (settings.enabledPlugins ?? {}) as Record<string, unknown>
 
-  return Object.entries(installed?.plugins ?? {}).flatMap(([key, installs]) => {
-    const [name = key, marketplace = ''] = key.split('@')
-    const first = installs[0]
+  const dirs = await Promise.all(
+    Object.entries(installed?.plugins ?? {}).map(async ([key, installs]) => {
+      const [name = key, marketplace = ''] = key.split('@')
+      const first = installs[0]
 
-    return first === undefined
-      ? []
-      : [
-          {
-            name,
-            marketplace,
-            root: first.installPath,
-            version: first.version,
-            isEnabled: enabled[key] === true,
-          },
-        ]
-  })
+      if (first === undefined) {
+        return undefined
+      }
+
+      const manifest = await readJson<Manifest>($, `${first.installPath}/.claude-plugin/plugin.json`)
+      const latest = await latestOf($, marketplaces[marketplace], name)
+      const info: PluginInfo = {
+        key,
+        version: first.version,
+        latest: latest.version,
+        isEnabled: enabled[key] === true,
+        installedAt: first.installedAt,
+        updatedAt: first.lastUpdated,
+        repo:
+          latest.repo ??
+          githubRepo(manifest?.repository) ??
+          sourceRepo(marketplaces[marketplace]?.source),
+        installs: catalog?.catalog?.plugins?.[key]?.unique_installs,
+      }
+
+      return { name, root: first.installPath, info, manifest }
+    }),
+  )
+
+  return dirs.filter(one => one !== undefined)
 }
 
 const agentOrigin = (agent: KnownAgent) => {
@@ -268,6 +475,10 @@ const commandOrigin = (command: CommandInfo, skillOrigin: string | undefined) =>
   return command.source === 'builtin' ? 'built-in' : command.source
 }
 
+// claude.ai connectors and plugin-provided servers are not managed by `claude mcp`.
+const isRemovableServer = (server: string) =>
+  !server.startsWith('claude_ai') && !server.startsWith('plugin_') && !/^[0-9a-f]{8}-/.test(server)
+
 const mcpEntries = (tools: readonly ToolInfo[]): Entry[] => {
   const servers = new Map<string, string[]>()
 
@@ -288,6 +499,7 @@ const mcpEntries = (tools: readonly ToolInfo[]): Entry[] => {
       `${names.length} tools: ${names.slice(0, MCP_PREVIEW).join(', ')}` +
       (names.length > MCP_PREVIEW ? ', …' : ''),
     detail: names.join(', '),
+    isRemovable: isRemovableServer(server),
   }))
 }
 
@@ -315,7 +527,7 @@ export async function collect($: EngineInterface): Promise<Entry[]> {
     skillOrigins.set(name, 'project')
   }
 
-  const agents = new Map<string, KnownAgent>()
+  const agentsFound = new Map<string, KnownAgent>()
   const found = [
     ...(await agentsIn($, `${config}/agents`, 'userSettings')),
     ...(await agentsIn($, '.claude/agents', 'projectSettings')),
@@ -330,7 +542,7 @@ export async function collect($: EngineInterface): Promise<Entry[]> {
   }
 
   for (const agent of [...found, ...Object.values(offered)]) {
-    agents.set(agent.name, agent)
+    agentsFound.set(agent.name, agent)
   }
 
   const commandEntries: Entry[] = commands.map(command => {
@@ -347,29 +559,18 @@ export async function collect($: EngineInterface): Promise<Entry[]> {
   })
 
   const loaded = new Set(commands.flatMap(command => command.plugin ?? []))
-  const pluginEntries: Entry[] = await Promise.all(
-    plugins.map(async plugin => {
-      const manifest = await readJson<{ description?: string }>(
-        $,
-        `${plugin.root}/.claude-plugin/plugin.json`,
-      )
-      loaded.delete(plugin.name)
+  const pluginEntries: Entry[] = plugins.map(plugin => {
+    loaded.delete(plugin.name)
 
-      return {
-        id: idOf('plugin', plugin.name),
-        kind: 'plugin' as const,
-        name: plugin.name,
-        description: manifest?.description ?? '',
-        origin: plugin.marketplace,
-        detail: [
-          plugin.version === undefined ? undefined : `v${plugin.version}`,
-          plugin.isEnabled ? 'enabled' : 'disabled',
-        ]
-          .filter(Boolean)
-          .join(' · '),
-      }
-    }),
-  )
+    return {
+      id: idOf('plugin', plugin.name),
+      kind: 'plugin',
+      name: plugin.name,
+      description: plugin.manifest?.description ?? '',
+      origin: plugin.info.key.split('@')[1] ?? '',
+      plugin: plugin.info,
+    }
+  })
 
   for (const name of loaded) {
     pluginEntries.push({
@@ -378,11 +579,11 @@ export async function collect($: EngineInterface): Promise<Entry[]> {
       name,
       description: '',
       origin: 'session',
-      detail: 'loaded in this session',
+      detail: 'Loaded for this session from a folder, not installed.',
     })
   }
 
-  const agentEntries: Entry[] = [...agents.values()].map(agent => ({
+  const agentEntries: Entry[] = [...agentsFound.values()].map(agent => ({
     id: idOf('agent', agent.name),
     kind: 'agent',
     name: agent.name,
@@ -409,12 +610,97 @@ export async function collect($: EngineInterface): Promise<Entry[]> {
   ]
 }
 
+async function measureCosts($: EngineInterface, list: readonly Entry[]) {
+  const cache = ((await $.store.get(COSTS_KEY)) ?? {}) as Record<string, MeasuredPlugin>
+  const measured: Record<string, Cost> = {}
+
+  for (const entry of list) {
+    const info = entry.plugin
+
+    if (info === undefined) {
+      continue
+    }
+
+    const cacheKey = `${info.key}@${info.version ?? ''}`
+    let result = cache[cacheKey]
+
+    if (result === undefined) {
+      const run = await $.process
+        .run(['claude', 'plugin', 'details', info.key], { timeoutMs: CLI_TIMEOUT_MS })
+        .catch(() => undefined)
+
+      if (run === undefined || run.exitCode !== 0) {
+        continue
+      }
+
+      result = parseDetails(run.stdout)
+      cache[cacheKey] = result
+      await $.store.set(COSTS_KEY, cache)
+    }
+
+    measured[entry.id] = result.total
+
+    for (const [part, cost] of Object.entries(result.parts)) {
+      for (const kind of ['skill', 'agent', 'command'] as const) {
+        measured[idOf(kind, `${entry.name}:${part}`)] = cost
+      }
+    }
+
+    await update($, costs, () => ({ ...measured }))
+  }
+}
+
+async function fetchRepos($: EngineInterface, list: readonly Entry[]) {
+  const cache = ((await $.store.get(REPOS_KEY)) ?? {}) as Record<string, RepoStats>
+  const now = await $.clock.now()
+  const wanted = [...new Set(list.flatMap(entry => entry.plugin?.repo ?? []))]
+
+  for (const repo of wanted) {
+    const cached = cache[repo]
+
+    if (cached !== undefined && now - cached.fetchedAt < REPO_TTL_MS) {
+      continue
+    }
+
+    const response = await $.http
+      .fetch(`https://api.github.com/repos/${repo}`, {
+        headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'catalog-pane' },
+      })
+      .catch(() => undefined)
+
+    if (response?.ok !== true) {
+      continue
+    }
+
+    const body = JSON.parse(response.text) as {
+      stargazers_count?: number
+      open_issues_count?: number
+      pushed_at?: string
+      license?: { spdx_id?: string } | null
+    }
+    cache[repo] = {
+      stars: body.stargazers_count ?? 0,
+      issues: body.open_issues_count ?? 0,
+      pushedAt: body.pushed_at ?? '',
+      license: body.license?.spdx_id,
+      fetchedAt: now,
+    }
+  }
+
+  await $.store.set(REPOS_KEY, cache)
+  await update($, repos, () => cache)
+}
+
+async function enrich($: EngineInterface, list: readonly Entry[]) {
+  await measureCosts($, list)
+
+  if (showsGithub) {
+    await fetchRepos($, list)
+  }
+}
+
 const skillName = (skill: string, pluginName: string | undefined) =>
   pluginName === undefined || skill.includes(':') ? skill : `${pluginName}:${skill}`
-
-let isFlushing = false
-let skills = new Set<string>()
-let agents: Record<string, KnownAgent> = {}
 
 async function bump($: EngineInterface, id: string) {
   const at = await $.clock.now()
@@ -432,11 +718,15 @@ async function flush($: EngineInterface) {
     const delta = await read($, pending)
 
     if (Object.keys(delta).length > 0) {
+      const now = await $.clock.now()
       // Re-read the store so counts from other sessions running at the same time survive.
       const merged = merge(((await $.store.get(USAGE_KEY)) ?? {}) as Usage, delta)
+      const days = addDay(((await $.store.get(DAILY_KEY)) ?? {}) as Daily, dayOf(now), delta, now)
       await $.store.set(USAGE_KEY, merged)
+      await $.store.set(DAILY_KEY, days)
       await update($, pending, marks => subtract(marks, delta))
       await update($, usage, () => merged)
+      await update($, daily, () => days)
     }
   } finally {
     isFlushing = false
@@ -444,11 +734,18 @@ async function flush($: EngineInterface) {
 }
 
 export async function snapshot($: EngineInterface) {
+  const list = await read($, entries)
+  const waiting = await read($, pending)
+  const now = await $.clock.now()
+
   return {
-    list: await read($, entries),
-    totals: merge(await read($, usage), await read($, pending)),
+    list,
+    stats: statsOf(list, merge(await read($, usage), waiting), waiting, await read($, daily), await read($, costs), now),
+    repos: await read($, repos),
     notes: await read($, explanations),
     busy: await read($, explaining),
+    confirming: await read($, confirming),
+    working: await read($, working),
     isLoading: await read($, isLoading),
   }
 }
@@ -459,18 +756,25 @@ export async function refresh($: EngineInterface) {
   try {
     const list = await collect($)
     await update($, entries, () => list)
+    // One enrichment at a time, so a second refresh reads the caches the first one wrote.
+    enriching = enriching.then(() => enrich($, list)).catch(() => undefined)
   } finally {
     await update($, isLoading, () => false)
   }
 }
 
-export async function startCatalog($: EngineInterface) {
+export async function startCatalog($: EngineInterface, options: { github: boolean }) {
+  showsGithub = options.github
   const stored = ((await $.store.get(USAGE_KEY)) ?? {}) as Usage
+  const days = ((await $.store.get(DAILY_KEY)) ?? {}) as Daily
   const known = ((await $.store.get(EXPLANATIONS_KEY)) ?? {}) as Record<string, string>
+  const fetched = ((await $.store.get(REPOS_KEY)) ?? {}) as Record<string, RepoStats>
   skills = new Set(((await $.store.get(SKILLS_KEY)) ?? []) as string[])
   agents = ((await $.store.get(AGENTS_KEY)) ?? {}) as Record<string, KnownAgent>
   await update($, usage, () => stored)
+  await update($, daily, () => days)
   await update($, explanations, () => known)
+  await update($, repos, () => (showsGithub ? fetched : {}))
   $.clock.every(FLUSH_MS, () => void flush($))
 }
 
@@ -586,14 +890,146 @@ async function run($: EngineInterface, name: string) {
   }
 }
 
-export function actions($: EngineInterface, { Box, Button }: DetailTags, entry: Entry) {
+async function cli($: EngineInterface, task: string, argv: readonly string[], done: string) {
+  await update($, working, () => task)
+
+  try {
+    const result = await $.process.run(['claude', ...argv], { timeoutMs: CLI_TIMEOUT_MS })
+    $.ui.toast(
+      result.exitCode === 0
+        ? `${done} It takes effect in the next session.`
+        : `claude ${argv.join(' ')} failed: ${firstLine(result.stderr || result.stdout)}`,
+    )
+  } catch {
+    $.ui.toast(`claude ${argv.join(' ')} could not start.`)
+  } finally {
+    await update($, working, () => null)
+    await update($, confirming, () => null)
+  }
+
+  await refresh($)
+}
+
+async function ask($: EngineInterface, task: string) {
+  await update($, confirming, () => task)
+}
+
+async function cancel($: EngineInterface) {
+  await update($, confirming, () => null)
+}
+
+function confirmation(
+  $: EngineInterface,
+  { Box, Button, Text }: DetailTags,
+  question: string,
+  yes: string,
+  onYes: () => void,
+) {
+  return (
+    <Box flexDirection="column">
+      <Text color="warning">{question}</Text>
+      <Box flexDirection="row" gap={1}>
+        <Button key="confirm" label={yes} variant="primary" onPress={onYes} />
+        <Button key="cancel" label="Cancel" onPress={() => cancel($)} />
+      </Box>
+    </Box>
+  )
+}
+
+function pluginActions($: EngineInterface, tags: DetailTags, entry: Entry, props: DetailProps) {
+  const { Box, Button } = tags
+  const info = entry.plugin
+
+  if (info === undefined) {
+    return undefined
+  }
+
+  const task = `uninstall:${entry.id}`
+
+  if (props.working !== null && props.working.endsWith(entry.id)) {
+    return <Button key="working" label="Working…" onPress={() => undefined} />
+  }
+
+  if (props.confirming === task) {
+    return confirmation(
+      $,
+      tags,
+      `Uninstall ${info.key}? Its skills, commands and agents go away from the next session on.`,
+      'Yes, uninstall',
+      () => void cli($, task, ['plugin', 'uninstall', info.key], `Uninstalled ${info.key}.`),
+    )
+  }
+
+  const hasUpdate = info.latest !== undefined && info.latest !== info.version
+
+  return (
+    <Box flexDirection="row" flexWrap="wrap" gap={1}>
+      {hasUpdate && (
+        <Button
+          key="update"
+          label={`Update to v${info.latest}`}
+          variant="primary"
+          onPress={() =>
+            void cli($, `update:${entry.id}`, ['plugin', 'update', info.key], `Updated ${info.key}.`)
+          }
+        />
+      )}
+      <Button
+        key="toggle"
+        label={info.isEnabled ? 'Disable' : 'Enable'}
+        onPress={() =>
+          void cli(
+            $,
+            `toggle:${entry.id}`,
+            ['plugin', info.isEnabled ? 'disable' : 'enable', info.key],
+            `${info.isEnabled ? 'Disabled' : 'Enabled'} ${info.key}.`,
+          )
+        }
+      />
+      <Button key="uninstall" label="Uninstall…" onPress={() => void ask($, task)} />
+    </Box>
+  )
+}
+
+function serverActions($: EngineInterface, tags: DetailTags, entry: Entry, props: DetailProps) {
+  const { Box, Button } = tags
+  const task = `remove:${entry.id}`
+
+  if (props.working === task) {
+    return <Button key="working" label="Working…" onPress={() => undefined} />
+  }
+
+  if (props.confirming === task) {
+    return confirmation(
+      $,
+      tags,
+      `Remove the MCP server ${entry.name} from your configuration?`,
+      'Yes, remove',
+      () => void cli($, task, ['mcp', 'remove', entry.name], `Removed ${entry.name}.`),
+    )
+  }
+
+  return (
+    <Box flexDirection="row">
+      <Button key="remove" label="Remove…" onPress={() => void ask($, task)} />
+    </Box>
+  )
+}
+
+export function actions($: EngineInterface, tags: DetailTags, entry: Entry, props: DetailProps) {
+  const { Box, Button } = tags
+
   if (entry.kind === 'skill' || entry.kind === 'command') {
     return (
       <Box flexDirection="row" gap={1}>
-        <Button key="run" label={`Run /${entry.name}`} variant="primary" onPress={() => run($, entry.name)} />
-        <Button key="insert" label="Insert into prompt" onPress={() => insert($, `/${entry.name} `)} />
+        <Button key="insert" label={`Insert /${entry.name}`} variant="primary" onPress={() => insert($, `/${entry.name} `)} />
+        <Button key="run" label="Run now" onPress={() => run($, entry.name)} />
       </Box>
     )
+  }
+
+  if (entry.kind === 'plugin') {
+    return pluginActions($, tags, entry, props)
   }
 
   const prompts: Partial<Record<Kind, string>> = {
@@ -603,22 +1039,66 @@ export function actions($: EngineInterface, { Box, Button }: DetailTags, entry: 
   }
   const prompt = prompts[entry.kind]
 
-  return prompt === undefined ? undefined : (
-    <Box flexDirection="row">
-      <Button key="insert" label="Insert into prompt" variant="primary" onPress={() => insert($, prompt)} />
+  return (
+    <Box flexDirection="column" gap={1}>
+      {prompt !== undefined && (
+        <Box flexDirection="row">
+          <Button key="insert" label="Insert into prompt" variant="primary" onPress={() => insert($, prompt)} />
+        </Box>
+      )}
+      {entry.kind === 'mcp' && entry.isRemovable === true && serverActions($, tags, entry, props)}
     </Box>
   )
 }
 
+const usageLine = (stat: Stat) =>
+  stat.count === 0
+    ? 'Never used since the catalog started counting'
+    : `Used ${stat.count}× · ${stat.week} in 7 days · ${stat.month} in 30 days · last ${dateOf(stat.lastAt)}`
+
+const costLine = (cost: Cost | undefined) =>
+  cost === undefined
+    ? undefined
+    : `~${tokensText(cost.alwaysOn)} tokens in every session` +
+      (cost.onInvoke === undefined ? '' : ` · ~${tokensText(cost.onInvoke)} per use`)
+
+const pluginLine = (info: PluginInfo | undefined) =>
+  info === undefined
+    ? undefined
+    : [
+        info.version === undefined ? undefined : `v${info.version}`,
+        info.isEnabled ? 'enabled' : 'disabled',
+        info.installedAt === undefined ? undefined : `installed ${dateOf(info.installedAt)}`,
+        info.updatedAt === undefined ? undefined : `updated ${dateOf(info.updatedAt)}`,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+
+const repoLine = (repo: RepoStats) =>
+  [
+    `★ ${repo.stars.toLocaleString('en-US')}`,
+    `${repo.issues} open issues`,
+    repo.pushedAt === '' ? undefined : `last push ${dateOf(repo.pushedAt)}`,
+    repo.license === undefined || repo.license === 'NOASSERTION' ? undefined : repo.license,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
 export function detail($: EngineInterface, tags: DetailTags, props: DetailProps) {
-  const { Box, Text, Button, Markdown } = tags
-  const { entry, list, totals } = props
+  const { Box, Text, Button, Markdown, Link } = tags
+  const { entry, list } = props
+  const stat = statOf(props.stats, entry.id)
+  const info = entry.plugin
+  const repo = info?.repo === undefined ? undefined : props.repos[info.repo]
   const items = entry.kind === 'plugin' ? list.filter(one => one.kind !== 'plugin' && one.origin === entry.name) : []
   const facts = [
     `${labelOf(entry.kind)} from ${entry.origin}`,
+    usageLine(stat),
+    costLine(stat.cost),
+    pluginLine(info),
+    info?.installs === undefined ? undefined : `${info.installs.toLocaleString('en-US')} installs in the official directory`,
     entry.kind === 'mcp' ? undefined : entry.detail,
-    usageText(usageOf(entry, list, totals)),
-  ].filter(Boolean)
+  ].filter(line => line !== undefined)
 
   return (
     <Box flexDirection="column" gap={1}>
@@ -626,7 +1106,18 @@ export function detail($: EngineInterface, tags: DetailTags, props: DetailProps)
         <Text bold size="heading">
           {entry.name}
         </Text>
-        <Text dimColor>{facts.join(' · ')}</Text>
+        {facts.map(line => (
+          <Text dimColor>{line}</Text>
+        ))}
+        {info?.latest !== undefined && info.latest !== info.version && (
+          <Text color="warning">Update available: v{info.latest}</Text>
+        )}
+        {info?.repo !== undefined && (
+          <Box flexDirection="row" gap={1} flexWrap="wrap">
+            <Link href={`https://github.com/${info.repo}`} label={info.repo} />
+            {repo !== undefined && <Text dimColor>{repoLine(repo)}</Text>}
+          </Box>
+        )}
       </Box>
       <Markdown key="about" text={entry.description || '_No description._'} />
       {entry.kind === 'mcp' && entry.detail !== undefined && <Text dimColor>Tools: {entry.detail}</Text>}
@@ -644,13 +1135,13 @@ export function detail($: EngineInterface, tags: DetailTags, props: DetailProps)
           <Markdown key="why" text={props.explanation} />
         )}
       </Box>
-      {actions($, tags, entry)}
+      {actions($, tags, entry, props)}
       {items.length > 0 && (
         <Box flexDirection="column">
           <Text bold>Provides</Text>
           {items.map(one => (
             <Button key={`item-${one.id}`} plain onPress={() => props.onOpen(one.id)}>
-              {one.name} <Text dimColor>{labelOf(one.kind)}</Text>
+              {one.name} <Text dimColor>{rowText(one, statOf(props.stats, one.id))}</Text>
             </Button>
           ))}
         </Box>

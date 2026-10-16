@@ -1,5 +1,18 @@
 export type Kind = 'skill' | 'command' | 'agent' | 'plugin' | 'mcp' | 'tool'
 
+export type Cost = { alwaysOn: number; onInvoke?: number }
+
+export type PluginInfo = {
+  key: string
+  version?: string
+  latest?: string
+  isEnabled: boolean
+  installedAt?: string
+  updatedAt?: string
+  repo?: string
+  installs?: number
+}
+
 export type Entry = {
   id: string
   kind: Kind
@@ -7,15 +20,29 @@ export type Entry = {
   description: string
   origin: string
   detail?: string
+  plugin?: PluginInfo
+  isRemovable?: boolean
 }
 
 export type Mark = { count: number; lastAt: number }
 
 export type Usage = Record<string, Mark>
 
+export type Daily = Record<string, Record<string, number>>
+
+export type Stat = Mark & { week: number; month: number; cost?: Cost }
+
+export type RepoStats = {
+  stars: number
+  issues: number
+  pushedAt: string
+  license?: string
+  fetchedAt: number
+}
+
 export type KnownAgent = { name: string; description: string; source: string }
 
-export type Sort = 'usage' | 'name'
+export type Sort = 'usage' | 'name' | 'cleanup'
 
 export type View = {
   kind: Kind
@@ -34,9 +61,14 @@ declare module 'claude-code' {
       isLoading: boolean
       usage: Usage
       pending: Usage
+      daily: Daily
+      costs: Record<string, Cost>
+      repos: Record<string, RepoStats>
       view: View
       explanations: Record<string, string>
       explaining: string[]
+      confirming: string | null
+      working: string | null
     }
   }
 }
