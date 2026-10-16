@@ -1,4 +1,4 @@
-export type Kind = 'skill' | 'command' | 'agent' | 'plugin' | 'mcp' | 'tool'
+export type Kind = 'skill' | 'command' | 'agent' | 'mod' | 'plugin' | 'hook' | 'mcp' | 'tool'
 
 export type Cost = { alwaysOn: number; onInvoke?: number }
 
@@ -21,8 +21,11 @@ export type Entry = {
   origin: string
   detail?: string
   plugin?: PluginInfo
+  root?: string
   isRemovable?: boolean
 }
+
+export type Scan = { hooks: string; calls: string }
 
 export type Mark = { count: number; lastAt: number }
 
@@ -64,6 +67,7 @@ declare module 'claude-code' {
       daily: Daily
       costs: Record<string, Cost>
       repos: Record<string, RepoStats>
+      scans: Record<string, Scan>
       view: View
       explanations: Record<string, string>
       explaining: string[]

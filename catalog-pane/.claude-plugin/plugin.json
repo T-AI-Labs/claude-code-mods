@@ -1,12 +1,12 @@
 {
   "name": "catalog-pane",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "author": {
     "name": "Claude",
     "email": "noreply@anthropic.com"
   },
   "license": "MIT",
-  "description": "A pane that opens with each desktop session and lists every skill, command, agent, plugin, MCP server and tool by category: descriptions, usage over 7 and 30 days, token cost, updates, GitHub stars, a model-written note on what each is for, and buttons to insert, run, update, disable or uninstall.",
+  "description": "A pane that opens with each desktop session and lists every skill, command, agent, mod, plugin, settings hook, MCP server and tool by category: descriptions, usage over 7 and 30 days, token cost, what each mod hooks, updates, GitHub stars, a model-written note on what each is for, and buttons to insert, run, update, disable or uninstall.",
   "types": "./types/index.d.ts",
   "userConfig": {
     "language": {

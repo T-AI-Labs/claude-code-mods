@@ -87,7 +87,7 @@ export const register: Register = (on, options) => {
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const tags = $.ui.resolve(e)
     const { Box, Button, Text } = tags
-    const { list, stats, repos, notes, busy, confirming, working, isLoading: loading } = await snapshot($)
+    const { list, stats, repos, scans, notes, busy, confirming, working, isLoading: loading } = await snapshot($)
     const state = await read($, view)
     const selected = state.selected === null ? undefined : list.find(one => one.id === state.selected)
 
@@ -143,6 +143,7 @@ export const register: Register = (on, options) => {
             list,
             stats,
             repos,
+            scans,
             confirming,
             working,
             explanation: notes[explanationKey(language, selected.id)],

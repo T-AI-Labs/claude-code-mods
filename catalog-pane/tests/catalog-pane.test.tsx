@@ -33,6 +33,16 @@ Per-component (rounded)
   fix                                    ~80      ~2.7k
 `
 
+const VALIDATED = `Validating hooks: C:\\mods\\catalog\\hooks\\hooks.json
+
+  ❯ ./register.tsx hooks: session.start, ui.render{component=Pane, requestId=catalog}
+  ❯ ./register.tsx calls: $.process.run (via cli), $.ui.open
+`
+
+const USER_HOOKS = {
+  PreToolUse: [{ matcher: 'Bash|PowerShell', hooks: [{ type: 'command', command: 'rtk hook claude' }] }],
+}
+
 const FILES: Record<string, unknown> = {
   'C:/home/.claude/plugins/installed_plugins.json': {
     plugins: {
@@ -44,6 +54,7 @@ const FILES: Record<string, unknown> = {
           lastUpdated: '2026-09-30T05:49:16.332Z',
         },
       ],
+      'meter@T-AI-Labs': [{ installPath: 'C:/plugins/meter', version: '0.3.4' }],
     },
   },
   'C:/home/.claude/plugins/known_marketplaces.json': {
@@ -52,6 +63,10 @@ const FILES: Record<string, unknown> = {
   'C:/markets/thor/.claude-plugin/marketplace.json': { plugins: [{ name: 'auto', source: './auto' }] },
   'C:/markets/thor/auto/.claude-plugin/plugin.json': { version: '0.4.0' },
   'C:/plugins/auto/.claude-plugin/plugin.json': { description: 'Ticket to PR automation' },
+  'C:/plugins/meter/.claude-plugin/plugin.json': { description: 'Cache hit rate above the prompt' },
+  'C:/plugins/meter/hooks/hooks.json': { modules: ['./register.tsx'] },
+  'C:/mods/catalog/.claude-plugin/plugin.json': { name: 'catalog-pane', description: 'The catalog', version: '0.3.0' },
+  'C:/mods/catalog/hooks/hooks.json': { modules: ['./register.tsx'] },
 }
 
 const DIRS: Record<string, string[]> = {
@@ -69,7 +84,7 @@ const world = (on: On) => {
   const fetched: string[] = []
   const clock = mock.clock(on, { now: Date.parse('2026-10-16T10:00:00Z') })
   mock.store(on, {})
-  mock.env(on, { USERPROFILE: 'C:/home' })
+  mock.env(on, { USERPROFILE: 'C:/home', CLAUDE_CODE_PLUGIN_DIRS: 'C:/mods/catalog' })
   on('session.start', ($, e) => ({ cwd: e.cwd }))
   on('session.attach', ($, e) => ({ clientId: e.clientId }))
   on('command.register', ($, e) => ({ value: { command: e.name } }))
@@ -88,7 +103,11 @@ const world = (on: On) => {
       { name: 'mcp__claude_ai_Gmail__send', description: 'Send mail', mcp: true },
     ],
   }))
-  on('settings.read', () => ({ value: { enabledPlugins: { 'auto@thor-skills': true } } }))
+  on('settings.read', ($, e) =>
+    e.source === 'user'
+      ? { value: { hooks: USER_HOOKS } }
+      : { value: { enabledPlugins: { 'auto@thor-skills': true, 'meter@T-AI-Labs': true } } },
+  )
   on('fs.list', ($, e) => {
     const names = DIRS[slash(e.path)]
 
@@ -103,7 +122,7 @@ const world = (on: On) => {
   })
   on('process.run', ($, e) => {
     commands.push(e.argv.join(' '))
-    const stdout = e.argv.includes('details') ? DETAILS : ''
+    const stdout = e.argv.includes('details') ? DETAILS : e.argv.includes('validate') ? VALIDATED : ''
 
     return { value: { exitCode: 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
   })
@@ -341,4 +360,36 @@ test('opens the pane by itself when the desktop app attaches, not in the termina
 
   expect(opened).toEqual(['catalog'])
   await clock.settle()
+})
+
+test('lists mods apart from plugins with what each one hooks and calls', async ($, on) => {
+  const { commands, clock } = world(on)
+  await openCatalog($, 'mods')
+  await clock.settle()
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+
+  expect((await ui.find({ key: 'tab-mod' }))?.props.label).toBe('Mods 2')
+  expect((await ui.find({ key: 'tab-plugin' }))?.props.label).toBe('Plugins 1')
+  expect(await ui.find({ key: 'open-mod:meter' })).toBeDefined()
+
+  await ui.press({ key: 'open-mod:catalog-pane' })
+
+  expect(commands).toContain('claude plugin validate C:/mods/catalog')
+  expect(await ui.find({ type: 'Text', text: /Loaded from C:\/mods\/catalog through CLAUDE_CODE_PLUGIN_DIRS, v0\.3\.0/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /Hooks: session\.start, ui\.render\{component=Pane, requestId=catalog\}/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /Uses: \$\.process\.run \(via cli\), \$\.ui\.open/ })).toBeDefined()
+  await ui.unmount()
+})
+
+test('lists the hooks from the settings with their command', async ($, on) => {
+  const { clock } = world(on)
+  await openCatalog($, 'hooks')
+  await clock.settle()
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await ui.press({ key: 'open-hook:user:PreToolUse:0:0' })
+
+  expect(await ui.find({ type: 'Text', text: 'PreToolUse · Bash|PowerShell' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /command hook from the user settings/ })).toBeDefined()
+  expect((await ui.find({ key: 'about' }))?.props.text).toBe('`rtk hook claude`')
+  await ui.unmount()
 })

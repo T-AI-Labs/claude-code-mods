@@ -17,6 +17,7 @@ import type {
   Mark,
   PluginInfo,
   RepoStats,
+  Scan,
   Sort,
   Stat,
   Usage,
@@ -26,7 +27,9 @@ export const KINDS: readonly { kind: Kind; label: string; noun: string }[] = [
   { kind: 'skill', label: 'Skills', noun: 'skill' },
   { kind: 'command', label: 'Commands', noun: 'slash command' },
   { kind: 'agent', label: 'Agents', noun: 'subagent type' },
+  { kind: 'mod', label: 'Mods', noun: 'mod (a plugin with function hooks)' },
   { kind: 'plugin', label: 'Plugins', noun: 'plugin' },
+  { kind: 'hook', label: 'Hooks', noun: 'settings hook (a shell command run on an event)' },
   { kind: 'mcp', label: 'MCP', noun: 'MCP server' },
   { kind: 'tool', label: 'Tools', noun: 'built-in tool' },
 ]
@@ -37,6 +40,7 @@ const USAGE_KEY = 'usage'
 const DAILY_KEY = 'daily'
 const COSTS_KEY = 'costs'
 const REPOS_KEY = 'repos'
+const SCANS_KEY = 'scans'
 const SKILLS_KEY = 'skills'
 const AGENTS_KEY = 'agents'
 const EXPLANATIONS_KEY = 'explanations'
@@ -54,6 +58,7 @@ const pending = atom({ plugin: 'catalog-pane', key: 'pending' } as const, {})
 const daily = atom({ plugin: 'catalog-pane', key: 'daily' } as const, {})
 const costs = atom({ plugin: 'catalog-pane', key: 'costs' } as const, {})
 const repos = atom({ plugin: 'catalog-pane', key: 'repos' } as const, {})
+const scans = atom({ plugin: 'catalog-pane', key: 'scans' } as const, {})
 const explanations = atom({ plugin: 'catalog-pane', key: 'explanations' } as const, {})
 const explaining = atom({ plugin: 'catalog-pane', key: 'explaining' } as const, [])
 const confirming = atom({ plugin: 'catalog-pane', key: 'confirming' } as const, null)
@@ -75,9 +80,15 @@ type MarketplaceFile = {
   plugins?: { name: string; version?: string; source?: unknown }[]
 }
 
-type Manifest = { description?: string; version?: string; repository?: unknown }
+type Manifest = { name?: string; description?: string; version?: string; repository?: unknown }
+
+type HookGroups = Record<string, { matcher?: string; hooks?: { type?: string; command?: string }[] }[]>
+
+type HooksFile = { modules?: string[]; hooks?: HookGroups }
 
 type PluginDir = { name: string; root: string; info: PluginInfo }
+
+const SETTINGS_SOURCES = ['user', 'project', 'local', 'policy'] as const
 
 type MeasuredPlugin = { total: Cost; parts: Record<string, Cost> }
 
@@ -91,6 +102,7 @@ export type DetailProps = {
   list: readonly Entry[]
   stats: Record<string, Stat>
   repos: Record<string, RepoStats>
+  scans: Record<string, Scan>
   confirming: string | null
   working: string | null
   explanation: string | undefined
@@ -180,7 +192,7 @@ export const statsOf = (
 ): Record<string, Stat> => {
   const stats: Record<string, Stat> = {}
 
-  for (const one of list.filter(entry => entry.kind !== 'plugin')) {
+  for (const one of list.filter(entry => !isContainer(entry.kind))) {
     const mark = totals[one.id] ?? { count: 0, lastAt: 0 }
     const fresh = waiting[one.id]?.count ?? 0
     stats[one.id] = {
@@ -191,8 +203,8 @@ export const statsOf = (
     }
   }
 
-  for (const one of list.filter(entry => entry.kind === 'plugin')) {
-    const items = list.filter(item => item.kind !== 'plugin' && item.origin === one.name)
+  for (const one of list.filter(entry => isContainer(entry.kind))) {
+    const items = list.filter(item => !isContainer(item.kind) && item.origin === one.name)
     stats[one.id] = items.reduce<Stat>(
       (sum, item) => {
         const stat = stats[item.id]
@@ -213,6 +225,8 @@ export const statsOf = (
 
   return stats
 }
+
+export const isContainer = (kind: Kind) => kind === 'plugin' || kind === 'mod'
 
 const statOf = (stats: Record<string, Stat>, id: string): Stat =>
   stats[id] ?? { count: 0, lastAt: 0, week: 0, month: 0 }
@@ -407,7 +421,10 @@ async function latestOf($: EngineInterface, marketplace: Marketplaces[string] | 
   return { version: listed.version ?? local?.version, repo: sourceRepo(listed.source) }
 }
 
-async function pluginDirs($: EngineInterface, config: string): Promise<(PluginDir & { manifest?: Manifest })[]> {
+async function pluginDirs(
+  $: EngineInterface,
+  config: string,
+): Promise<(PluginDir & { manifest?: Manifest; hooksFile?: HooksFile })[]> {
   const installed = await readJson<Installed>($, `${config}/plugins/installed_plugins.json`)
   const marketplaces = (await readJson<Marketplaces>($, `${config}/plugins/known_marketplaces.json`)) ?? {}
   const catalog = await readJson<{ catalog?: { plugins?: Record<string, { unique_installs?: number }> } }>(
@@ -427,6 +444,7 @@ async function pluginDirs($: EngineInterface, config: string): Promise<(PluginDi
       }
 
       const manifest = await readJson<Manifest>($, `${first.installPath}/.claude-plugin/plugin.json`)
+      const hooksFile = await readJson<HooksFile>($, `${first.installPath}/hooks/hooks.json`)
       const latest = await latestOf($, marketplaces[marketplace], name)
       const info: PluginInfo = {
         key,
@@ -442,7 +460,7 @@ async function pluginDirs($: EngineInterface, config: string): Promise<(PluginDi
         installs: catalog?.catalog?.plugins?.[key]?.unique_installs,
       }
 
-      return { name, root: first.installPath, info, manifest }
+      return { name, root: first.installPath, info, manifest, hooksFile }
     }),
   )
 
@@ -503,6 +521,72 @@ const mcpEntries = (tools: readonly ToolInfo[]): Entry[] => {
   }))
 }
 
+const isMod = (hooksFile: HooksFile | undefined) => (hooksFile?.modules?.length ?? 0) > 0
+
+const hookEntries = (groups: HookGroups | undefined, origin: string, place: string): Entry[] =>
+  Object.entries(groups ?? {}).flatMap(([event, list]) =>
+    list.flatMap((group, at) =>
+      (group.hooks ?? []).map((hook, index) => ({
+        id: idOf('hook', `${origin}:${event}:${at}:${index}`),
+        kind: 'hook' as const,
+        name: group.matcher === undefined || group.matcher === '' ? event : `${event} · ${group.matcher}`,
+        description: hook.command === undefined ? `A ${hook.type ?? 'hook'} hook.` : `\`${hook.command}\``,
+        origin,
+        detail: `${hook.type ?? 'command'} hook from ${place}`,
+      })),
+    ),
+  )
+
+// CLAUDE_CODE_PLUGIN_DIRS uses the platform's path-list separator.
+const folderList = (value: string) =>
+  value
+    .split(/^[A-Za-z]:[\\/]/.test(value) || value.includes(';') ? ';' : ':')
+    .map(one => one.trim())
+    .filter(one => one !== '')
+
+async function folderPlugins($: EngineInterface): Promise<Entry[]> {
+  const folders = folderList((await $.env.get('CLAUDE_CODE_PLUGIN_DIRS')) ?? '')
+
+  const found = await Promise.all(
+    folders.map(async root => {
+      const manifest = await readJson<Manifest>($, `${root}/.claude-plugin/plugin.json`)
+
+      if (manifest?.name === undefined) {
+        return []
+      }
+
+      const hooksFile = await readJson<HooksFile>($, `${root}/hooks/hooks.json`)
+      const kind: Kind = isMod(hooksFile) ? 'mod' : 'plugin'
+      const version = manifest.version === undefined ? '' : `, v${manifest.version}`
+      const entry: Entry = {
+        id: idOf(kind, manifest.name),
+        kind,
+        name: manifest.name,
+        description: manifest.description ?? '',
+        origin: 'folder',
+        detail: `Loaded from ${root} through CLAUDE_CODE_PLUGIN_DIRS${version}.`,
+        root,
+      }
+
+      return [entry, ...hookEntries(hooksFile?.hooks, manifest.name, `the plugin ${manifest.name}`)]
+    }),
+  )
+
+  return found.flat()
+}
+
+async function settingsHooks($: EngineInterface): Promise<Entry[]> {
+  const found = await Promise.all(
+    SETTINGS_SOURCES.map(async source => {
+      const settings = await $.settings.read({ source }).catch(() => ({}) as Record<string, unknown>)
+
+      return hookEntries(settings.hooks as HookGroups | undefined, source, `the ${source} settings`)
+    }),
+  )
+
+  return found.flat()
+}
+
 export async function collect($: EngineInterface): Promise<Entry[]> {
   const config = await configDir($)
   const [commands, tools, plugins] = await Promise.all([
@@ -558,17 +642,25 @@ export async function collect($: EngineInterface): Promise<Entry[]> {
     }
   })
 
+  const folders = await folderPlugins($)
   const loaded = new Set(commands.flatMap(command => command.plugin ?? []))
+
+  for (const entry of folders) {
+    loaded.delete(entry.name)
+  }
+
   const pluginEntries: Entry[] = plugins.map(plugin => {
+    const kind: Kind = isMod(plugin.hooksFile) ? 'mod' : 'plugin'
     loaded.delete(plugin.name)
 
     return {
-      id: idOf('plugin', plugin.name),
-      kind: 'plugin',
+      id: idOf(kind, plugin.name),
+      kind,
       name: plugin.name,
       description: plugin.manifest?.description ?? '',
       origin: plugin.info.key.split('@')[1] ?? '',
       plugin: plugin.info,
+      root: plugin.root,
     }
   })
 
@@ -601,10 +693,17 @@ export async function collect($: EngineInterface): Promise<Entry[]> {
       origin: 'built-in',
     }))
 
+  const pluginHooks = plugins.flatMap(plugin =>
+    hookEntries(plugin.hooksFile?.hooks, plugin.name, `the plugin ${plugin.name}`),
+  )
+
   return [
     ...commandEntries,
     ...agentEntries,
     ...pluginEntries,
+    ...folders,
+    ...pluginHooks,
+    ...(await settingsHooks($)),
     ...mcpEntries(tools),
     ...toolEntries,
   ]
@@ -691,8 +790,47 @@ async function fetchRepos($: EngineInterface, list: readonly Entry[]) {
   await update($, repos, () => cache)
 }
 
+const scanLine = (text: string, label: string) =>
+  text
+    .split(/\r?\n/)
+    .map(line => new RegExp(`^\\s*\\S+\\s+\\S+\\s+${label}:\\s*(.*)$`).exec(line)?.[1])
+    .filter(found => found !== undefined)
+    .join('; ')
+
+async function scanMods($: EngineInterface, list: readonly Entry[]) {
+  const cache = ((await $.store.get(SCANS_KEY)) ?? {}) as Record<string, Scan>
+  const found: Record<string, Scan> = {}
+
+  for (const entry of list) {
+    if (entry.kind !== 'mod' || entry.root === undefined) {
+      continue
+    }
+
+    const cacheKey = `${entry.root}|${entry.plugin?.version ?? entry.detail ?? ''}`
+    let scan = cache[cacheKey]
+
+    if (scan === undefined) {
+      const run = await $.process
+        .run(['claude', 'plugin', 'validate', entry.root], { timeoutMs: CLI_TIMEOUT_MS })
+        .catch(() => undefined)
+
+      if (run === undefined) {
+        continue
+      }
+
+      scan = { hooks: scanLine(run.stdout, 'hooks'), calls: scanLine(run.stdout, 'calls') }
+      cache[cacheKey] = scan
+      await $.store.set(SCANS_KEY, cache)
+    }
+
+    found[entry.id] = scan
+    await update($, scans, () => ({ ...found }))
+  }
+}
+
 async function enrich($: EngineInterface, list: readonly Entry[]) {
   await measureCosts($, list)
+  await scanMods($, list)
 
   if (showsGithub) {
     await fetchRepos($, list)
@@ -742,6 +880,7 @@ export async function snapshot($: EngineInterface) {
     list,
     stats: statsOf(list, merge(await read($, usage), waiting), waiting, await read($, daily), await read($, costs), now),
     repos: await read($, repos),
+    scans: await read($, scans),
     notes: await read($, explanations),
     busy: await read($, explaining),
     confirming: await read($, confirming),
@@ -1028,7 +1167,7 @@ export function actions($: EngineInterface, tags: DetailTags, entry: Entry, prop
     )
   }
 
-  if (entry.kind === 'plugin') {
+  if (isContainer(entry.kind)) {
     return pluginActions($, tags, entry, props)
   }
 
@@ -1090,7 +1229,8 @@ export function detail($: EngineInterface, tags: DetailTags, props: DetailProps)
   const stat = statOf(props.stats, entry.id)
   const info = entry.plugin
   const repo = info?.repo === undefined ? undefined : props.repos[info.repo]
-  const items = entry.kind === 'plugin' ? list.filter(one => one.kind !== 'plugin' && one.origin === entry.name) : []
+  const items = isContainer(entry.kind) ? list.filter(one => !isContainer(one.kind) && one.origin === entry.name) : []
+  const scan = props.scans[entry.id]
   const facts = [
     `${labelOf(entry.kind)} from ${entry.origin}`,
     usageLine(stat),
@@ -1098,6 +1238,8 @@ export function detail($: EngineInterface, tags: DetailTags, props: DetailProps)
     pluginLine(info),
     info?.installs === undefined ? undefined : `${info.installs.toLocaleString('en-US')} installs in the official directory`,
     entry.kind === 'mcp' ? undefined : entry.detail,
+    scan === undefined || scan.hooks === '' ? undefined : `Hooks: ${scan.hooks}`,
+    scan === undefined || scan.calls === '' ? undefined : `Uses: ${scan.calls}`,
   ].filter(line => line !== undefined)
 
   return (
