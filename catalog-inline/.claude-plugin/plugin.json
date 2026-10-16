@@ -1,0 +1,19 @@
+{
+  "name": "catalog-inline",
+  "version": "0.1.0",
+  "author": {
+    "name": "Claude",
+    "email": "noreply@anthropic.com"
+  },
+  "license": "MIT",
+  "description": "A /catalog-inline command that draws an interactive catalog in the chat: pick a category and an entry from dropdowns to see its description, usage count and a model-written note on what it is for, then run or insert it.",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "language": {
+      "type": "string",
+      "title": "Explanation language",
+      "description": "The language the Explain button answers in.",
+      "default": "English"
+    }
+  }
+}
