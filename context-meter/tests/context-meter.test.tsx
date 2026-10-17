@@ -29,6 +29,7 @@ const world = (on: On, stored?: number) => {
   on('session.usage', () => ({
     value: { startedAt: 0, context: { window: 200_000 }, rateLimits: [] },
   }))
+  on('classic.SessionStart', () => ({}))
   on('session.measure', ($, e) => ({ changed: e.changed }))
   on('command.run', ($, e) => {
     commands.push(e.command)
@@ -182,4 +183,19 @@ test('the Compact and Clear buttons run their commands', async ($, on) => {
   }
 
   expect(commands).toEqual(['compact', 'clear', 'compact', 'clear'])
+})
+
+test('shows an empty context with its window after a /clear', async ($, on) => {
+  world(on, 70)
+  await $.session.measure(measured(41))
+  await $.classic.SessionStart({ source: 'clear' })
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+
+    expect(await ui.find({ type: 'Text', text: '0%' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '(0/200k)' })).toBeDefined()
+    expect((await ui.find({ key: 'threshold' }))?.props.value).toBe('70')
+    await ui.unmount()
+  }
 })

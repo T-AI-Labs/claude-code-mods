@@ -34,6 +34,22 @@ const toFill = (live: SessionContextUsage): ContextFill | null =>
     ? null
     : { percent: live.percent, tokens: live.tokens, window: live.window }
 
+const restore = async ($: EngineInterface) => {
+  const stored = await $.store.get(STORE_KEY)
+
+  if (typeof stored === 'number' && STEPS.includes(stored)) {
+    await update($, threshold, () => stored)
+  }
+
+  // The engine has no reading before the first response of a session, so an empty one counts as nothing sent yet.
+  const usage = await $.session.usage()
+  await update(
+    $,
+    context,
+    () => toFill(usage.context) ?? { percent: 0, tokens: 0, window: usage.context.window },
+  )
+}
+
 const tokens = (count: number) => {
   const thousands = Math.round(count / 1000)
 
@@ -125,14 +141,16 @@ export const register: Register = (on, options) => {
   let isArmed = true
 
   on('session.start', async ($, e, next) => {
-    const stored = await $.store.get(STORE_KEY)
+    await restore($)
 
-    if (typeof stored === 'number' && STEPS.includes(stored)) {
-      await update($, threshold, () => stored)
+    return next(e)
+  })
+
+  // A /clear wipes every plugin's state after session.end and raises no session.start, only this.
+  on('classic.SessionStart', async ($, e, next) => {
+    if (e.source === 'clear') {
+      await restore($).catch(() => undefined)
     }
-
-    const usage = await $.session.usage()
-    await update($, context, () => toFill(usage.context))
 
     return next(e)
   })
