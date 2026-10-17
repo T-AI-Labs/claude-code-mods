@@ -125,7 +125,7 @@ The readings arrive with the first response of a session and are only reported o
 
 <p align="center"><img src="docs/catalog-pane.svg" alt="The catalog pane listing skills" width="100%"></p>
 
-A pane that lists what the session can use, one tab per category: **Skills**, **Commands**, **Agents**, **Mods**, **Plugins**, **Hooks** (from the settings files), **MCP** servers and built-in **Tools**, each with its count. In the desktop app it opens with every session. `/catalog` opens it anywhere, `/catalog mods` on a category and `/catalog <text>` with a search.
+A pane that lists what the session can use, one tab per category: **Skills**, **Commands**, **Agents**, **Mods**, **Plugins**, **Hooks** (from the settings files), **MCP** servers and built-in **Tools**, each with its count. It stays closed until you ask for it: `/catalog` opens it, in the desktop app and in the terminal, `/catalog mods` on a category and `/catalog <text>` with a search.
 
 Each row shows where the entry comes from, how often it was used, in total and in the last 30 days, and for plugin parts the tokens it adds to every session. On the desktop the list can be filtered by text and origin and sorted:
 

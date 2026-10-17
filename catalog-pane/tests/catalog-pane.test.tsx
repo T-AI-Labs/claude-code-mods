@@ -378,13 +378,14 @@ test('fetches nothing from GitHub when the option is off', { options: { githubSt
   expect(fetched).toEqual([])
 })
 
-test('opens the pane by itself when the desktop app attaches, not in the terminal', async ($, on) => {
+test('opens the pane only on /catalog, not when a session starts or the desktop app attaches', async ($, on) => {
   const { opened, clock } = world(on)
-  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true })
+  await $.session.start({ cwd: '/work', surface: 'desktop', isInteractive: true })
+  await $.session.attach({ surface: 'desktop', clientId: 'desktop:default' })
 
   expect(opened).toEqual([])
 
-  await $.session.attach({ surface: 'desktop', clientId: 'desktop:default' })
+  await $.command.run({ ...TYPED, command: 'catalog', args: '' })
 
   expect(opened).toEqual(['catalog'])
   await clock.settle()
