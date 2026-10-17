@@ -1,0 +1,39 @@
+{
+  "name": "context-usage",
+  "version": "0.1.0",
+  "author": {
+    "name": "Claude",
+    "email": "noreply@anthropic.com"
+  },
+  "license": "MIT",
+  "description": "context-meter and usage-limits in one band above the prompt: the context fill with its auto-compact threshold, Compact and Clear, and the 5-hour and weekly usage limits beneath it.",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "usagePosition": {
+      "type": "string",
+      "title": "Usage position",
+      "description": "below draws the usage-limits row under the context row; above draws it on top.",
+      "options": [
+        "below",
+        "above"
+      ],
+      "default": "below"
+    },
+    "display": {
+      "type": "string",
+      "title": "Display",
+      "description": "gauge shows a five-segment fill level before each percentage; text shows the percentage alone.",
+      "options": [
+        "gauge",
+        "text"
+      ],
+      "default": "gauge"
+    },
+    "details": {
+      "type": "boolean",
+      "title": "Details",
+      "description": "Show the token counts and the time left until each limit resets in parentheses.",
+      "default": true
+    }
+  }
+}
