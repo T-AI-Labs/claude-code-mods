@@ -1,7 +1,9 @@
 import type { On } from 'claude-code'
+import type { Engine } from 'claude-code/testing'
 import { expect, mock, test } from 'claude-code/testing'
 
 const SURFACES = ['terminal', 'desktop'] as const
+const MINUTE = 60_000
 const BAND = {
   plugin: 'cache-meter',
   component: 'AbovePrompt',
@@ -14,34 +16,41 @@ const BAND = {
     view: {},
   },
 } as const
-const TURN = {
-  answer: 'done',
-  durationMs: 1,
-  isAborted: false,
-  turnId: 'turn-1',
-  reason: 'answer',
-} as const
 
-const measured = (percent: number) => ({
-  context: { tokens: percent * 2000, window: 200_000, percent },
-  rateLimits: [],
-  changed: ['context' as const],
+const usageOf = (read: number, written = 0, fresh = 0) => ({
+  model: 'claude',
+  input_tokens: fresh,
+  output_tokens: 5,
+  cache_read_input_tokens: read,
+  cache_creation_input_tokens: written,
 })
 
-const world = (on: On, stored?: number) => {
-  const commands: string[] = []
-  const clock = mock.clock(on)
-  mock.store(on, stored === undefined ? {} : { threshold: stored })
+const world = (on: On, forkRead = 90) => {
+  const forks: string[] = []
+  const toasts: string[] = []
+  const clock = mock.clock(on, { now: Date.parse('2026-10-16T10:00:00Z') })
+  mock.store(on, {})
   on('session.start', ($, e) => ({ cwd: e.cwd }))
-  on('session.usage', () => ({
-    value: { startedAt: 0, context: { window: 200_000 }, rateLimits: [] },
-  }))
-  on('session.measure', ($, e) => ({ changed: e.changed }))
   on('turn.complete', ($, e) => ({ text: e.answer }))
-  on('command.run', ($, e) => {
-    commands.push(e.command)
+  on('turn.step', async function* ($, e) {
+    return {
+      turnId: e.turnId,
+      index: e.index,
+      answer: 'done',
+      toolUses: [],
+      stopReason: 'end_turn',
+      usage: usageOf(80, 10, 10),
+    }
+  })
+  on('model.fork', ($, e) => {
+    forks.push(e.prompt)
 
-    return { text: '' }
+    return { value: { isAnswered: true, text: 'OK', usage: usageOf(forkRead, 2, 8) } }
+  })
+  on('ui.toast', ($, e) => {
+    toasts.push(String(e.text))
+
+    return { value: undefined }
   })
   on('ui.render', { component: 'AbovePrompt' }, ($, e) => {
     const { Text } = $.ui.resolve(e)
@@ -49,40 +58,61 @@ const world = (on: On, stored?: number) => {
     return <Text>below</Text>
   })
 
-  return { commands, clock }
+  return { forks, toasts, clock }
 }
 
-test('shows the cache hit rate and the context fill in one row', async ($, on) => {
-  world(on)
+const step = async ($: Engine) => {
+  const stream = $.turn.step({ turnId: 'turn-1', index: 0, model: 'claude', messageCount: 3 })
+
+  for await (const chunk of stream) {
+    void chunk
+  }
+
+  await stream.result
+}
+
+const turn = async ($: Engine, read = 80, written = 10, fresh = 10) => {
+  await step($)
   await $.turn.complete({
-    ...TURN,
-    usage: {
-      model: 'claude',
-      input_tokens: 10,
-      output_tokens: 5,
-      cache_read_input_tokens: 80,
-      cache_creation_input_tokens: 10,
-    },
+    answer: 'done',
+    durationMs: 1,
+    isAborted: false,
+    turnId: 'turn-1',
+    reason: 'answer',
+    usage: usageOf(read, written, fresh),
   })
-  await $.session.measure(measured(41))
+}
+
+const start = ($: Engine) => $.session.start({ cwd: '/work', surface: 'desktop', isInteractive: true })
+
+test('shows the hit rate of the last turn and counts down until the cache goes cold', async ($, on) => {
+  const { clock } = world(on)
+  await start($)
+  await turn($)
+  await clock.advance(1000)
 
   for (const surface of SURFACES) {
     const ui = await $.ui.mount({ ...BAND, surface })
 
     expect(await ui.find({ type: 'Text', text: '80%' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: '41%' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: '(80/100)' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: '(82k/200k)' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'warm 4:59' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'Context' })).toBeUndefined()
     expect(await ui.find({ type: 'Text', text: 'below' })).toBeDefined()
-    expect(await ui.findAll({ type: 'Button' })).toHaveLength(2)
-    expect(await ui.find({ type: 'Select', key: 'threshold' })).toBeDefined()
     await ui.unmount()
   }
+
+  await clock.advance(5 * MINUTE)
+  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+
+  expect(await ui.find({ type: 'Text', text: 'cold' })).toBeDefined()
+  await ui.unmount()
 })
 
 test('draws five-segment gauges by default', async ($, on) => {
   world(on)
-  await $.session.measure(measured(41))
+  await start($)
+  await turn($, 40, 50, 10)
 
   for (const surface of SURFACES) {
     const ui = await $.ui.mount({ ...BAND, surface })
@@ -93,111 +123,102 @@ test('draws five-segment gauges by default', async ($, on) => {
   }
 })
 
-test('keeps the details and gauges on a narrow band', async ($, on) => {
-  world(on)
-  await $.session.measure(measured(41))
-
-  for (const surface of SURFACES) {
-    const ui = await $.ui.mount({
-      ...BAND,
-      props: { ...BAND.props, bodyColumns: 60 },
-      surface,
-    })
-
-    expect(await ui.find({ type: 'Text', text: '(82k/200k)' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /^▮{2}$/ })).toBeDefined()
-    await ui.unmount()
-  }
-})
-
 test('shows no gauge when display is text', { options: { display: 'text' } }, async ($, on) => {
   world(on)
-  await $.session.measure(measured(41))
+  await start($)
+  await turn($)
+  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
 
-  for (const surface of SURFACES) {
-    const ui = await $.ui.mount({ ...BAND, surface })
-
-    expect(await ui.find({ type: 'Text', text: '41%' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /[▮▯]/ })).toBeUndefined()
-    await ui.unmount()
-  }
+  expect(await ui.find({ type: 'Text', text: '80%' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /[▮▯]/ })).toBeUndefined()
+  await ui.unmount()
 })
 
 test('leaves the token counts out when details is off', { options: { details: false } }, async ($, on) => {
   world(on)
-  await $.session.measure(measured(41))
+  await start($)
+  await turn($)
+  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
 
-  for (const surface of SURFACES) {
-    const ui = await $.ui.mount({ ...BAND, surface })
-
-    expect(await ui.find({ type: 'Text', text: '41%' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: '(82k/200k)' })).toBeUndefined()
-    await ui.unmount()
-  }
-})
-
-test('the threshold is a picker over 97, 90, 70, 60 and 50', async ($, on) => {
-  world(on)
-
-  for (const surface of SURFACES) {
-    const ui = await $.ui.mount({ ...BAND, surface })
-    const options = (await ui.find({ key: 'threshold' }))?.props.options
-
-    expect(options).toEqual(
-      [97, 90, 70, 60, 50].map(step => ({ value: `${step}`, label: `${step}%` })),
-    )
-
-    for (const step of [70, 50, 97]) {
-      await ui.select({ key: 'threshold', value: `${step}` })
-      expect((await ui.find({ key: 'threshold' }))?.props.value).toBe(`${step}`)
-    }
-
-    await ui.unmount()
-  }
-})
-
-test('on mobile the threshold is a button that steps through the values', async ($, on) => {
-  world(on)
-  const ui = await $.ui.mount({ ...BAND, surface: 'mobile' })
-
-  for (const step of [90, 70, 60, 50, 97]) {
-    await ui.press({ key: 'threshold' })
-    expect((await ui.find({ key: 'threshold' }))?.props.label).toBe(
-      `Auto ${step}%`,
-    )
-  }
-
+  expect(await ui.find({ type: 'Text', text: '80%' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: '(80/100)' })).toBeUndefined()
   await ui.unmount()
 })
 
-test('compacts once at the stored threshold and re-arms below it', async ($, on) => {
-  const { commands, clock } = world(on, 50)
-  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true })
+test('never refreshes the cache unless Keep warm is switched on', async ($, on) => {
+  const { forks, clock } = world(on)
+  await start($)
+  await turn($)
+  await clock.advance(20 * MINUTE)
 
-  await $.session.measure(measured(49))
-  await clock.advance(1000)
-  expect(commands).toEqual([])
-
-  await $.session.measure(measured(55))
-  await $.session.measure(measured(58))
-  await clock.advance(1000)
-  expect(commands).toEqual(['compact'])
-
-  await $.session.measure(measured(20))
-  await $.session.measure(measured(51))
-  await clock.advance(1000)
-  expect(commands).toEqual(['compact', 'compact'])
+  expect(forks).toEqual([])
 })
 
-test('the Compact and Clear buttons run their commands', async ($, on) => {
-  const { commands } = world(on)
+test('Keep warm refreshes the cache before it lapses, up to the configured minutes', { options: { keepWarmMinutes: '15' } }, async ($, on) => {
+  const { forks, clock } = world(on)
+  await start($)
+  await turn($)
+  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  await ui.press({ key: 'keep-warm' })
+  await clock.advance(4 * MINUTE + 25_000)
+
+  expect(forks).toHaveLength(1)
+  expect(await ui.find({ type: 'Text', text: /^warm 4:5\d$/ })).toBeDefined()
+  expect((await ui.find({ key: 'keep-warm' }))?.props.label).toMatch(/Keeping warm 11m · 1×/)
+
+  await clock.advance(20 * MINUTE)
+
+  expect(forks).toHaveLength(3)
+  expect(await ui.find({ type: 'Text', text: 'cold' })).toBeDefined()
+  expect((await ui.find({ key: 'keep-warm' }))?.props.label).toBe('Kept warm · 3×')
+  await ui.unmount()
+})
+
+test('Keep warm stops when a refresh shows the cache had already lapsed', async ($, on) => {
+  const { forks, toasts, clock } = world(on, 0)
+  await start($)
+  await turn($)
+  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  await ui.press({ key: 'keep-warm' })
+  await clock.advance(10 * MINUTE)
+
+  expect(forks).toHaveLength(1)
+  expect(toasts).toEqual(['cache-meter: Keep warm stopped, the cache had already lapsed.'])
+  expect((await ui.find({ key: 'keep-warm' }))?.props.label).toBe('Keep warm')
+  await ui.unmount()
+})
+
+test('learns that the session caches for an hour from a hit after a long pause', async ($, on) => {
+  const { clock } = world(on)
+  await start($)
+  await turn($)
+  await clock.advance(10 * MINUTE)
+  await turn($)
+  await clock.advance(1000)
+  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+
+  expect(await ui.find({ type: 'Text', text: 'warm 59:59' })).toBeDefined()
+  await ui.unmount()
+})
+
+test('shows a dash instead of a hit rate until the first turn', async ($, on) => {
+  world(on)
+  await start($)
 
   for (const surface of SURFACES) {
     const ui = await $.ui.mount({ ...BAND, surface })
-    await ui.press({ key: 'compact' })
-    await ui.press({ key: 'clear' })
+
+    expect(await ui.find({ type: 'Text', text: '–' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'last turn' })).toBeUndefined()
     await ui.unmount()
   }
 
-  expect(commands).toEqual(['compact', 'clear', 'compact', 'clear'])
+  await turn($)
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+
+    expect(await ui.find({ type: 'Text', text: '80%' })).toBeDefined()
+    await ui.unmount()
+  }
 })

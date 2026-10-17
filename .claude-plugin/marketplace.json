@@ -5,13 +5,18 @@
     "email": "noreply@anthropic.com"
   },
   "metadata": {
-    "description": "Mods for Claude Code: a prompt-cache and context row with compaction controls, a usage-limits row, and a catalog pane of everything the setup provides."
+    "description": "Mods for Claude Code: a prompt-cache row that keeps the cache warm, a context row with compaction controls, a usage-limits row, and a catalog pane of everything the setup provides."
   },
   "plugins": [
     {
       "name": "cache-meter",
       "source": "./cache-meter",
-      "description": "Prompt-cache hit rate and context fill in one row above the prompt, with a switchable auto-compact threshold and Compact and Clear buttons."
+      "description": "Prompt-cache hit rate in one row above the prompt, with how long the cache stays warm and a Keep warm switch that refreshes it while you are away."
+    },
+    {
+      "name": "context-meter",
+      "source": "./context-meter",
+      "description": "Context fill in one row above the prompt, with a switchable auto-compact threshold and Compact and Clear buttons."
     },
     {
       "name": "usage-limits",

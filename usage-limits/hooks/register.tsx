@@ -4,7 +4,8 @@ import type { Color, Elements, EngineInterface, Register } from 'claude-code'
 import type { Reading, UsageWindow } from '../types'
 
 const LABELS: Record<string, string> = {
-  five_hour: '5h',
+  // Padded so the hours line up with a two-digit window such as 24h.
+  five_hour: ' 5h',
   seven_day: 'Week',
   spend_limit: 'Spend',
 }
@@ -14,8 +15,8 @@ const HOUR = 60 * MINUTE
 const DAY = 24 * HOUR
 const STORE_KEY = 'reading'
 
-// Shared with cache-meter so the columns of both rows line up.
-const LABEL_WIDTHS = [5, 7]
+// Shared with cache-meter, context-meter and usage-limits so the gauges of all rows line up.
+const LABEL_WIDTH = 7
 const SEGMENTS = 5
 const PERCENT_WIDTH = 4
 const DETAIL_WIDTH = 10
@@ -24,7 +25,6 @@ type Tags = Pick<Elements['terminal'], 'Box' | 'Text'>
 type Layout = { hasGauge: boolean; hasDetails: boolean }
 type Cell = {
   label: string
-  column: number
   percent: number | null
   tone: Color
   detail: string
@@ -85,7 +85,7 @@ const meter = ({ Box, Text }: Tags, layout: Layout, one: Cell) => {
   return (
     <Box flexDirection="row" flexShrink={0}>
       <Box
-        minWidth={LABEL_WIDTHS[one.column] ?? LABEL_WIDTHS[1]}
+        minWidth={LABEL_WIDTH}
         marginRight={1}
         flexShrink={0}
       >
@@ -189,10 +189,9 @@ export const register: Register = (on, options) => {
           <Text dimColor>Usage limits: no reading yet</Text>
         ) : (
           <Box flexDirection="row" flexWrap="wrap">
-            {list.map((one, column) =>
+            {list.map(one =>
               meter({ Box, Text }, layout, {
                 label: labelOf(one.kind),
-                column,
                 percent: one.percentUsed,
                 tone: toneOf(one.percentUsed),
                 detail: untilReset(one.resetsAt, at),

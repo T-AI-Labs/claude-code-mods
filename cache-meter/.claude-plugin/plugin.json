@@ -1,12 +1,12 @@
 {
   "name": "cache-meter",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "author": {
     "name": "Claude",
     "email": "noreply@anthropic.com"
   },
   "license": "MIT",
-  "description": "Prompt-cache hit rate and context fill in one row above the prompt, with a switchable auto-compact threshold and Compact and Clear buttons.",
+  "description": "Prompt-cache hit rate in one row above the prompt, with how long the cache stays warm and a Keep warm switch that refreshes it while you are away.",
   "types": "./types/index.d.ts",
   "userConfig": {
     "display": {
@@ -22,8 +22,20 @@
     "details": {
       "type": "boolean",
       "title": "Details",
-      "description": "Show the token counts, such as (100k/1M) in parentheses.",
+      "description": "Show the token counts, such as (92k/100k) in parentheses.",
       "default": true
+    },
+    "keepWarmMinutes": {
+      "type": "string",
+      "title": "Keep warm for",
+      "description": "How many minutes after the last turn Keep warm goes on refreshing the cache. Each refresh reads the cached context at the cache price.",
+      "options": [
+        "15",
+        "30",
+        "60",
+        "120"
+      ],
+      "default": "60"
     }
   }
 }
