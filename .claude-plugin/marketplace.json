@@ -5,7 +5,7 @@
     "email": "noreply@anthropic.com"
   },
   "metadata": {
-    "description": "Mods for Claude Code: a prompt-cache and context row with compaction controls, and a usage-limits row."
+    "description": "Mods for Claude Code: a prompt-cache and context row with compaction controls, a usage-limits row, and a catalog pane of everything the setup provides."
   },
   "plugins": [
     {
@@ -17,6 +17,11 @@
       "name": "usage-limits",
       "source": "./usage-limits",
       "description": "One row above the prompt: how much of the 5-hour and weekly usage limits is used, in percent, with the time until each resets."
+    },
+    {
+      "name": "catalog-pane",
+      "source": "./catalog-pane",
+      "description": "A pane that lists every skill, command, agent, mod, plugin, settings hook, MCP server and tool by category, with usage, token cost, updates and GitHub stats, and buttons to insert, run, update, disable or uninstall."
     }
   ]
 }
