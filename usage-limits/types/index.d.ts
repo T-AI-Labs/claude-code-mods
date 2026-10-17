@@ -4,14 +4,13 @@ export type UsageWindow = {
   resetsAt?: string
 }
 
-export type Reading = { windows: UsageWindow[]; at: number }
+export type Reading = { windows: UsageWindow[] }
 
 declare module 'claude-code' {
   interface PluginState {
     'usage-limits': {
       windows: UsageWindow[]
       now: number
-      staleSince: number | null
     }
   }
 }
