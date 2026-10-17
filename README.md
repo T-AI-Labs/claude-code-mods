@@ -97,7 +97,7 @@ Context ▮▯▯▯▯  10% (100k/1M)  Auto 97% ▾  [ Compact ] [ Clear ]
 | **Compact** | Runs `/compact` now. |
 | **Clear** | Runs `/clear`. |
 
-The fill reads `–` until the first response of a session, and again after a clear.
+The fill reads `0%` with the window size until the first response of a session, and again after a clear: the engine counts the system prompt and tools only once a response arrives.
 
 ### How auto-compact works
 
