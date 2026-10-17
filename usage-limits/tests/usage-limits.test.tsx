@@ -151,3 +151,29 @@ test('shows the stored reading without its age until the first response', async 
     await ui.unmount()
   }
 })
+
+test('keeps the last reading when a /clear empties the engine reading', async ($, on) => {
+  world(on)
+  await $.session.measure({
+    context: { window: 200_000 },
+    rateLimits: [
+      { kind: 'five_hour', percentUsed: 42, resetsAt: '2026-10-12T12:13:00Z' },
+      { kind: 'seven_day', percentUsed: 18.4, resetsAt: '2026-10-15T14:00:00Z' },
+    ],
+    changed: ['rateLimits'],
+  })
+  await $.session.measure({
+    context: { window: 200_000 },
+    rateLimits: [],
+    changed: ['rateLimits'],
+  })
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+
+    expect(await ui.find({ type: 'Text', text: '42%' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '18%' })).toBeDefined()
+    expect(await ui.find({ text: 'no reading yet' })).toBeUndefined()
+    await ui.unmount()
+  }
+})
