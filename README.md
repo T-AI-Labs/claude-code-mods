@@ -4,6 +4,11 @@
 
 <p align="center">
   <a href="https://github.com/T-AI-Labs/claude-code-mods/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/T-AI-Labs/claude-code-mods/ci.yml?branch=main&style=flat-square&label=ci" alt="CI"></a>
+  <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcontext-usage%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=context-usage&style=flat-square" alt="context-usage version"></a>
+  <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcache-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=cache-meter&style=flat-square" alt="cache-meter version"></a>
+  <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcatalog-pane%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=catalog-pane&style=flat-square" alt="catalog-pane version"></a>
+  <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcontext-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=context-meter&style=flat-square" alt="context-meter version"></a>
+  <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fusage-limits%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=usage-limits&style=flat-square" alt="usage-limits version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/T-AI-Labs/claude-code-mods?style=flat-square" alt="License"></a>
 </p>
 
@@ -15,12 +20,7 @@
   <a href="#credits">Credits</a>
 </p>
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/preview.svg">
-    <img src="docs/preview-light.svg" alt="context-usage above the Claude Code prompt" width="100%">
-  </picture>
-</p>
+<p align="center"><img src="docs/preview.svg" alt="context-usage above the Claude Code prompt" width="100%"></p>
 
 <p align="center"><sub>Illustration of context-usage above the prompt, with the default settings.</sub></p>
 
@@ -135,12 +135,7 @@ A compaction does cost tokens, whether you press Compact or the threshold trigge
 
 ## catalog-pane
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/catalog-pane.svg">
-    <img src="docs/catalog-pane-light.svg" alt="The catalog pane listing skills" width="100%">
-  </picture>
-</p>
+<p align="center"><img src="docs/catalog-pane.svg" alt="The catalog pane listing skills" width="100%"></p>
 
 A pane that lists what the session can use, one tab per category: **Skills**, **Commands**, **Agents**, **Mods**, **Plugins**, **Hooks** (from the settings files), **MCP** servers and built-in **Tools**, each with its count. It stays closed until you ask for it: `/catalog` opens it, in the desktop app and in the terminal, `/catalog mods` on a category and `/catalog <text>` with a search.
 
@@ -153,12 +148,7 @@ Each row shows where the entry comes from, how often it was used, in total and i
 | GitHub stars, Trending, GitHub forks, Latest GitHub push | By the plugin's repository. Trending is stars gained per month. |
 | Installs, Newest installed | By the official directory's install count, or by install date. |
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/catalog-pane-detail.svg">
-    <img src="docs/catalog-pane-detail-light.svg" alt="The catalog pane showing one mod" width="100%">
-  </picture>
-</p>
+<p align="center"><img src="docs/catalog-pane-detail.svg" alt="The catalog pane showing one mod" width="100%"></p>
 
 Pressing an entry opens its detail: usage over 7 and 30 days, token cost, version and install dates, what a mod hooks and which engine calls it makes, the repository with its stars, and the full description. **Explain with Haiku** writes three sentences on what the entry is for and when to use it. The buttons depend on the kind: insert or run a skill or command, insert an agent, MCP server or tool into the prompt, update, disable or uninstall a plugin or mod, and remove a local MCP server. Uninstalling and removing ask first.
 
