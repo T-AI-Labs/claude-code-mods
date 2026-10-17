@@ -44,42 +44,42 @@ const USER_HOOKS = {
 }
 
 const FILES: Record<string, unknown> = {
-  'C:/home/.claude/plugins/installed_plugins.json': {
+  '/home/.claude/plugins/installed_plugins.json': {
     plugins: {
       'auto@thor-skills': [
         {
-          installPath: 'C:/plugins/auto',
+          installPath: '/plugins/auto',
           version: '0.3.0',
           installedAt: '2026-09-30T05:19:11.660Z',
           lastUpdated: '2026-09-30T05:49:16.332Z',
         },
       ],
-      'meter@T-AI-Labs': [{ installPath: 'C:/plugins/meter', version: '0.3.4' }],
+      'meter@T-AI-Labs': [{ installPath: '/plugins/meter', version: '0.3.4' }],
       'agents-kit@workflows': [
-        { installPath: 'C:/plugins/agents-kit', version: '1.2.3', installedAt: '2026-08-01T10:00:00.000Z' },
+        { installPath: '/plugins/agents-kit', version: '1.2.3', installedAt: '2026-08-01T10:00:00.000Z' },
       ],
     },
   },
-  'C:/home/.claude/plugins/known_marketplaces.json': {
-    'thor-skills': { source: { source: 'github', repo: 'thor/skills' }, installLocation: 'C:/markets/thor' },
-    workflows: { source: { source: 'github', repo: 'wshobson/agents' }, installLocation: 'C:/markets/workflows' },
+  '/home/.claude/plugins/known_marketplaces.json': {
+    'thor-skills': { source: { source: 'github', repo: 'thor/skills' }, installLocation: '/markets/thor' },
+    workflows: { source: { source: 'github', repo: 'wshobson/agents' }, installLocation: '/markets/workflows' },
   },
-  'C:/home/.claude/plugins/plugin-catalog-cache.json': {
+  '/home/.claude/plugins/plugin-catalog-cache.json': {
     catalog: { plugins: { 'agents-kit@workflows': { unique_installs: 3474 } } },
   },
-  'C:/markets/thor/.claude-plugin/marketplace.json': { plugins: [{ name: 'auto', source: './auto' }] },
-  'C:/markets/thor/auto/.claude-plugin/plugin.json': { version: '0.4.0' },
-  'C:/plugins/auto/.claude-plugin/plugin.json': { description: 'Ticket to PR automation' },
-  'C:/plugins/agents-kit/.claude-plugin/plugin.json': { description: 'Python agents' },
-  'C:/plugins/meter/.claude-plugin/plugin.json': { description: 'Cache hit rate above the prompt' },
-  'C:/plugins/meter/hooks/hooks.json': { modules: ['./register.tsx'] },
-  'C:/mods/catalog/.claude-plugin/plugin.json': { name: 'catalog-pane', description: 'The catalog', version: '0.3.0' },
-  'C:/mods/catalog/hooks/hooks.json': { modules: ['./register.tsx'] },
+  '/markets/thor/.claude-plugin/marketplace.json': { plugins: [{ name: 'auto', source: './auto' }] },
+  '/markets/thor/auto/.claude-plugin/plugin.json': { version: '0.4.0' },
+  '/plugins/auto/.claude-plugin/plugin.json': { description: 'Ticket to PR automation' },
+  '/plugins/agents-kit/.claude-plugin/plugin.json': { description: 'Python agents' },
+  '/plugins/meter/.claude-plugin/plugin.json': { description: 'Cache hit rate above the prompt' },
+  '/plugins/meter/hooks/hooks.json': { modules: ['./register.tsx'] },
+  '/mods/catalog/.claude-plugin/plugin.json': { name: 'catalog-pane', description: 'The catalog', version: '0.3.0' },
+  '/mods/catalog/hooks/hooks.json': { modules: ['./register.tsx'] },
 }
 
 const DIRS: Record<string, string[]> = {
-  'C:/home/.claude/skills': ['find-skills'],
-  'C:/plugins/auto/skills': ['fix'],
+  '/home/.claude/skills': ['find-skills'],
+  '/plugins/auto/skills': ['fix'],
 }
 
 const REPOS: Record<string, Record<string, unknown>> = {
@@ -101,7 +101,8 @@ const REPOS: Record<string, Record<string, unknown>> = {
   },
 }
 
-const slash = (path: string) => path.replaceAll('\\', '/')
+// The fixtures are POSIX paths; on Windows the engine resolves them onto the current drive.
+const slash = (path: string) => path.replaceAll('\\', '/').replace(/^[A-Za-z]:/, '')
 
 const world = (on: On, stored: Record<string, unknown> = {}) => {
   const filled: string[] = []
@@ -111,7 +112,7 @@ const world = (on: On, stored: Record<string, unknown> = {}) => {
   const fetched: string[] = []
   const clock = mock.clock(on, { now: Date.parse('2026-10-16T10:00:00Z') })
   mock.store(on, stored)
-  mock.env(on, { USERPROFILE: 'C:/home', CLAUDE_CODE_PLUGIN_DIRS: 'C:/mods/catalog' })
+  mock.env(on, { USERPROFILE: '/home', CLAUDE_CODE_PLUGIN_DIRS: '/mods/catalog' })
   on('session.start', ($, e) => ({ cwd: e.cwd }))
   on('session.attach', ($, e) => ({ clientId: e.clientId }))
   on('command.register', ($, e) => ({ value: { command: e.name } }))
@@ -401,8 +402,8 @@ test('lists mods apart from plugins with what each one hooks and calls', async (
 
   await ui.press({ key: 'open-mod:catalog-pane' })
 
-  expect(commands).toContain('claude plugin validate C:/mods/catalog')
-  expect(await ui.find({ type: 'Text', text: /Loaded from C:\/mods\/catalog through CLAUDE_CODE_PLUGIN_DIRS, v0\.3\.0/ })).toBeDefined()
+  expect(commands).toContain('claude plugin validate /mods/catalog')
+  expect(await ui.find({ type: 'Text', text: /Loaded from \/mods\/catalog through CLAUDE_CODE_PLUGIN_DIRS, v0\.3\.0/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /Hooks: session\.start, ui\.render\{component=Pane, requestId=catalog\}/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /Uses: \$\.process\.run \(via cli\), \$\.ui\.open/ })).toBeDefined()
   await ui.unmount()
