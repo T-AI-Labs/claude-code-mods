@@ -25,9 +25,9 @@
   <a href="#credits">Credits</a>
 </p>
 
-<p align="center"><img src="docs/preview.svg" alt="cache-meter and usage-limits above the Claude Code prompt" width="100%"></p>
+<p align="center"><img src="docs/preview.svg" alt="context-meter and usage-limits above the Claude Code prompt" width="100%"></p>
 
-<p align="center"><sub>Illustration of cache-meter and usage-limits above the prompt, with the default settings.</sub></p>
+<p align="center"><sub>Illustration of context-meter and usage-limits above the prompt, with the default settings.</sub></p>
 
 ## TL;DR
 
@@ -65,7 +65,7 @@ The mods use Claude Code's function-hook plugin API, which is in early access an
 ## cache-meter
 
 ```
-Cache ▮▮▮▮▮  92% (92k/100k) warm 3:12  [ Keep warm ]
+Cache   ▮▮▮▮▮  92% (92k/100k) warm 3:12  [ Keep warm ]
 ```
 
 | Element | What it shows |
@@ -114,7 +114,7 @@ A compaction does cost tokens, whether you press Compact or the threshold trigge
 ## usage-limits
 
 ```
-5h    ▮▮▯▯▯  42% (2h 13m)   Week    ▮▮▮▮▯  78% (3d 4h)
+ 5h     ▮▮▯▯▯  42% (2h 13m)   Week    ▮▮▮▮▯  78% (3d 4h)
 ```
 
 Each rate-limit window Claude Code reports gets a gauge, the percentage used and, in parentheses, the time left until it resets. `5h` is the 5-hour limit, `Week` the weekly one. A figure turns yellow from 75 % and red from 90 %.
