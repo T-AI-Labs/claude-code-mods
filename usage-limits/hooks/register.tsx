@@ -32,10 +32,6 @@ type Cell = {
 
 const windows = atom({ plugin: 'usage-limits', key: 'windows' } as const, [])
 const now = atom({ plugin: 'usage-limits', key: 'now' } as const, 0)
-const staleSince = atom(
-  { plugin: 'usage-limits', key: 'staleSince' } as const,
-  null,
-)
 
 const labelOf = (kind: string) => LABELS[kind] ?? kind.replaceAll('_', ' ')
 
@@ -126,10 +122,9 @@ const refresh = async ($: EngineInterface, list?: readonly UsageWindow[]) => {
 
   const sorted = [...list].sort((a, b) => rankOf(a.kind) - rankOf(b.kind))
   await update($, windows, () => sorted)
-  await update($, staleSince, () => null)
 
   if (sorted.length > 0) {
-    await $.store.set(STORE_KEY, { windows: sorted, at })
+    await $.store.set(STORE_KEY, { windows: sorted })
   }
 }
 
@@ -140,7 +135,6 @@ const restore = async ($: EngineInterface) => {
 
   if (stored !== undefined) {
     await update($, windows, () => stored.windows.filter(one => isOpen(one, at)))
-    await update($, staleSince, () => stored.at)
   }
 }
 
@@ -181,10 +175,11 @@ export const register: Register = (on, options) => {
     const { Box, Text } = $.ui.resolve(e)
     const list = await read($, windows)
     const at = await read($, now)
-    const since = await read($, staleSince)
 
+    // Drawn under the rows beneath it in the chain, so the context row stays on top whatever the install order.
     return (
       <Box flexDirection="column">
+        {below}
         {list.length === 0 ? (
           <Text dimColor>Usage limits: no reading yet</Text>
         ) : (
@@ -197,12 +192,8 @@ export const register: Register = (on, options) => {
                 detail: untilReset(one.resetsAt, at),
               }),
             )}
-            {since !== null && (
-              <Text dimColor>{`as of ${span(at - since)} ago`}</Text>
-            )}
           </Box>
         )}
-        {below}
       </Box>
     )
   })

@@ -88,7 +88,24 @@ test('says so while no limit has a reading', async ($, on) => {
   }
 })
 
-test('shows the stored reading as stale until the first response', async ($, on) => {
+test('draws its row under the rows beneath it', async ($, on) => {
+  world(on)
+  await $.session.measure({
+    context: { window: 200_000 },
+    rateLimits: [{ kind: 'five_hour', percentUsed: 42 }],
+    changed: ['rateLimits'],
+  })
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+    const texts = (await ui.findAll({ type: 'Text' })).map(one => one.text)
+
+    expect(texts.indexOf('below')).toBeLessThan(texts.indexOf(' 5h'))
+    await ui.unmount()
+  }
+})
+
+test('shows the stored reading without its age until the first response', async ($, on) => {
   const clock = world(on, {
     reading: {
       at: Date.parse('2026-10-12T06:40:00Z'),
@@ -104,7 +121,7 @@ test('shows the stored reading as stale until the first response', async ($, on)
     const ui = await $.ui.mount({ ...BAND, surface })
 
     expect(await ui.find({ type: 'Text', text: '18%' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: 'as of 3h 20m ago' })).toBeDefined()
+    expect(await ui.find({ text: /as of/ })).toBeUndefined()
     expect(await ui.find({ type: 'Text', text: ' 5h' })).toBeUndefined()
     await ui.unmount()
   }
@@ -130,7 +147,7 @@ test('shows the stored reading as stale until the first response', async ($, on)
     const ui = await $.ui.mount({ ...BAND, surface })
 
     expect(await ui.find({ type: 'Text', text: '7%' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: 'as of 5m ago' })).toBeDefined()
+    expect(await ui.find({ text: /as of/ })).toBeUndefined()
     await ui.unmount()
   }
 })
