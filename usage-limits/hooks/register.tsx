@@ -12,6 +12,7 @@ const ORDER = ['five_hour', 'seven_day', 'spend_limit']
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
 const DAY = 24 * HOUR
+const STORE_KEY = 'windows'
 
 // Shared with cache-meter so the columns of both rows line up.
 const LABEL_WIDTHS = [5, 7]
@@ -40,8 +41,31 @@ const rankOf = (kind: string) => {
   return rank === -1 ? ORDER.length : rank
 }
 
-const toneOf = (percent: number): Color =>
-  percent >= 90 ? 'error' : percent >= 75 ? 'warning' : 'text'
+const toneOf = (one: UsageWindow): Color =>
+  one.isStale
+    ? 'inactive'
+    : one.percentUsed >= 90
+      ? 'error'
+      : one.percentUsed >= 75
+        ? 'warning'
+        : 'text'
+
+// A remembered reading says nothing once its window has reset.
+const isCurrent = (one: UsageWindow, at: number) =>
+  !one.isStale || one.resetsAt === undefined || Date.parse(one.resetsAt) > at
+
+const merge = (
+  fresh: readonly UsageWindow[],
+  known: readonly UsageWindow[],
+  at: number,
+) =>
+  [
+    ...fresh,
+    ...known
+      .filter(one => !fresh.some(other => other.kind === one.kind))
+      .map(one => ({ ...one, isStale: true }))
+      .filter(one => isCurrent(one, at)),
+  ].sort((a, b) => rankOf(a.kind) - rankOf(b.kind))
 
 const untilReset = (resetsAt: string | undefined, at: number) => {
   const left = resetsAt === undefined ? Number.NaN : Date.parse(resetsAt) - at
@@ -108,13 +132,31 @@ const meter = ({ Box, Text }: Tags, layout: Layout, one: Cell) => {
   )
 }
 
-const refresh = async ($: EngineInterface, list?: readonly UsageWindow[]) => {
+const tick = async ($: EngineInterface) => {
   const at = await $.clock.now()
   await update($, now, () => at)
 
-  if (list !== undefined) {
-    const sorted = [...list].sort((a, b) => rankOf(a.kind) - rankOf(b.kind))
-    await update($, windows, () => sorted)
+  return at
+}
+
+const remember = async (
+  $: EngineInterface,
+  fresh: readonly UsageWindow[],
+  known: readonly UsageWindow[],
+  at: number,
+) => {
+  const merged = merge(fresh, known, at)
+  await update($, windows, () => merged)
+
+  if (fresh.length > 0) {
+    await $.store.set(
+      STORE_KEY,
+      merged.map(({ kind, percentUsed, resetsAt }) => ({
+        kind,
+        percentUsed,
+        resetsAt,
+      })),
+    )
   }
 }
 
@@ -125,15 +167,26 @@ export const register: Register = (on, options) => {
   }
 
   on('session.start', async ($, e, next) => {
+    const at = await tick($)
     const usage = await $.session.usage()
-    await refresh($, usage.rateLimits)
-    $.clock.every(MINUTE, () => void refresh($))
+    const stored = await $.store.get(STORE_KEY)
+    await remember(
+      $,
+      usage.rateLimits,
+      Array.isArray(stored) ? (stored as UsageWindow[]) : [],
+      at,
+    )
+    $.clock.every(MINUTE, () => void tick($))
 
     return next(e)
   })
 
   on('session.measure', async ($, e, next) => {
-    await refresh($, e.rateLimits)
+    const at = await tick($)
+
+    if (e.changed.includes('rateLimits')) {
+      await remember($, e.rateLimits, await read($, windows), at)
+    }
 
     return next(e)
   })
@@ -146,8 +199,8 @@ export const register: Register = (on, options) => {
     }
 
     const { Box, Text } = $.ui.resolve(e)
-    const list = await read($, windows)
     const at = await read($, now)
+    const list = (await read($, windows)).filter(one => isCurrent(one, at))
 
     return (
       <Box flexDirection="column">
@@ -160,7 +213,7 @@ export const register: Register = (on, options) => {
                 label: labelOf(one.kind),
                 column,
                 percent: one.percentUsed,
-                tone: toneOf(one.percentUsed),
+                tone: toneOf(one),
                 detail: untilReset(one.resetsAt, at),
               }),
             )}
