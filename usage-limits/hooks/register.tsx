@@ -123,7 +123,7 @@ const restore = async ($: EngineInterface) => {
 }
 
 const refresh = async ($: EngineInterface, list?: readonly UsageWindow[]) => {
-  // The engine has no reading before the first response of a session, nor right after a /clear.
+  // The engine has no reading before the first response of a session.
   if (list !== undefined && list.length === 0) {
     return restore($)
   }
@@ -151,6 +151,15 @@ export const register: Register = (on, options) => {
     await refresh($, usage.rateLimits)
 
     $.clock.every(MINUTE, () => void refresh($))
+
+    return next(e)
+  })
+
+  // A /clear wipes every plugin's state after session.end and raises no session.start, only this.
+  on('classic.SessionStart', async ($, e, next) => {
+    if (e.source === 'clear') {
+      await restore($).catch(() => undefined)
+    }
 
     return next(e)
   })
