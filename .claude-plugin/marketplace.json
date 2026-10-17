@@ -5,9 +5,14 @@
     "email": "noreply@anthropic.com"
   },
   "metadata": {
-    "description": "Mods for Claude Code: a prompt-cache row that keeps the cache warm, a context row with compaction controls, a usage-limits row, and a catalog pane of everything the setup provides."
+    "description": "Mods for Claude Code: a context and usage-limits band with compaction controls, a prompt-cache row that keeps the cache warm, the context and usage-limits rows on their own, and a catalog pane of everything the setup provides."
   },
   "plugins": [
+    {
+      "name": "context-usage",
+      "source": "./context-usage",
+      "description": "context-meter and usage-limits in one band above the prompt: the context fill with its auto-compact threshold, Compact and Clear, and the 5-hour and weekly usage limits beneath it."
+    },
     {
       "name": "cache-meter",
       "source": "./cache-meter",

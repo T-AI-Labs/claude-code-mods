@@ -4,17 +4,17 @@
 
 <p align="center">
   <a href="https://github.com/T-AI-Labs/claude-code-mods/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/T-AI-Labs/claude-code-mods/ci.yml?branch=main&style=flat-square&label=ci" alt="CI"></a>
+  <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcontext-usage%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=context-usage&style=flat-square" alt="context-usage version"></a>
   <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcache-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=cache-meter&style=flat-square" alt="cache-meter version"></a>
   <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcontext-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=context-meter&style=flat-square" alt="context-meter version"></a>
   <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fusage-limits%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=usage-limits&style=flat-square" alt="usage-limits version"></a>
   <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcatalog-pane%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=catalog-pane&style=flat-square" alt="catalog-pane version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/T-AI-Labs/claude-code-mods?style=flat-square" alt="License"></a>
-  <img src="https://img.shields.io/badge/Claude%20Code-2.1.295-d97757?style=flat-square" alt="Claude Code 2.1.295">
-  <img src="https://img.shields.io/badge/Claude%20desktop%20app-2.31226.1-d97757?style=flat-square" alt="Claude desktop app 2.31226.1">
 </p>
 
 <p align="center">
   <a href="#install"><strong>Install</strong></a> ·
+  <a href="#context-usage">context-usage</a> ·
   <a href="#cache-meter">cache-meter</a> ·
   <a href="#context-meter">context-meter</a> ·
   <a href="#usage-limits">usage-limits</a> ·
@@ -25,42 +25,52 @@
   <a href="#credits">Credits</a>
 </p>
 
-<p align="center"><img src="docs/preview.svg" alt="context-meter and usage-limits above the Claude Code prompt" width="100%"></p>
+<p align="center"><img src="docs/preview.svg" alt="context-usage above the Claude Code prompt" width="100%"></p>
 
-<p align="center"><sub>Illustration of context-meter and usage-limits above the prompt, with the default settings.</sub></p>
+<p align="center"><sub>Illustration of context-usage above the prompt, with the default settings.</sub></p>
 
 ## TL;DR
 
+- **context-usage** is the one to start with: the context fill with the auto-compact threshold, Compact and Clear, and the 5-hour and weekly limits beneath it, in one mod. It replaces context-meter and usage-limits.
 - **cache-meter** shows how much of each turn the prompt cache served and how long the cache stays warm, and can keep it warm while you are away.
 - **context-meter** shows the context fill and puts the auto-compact threshold, Compact and Clear one click away.
 - **usage-limits** shows how much of the 5-hour and weekly limits is used, and how long until each resets.
 - **catalog-pane** lists every skill, command, agent, mod, plugin, settings hook, MCP server and tool in a pane, with usage, token cost and buttons to use or manage each one.
-- The three rows are one quiet line each. The figures stay neutral and only take a color when something needs attention.
-- All four work in the Claude Code CLI and in the desktop app, alone or together. Together, the rows' columns line up.
+- Each row is one quiet line. The figures stay neutral and only take a color when something needs attention.
+- All five work in the Claude Code CLI and in the desktop app. Together, the rows' columns line up.
 - The rows make no network calls, run no external programs and add no tokens; only cache-meter's Keep warm, when you switch it on, makes requests. See [Token cost](#token-cost) and, for the pane, [What catalog-pane reaches out to](#what-catalog-pane-reaches-out-to).
 
 ```
 claude plugin marketplace add T-AI-Labs/claude-code-mods
+claude plugin install context-usage@T-AI-Labs
 claude plugin install cache-meter@T-AI-Labs
-claude plugin install context-meter@T-AI-Labs
-claude plugin install usage-limits@T-AI-Labs
 claude plugin install catalog-pane@T-AI-Labs
 ```
 
 ## Install
 
-Install only the mods you want. Run the commands above in any shell (cmd, PowerShell, bash). The mods load in every session started afterwards, in the terminal and in the desktop app.
+Install only the mods you want. context-usage holds context-meter and usage-limits; install it or those two, not both, or the rows show twice and two mods compact at their thresholds. Run the commands above in any shell (cmd, PowerShell, bash). The mods load in every session started afterwards, in the terminal and in the desktop app.
 
 From the prompt of a running Claude Code terminal session, the same install is:
 
 ```
+/plugin install context-usage --marketplace T-AI-Labs/claude-code-mods
 /plugin install cache-meter --marketplace T-AI-Labs/claude-code-mods
-/plugin install context-meter --marketplace T-AI-Labs/claude-code-mods
-/plugin install usage-limits --marketplace T-AI-Labs/claude-code-mods
 /plugin install catalog-pane --marketplace T-AI-Labs/claude-code-mods
 ```
 
 The mods use Claude Code's function-hook plugin API, which is in early access and may change between releases. They are built and tested against Claude Code 2.1.295, the engine in the Claude desktop app 2.31226.1.
+
+## context-usage
+
+```
+Context ▮▯▯▯▯  10% (100k/1M)  Auto 97% ▾  [ Compact ] [ Clear ]
+ 5h     ▮▮▯▯▯  42% (2h 13m)   Week    ▮▮▮▮▯  78% (3d 4h)
+```
+
+context-meter and usage-limits in one mod: the context row with its auto-compact threshold, Compact and Clear, and the usage-limits row beneath it. Each row works as described under [context-meter](#context-meter) and [usage-limits](#usage-limits). With `usagePosition` set to `above`, the usage row moves on top of the context row; see [Configure](#configure).
+
+To switch from the two separate mods, install context-usage and uninstall context-meter and usage-limits. The threshold you picked does not carry over: pick it again.
 
 ## cache-meter
 
@@ -152,12 +162,14 @@ Everything else it reads from Claude Code and the configuration files. Counts, c
 
 ## Configure
 
-cache-meter, context-meter and usage-limits take the same two options:
+cache-meter, context-usage, context-meter and usage-limits take the same two options:
 
 | Option | Values | Default | Effect |
 | --- | --- | --- | --- |
 | `display` | `gauge`, `text` | `gauge` | `gauge` draws a five-segment fill level before each percentage; `text` leaves it out. |
 | `details` | `true`, `false` | `true` | Shows the figures in parentheses. |
+
+context-usage also takes `usagePosition`, `below` or `above` (default `below`): where the usage row sits, under the context row or on top of it.
 
 cache-meter also takes `keepWarmMinutes`, one of `15`, `30`, `60` or `120` (default `60`): how long after the last turn Keep warm goes on refreshing.
 
@@ -186,7 +198,7 @@ catalog-pane takes its own two, set the same way:
 
 ### Fitting one line
 
-context-meter needs about 62 columns with the defaults. On a narrower window its buttons wrap to a second line. Turning `details` off saves about 11 columns, `display` set to `text` about 6:
+context-usage and context-meter need about 62 columns with the defaults. On a narrower window the buttons wrap to a second line. Turning `details` off saves about 11 columns, `display` set to `text` about 6:
 
 ```
 Context ▮▯▯▯▯  10%  Auto 97% ▾  [ Compact ] [ Clear ]
@@ -198,6 +210,7 @@ In the terminal, use the mouse, or move the focus into the row with `ctrl+x tab`
 
 ```
 claude plugin marketplace update T-AI-Labs
+claude plugin update context-usage@T-AI-Labs
 claude plugin update cache-meter@T-AI-Labs
 claude plugin update usage-limits@T-AI-Labs
 claude plugin update catalog-pane@T-AI-Labs
@@ -207,6 +220,7 @@ claude plugin install context-meter@T-AI-Labs
 Since 0.4.0 cache-meter shows the cache alone; the context fill, the threshold and the Compact and Clear buttons moved to context-meter, which an update does not install by itself. The threshold you picked in cache-meter does not carry over: pick it again in context-meter.
 
 ```
+claude plugin uninstall context-usage@T-AI-Labs
 claude plugin uninstall cache-meter@T-AI-Labs
 claude plugin uninstall context-meter@T-AI-Labs
 claude plugin uninstall usage-limits@T-AI-Labs
