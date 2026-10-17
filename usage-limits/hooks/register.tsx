@@ -112,22 +112,6 @@ const meter = ({ Box, Text }: Tags, layout: Layout, one: Cell) => {
   )
 }
 
-const refresh = async ($: EngineInterface, list?: readonly UsageWindow[]) => {
-  const at = await $.clock.now()
-  await update($, now, () => at)
-
-  if (list === undefined) {
-    return
-  }
-
-  const sorted = [...list].sort((a, b) => rankOf(a.kind) - rankOf(b.kind))
-  await update($, windows, () => sorted)
-
-  if (sorted.length > 0) {
-    await $.store.set(STORE_KEY, { windows: sorted })
-  }
-}
-
 const restore = async ($: EngineInterface) => {
   const at = await $.clock.now()
   const stored = (await $.store.get(STORE_KEY)) as Reading | undefined
@@ -138,6 +122,24 @@ const restore = async ($: EngineInterface) => {
   }
 }
 
+const refresh = async ($: EngineInterface, list?: readonly UsageWindow[]) => {
+  // The engine has no reading before the first response of a session, nor right after a /clear.
+  if (list !== undefined && list.length === 0) {
+    return restore($)
+  }
+
+  const at = await $.clock.now()
+  await update($, now, () => at)
+
+  if (list === undefined) {
+    return
+  }
+
+  const sorted = [...list].sort((a, b) => rankOf(a.kind) - rankOf(b.kind))
+  await update($, windows, () => sorted)
+  await $.store.set(STORE_KEY, { windows: sorted })
+}
+
 export const register: Register = (on, options) => {
   const layout: Layout = {
     hasGauge: options.display !== 'text',
@@ -146,13 +148,7 @@ export const register: Register = (on, options) => {
 
   on('session.start', async ($, e, next) => {
     const usage = await $.session.usage()
-
-    // The engine has no reading before the first response of a session.
-    if (usage.rateLimits.length > 0) {
-      await refresh($, usage.rateLimits)
-    } else {
-      await restore($)
-    }
+    await refresh($, usage.rateLimits)
 
     $.clock.every(MINUTE, () => void refresh($))
 
