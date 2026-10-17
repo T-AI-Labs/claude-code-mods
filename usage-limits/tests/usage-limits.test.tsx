@@ -46,7 +46,7 @@ test('shows the 5-hour and weekly limits in percent with their resets', async ($
 
   for (const surface of SURFACES) {
     const ui = await $.ui.mount({ ...BAND, surface })
-    const labels = (await ui.findAll({ type: 'Text', text: /^(5h|Week)$/ })).map(
+    const labels = (await ui.findAll({ type: 'Text', text: /^( 5h|Week)$/ })).map(
       one => one.text.trim(),
     )
 
@@ -105,7 +105,7 @@ test('shows the stored reading as stale until the first response', async ($, on)
 
     expect(await ui.find({ type: 'Text', text: '18%' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: 'as of 3h 20m ago' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: '5h' })).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: ' 5h' })).toBeUndefined()
     await ui.unmount()
   }
 

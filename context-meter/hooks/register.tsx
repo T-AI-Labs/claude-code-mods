@@ -14,6 +14,7 @@ const OPTIONS = STEPS.map(step => ({ value: String(step), label: `${step}%` }))
 const DEFAULT_THRESHOLD = 97
 const STORE_KEY = 'threshold'
 
+// Shared with cache-meter, context-meter and usage-limits so the gauges of all rows line up.
 const LABEL_WIDTH = 7
 const SEGMENTS = 5
 const PERCENT_WIDTH = 4
