@@ -15,12 +15,7 @@
   <a href="#credits">Credits</a>
 </p>
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/preview.svg">
-    <img src="docs/preview-light.svg" alt="context-usage above the Claude Code prompt" width="100%">
-  </picture>
-</p>
+<p align="center"><img src="docs/preview.svg" alt="context-usage above the Claude Code prompt" width="100%"></p>
 
 <p align="center"><sub>Illustration of context-usage above the prompt, with the default settings.</sub></p>
 
@@ -135,12 +130,7 @@ A compaction does cost tokens, whether you press Compact or the threshold trigge
 
 ## catalog-pane
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/catalog-pane.svg">
-    <img src="docs/catalog-pane-light.svg" alt="The catalog pane listing skills" width="100%">
-  </picture>
-</p>
+<p align="center"><img src="docs/catalog-pane.svg" alt="The catalog pane listing skills" width="100%"></p>
 
 A pane that lists what the session can use, one tab per category: **Skills**, **Commands**, **Agents**, **Mods**, **Plugins**, **Hooks** (from the settings files), **MCP** servers and built-in **Tools**, each with its count. It stays closed until you ask for it: `/catalog` opens it, in the desktop app and in the terminal, `/catalog mods` on a category and `/catalog <text>` with a search.
 
@@ -153,12 +143,7 @@ Each row shows where the entry comes from, how often it was used, in total and i
 | GitHub stars, Trending, GitHub forks, Latest GitHub push | By the plugin's repository. Trending is stars gained per month. |
 | Installs, Newest installed | By the official directory's install count, or by install date. |
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/catalog-pane-detail.svg">
-    <img src="docs/catalog-pane-detail-light.svg" alt="The catalog pane showing one mod" width="100%">
-  </picture>
-</p>
+<p align="center"><img src="docs/catalog-pane-detail.svg" alt="The catalog pane showing one mod" width="100%"></p>
 
 Pressing an entry opens its detail: usage over 7 and 30 days, token cost, version and install dates, what a mod hooks and which engine calls it makes, the repository with its stars, and the full description. **Explain with Haiku** writes three sentences on what the entry is for and when to use it. The buttons depend on the kind: insert or run a skill or command, insert an agent, MCP server or tool into the prompt, update, disable or uninstall a plugin or mod, and remove a local MCP server. Uninstalling and removing ask first.
 
