@@ -200,3 +200,25 @@ test('learns that the session caches for an hour from a hit after a long pause',
   expect(await ui.find({ type: 'Text', text: 'warm 59:59' })).toBeDefined()
   await ui.unmount()
 })
+
+test('shows a dash instead of a hit rate until the first turn', async ($, on) => {
+  world(on)
+  await start($)
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+
+    expect(await ui.find({ type: 'Text', text: '–' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'last turn' })).toBeUndefined()
+    await ui.unmount()
+  }
+
+  await turn($)
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+
+    expect(await ui.find({ type: 'Text', text: '80%' })).toBeDefined()
+    await ui.unmount()
+  }
+})

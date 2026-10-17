@@ -1,5 +1,11 @@
 import { atom, read, update } from 'claude-code'
-import type { Color, Elements, EngineInterface, Register } from 'claude-code'
+import type {
+  Color,
+  Elements,
+  EngineInterface,
+  ModelUsage,
+  Register,
+} from 'claude-code'
 
 import type { CacheHit } from '../types'
 
@@ -14,8 +20,8 @@ const GRACE_MS = 30_000
 const LAPSED_SHARE = 0.5
 const REFRESH_PROMPT = 'Reply with the single word OK.'
 
-// Shared with usage-limits so the columns of both rows line up.
-const LABEL_WIDTH = 5
+// Shared with cache-meter, context-meter and usage-limits so the gauges of all rows line up.
+const LABEL_WIDTH = 7
 const SEGMENTS = 5
 const PERCENT_WIDTH = 4
 const DETAIL_WIDTH = 10
@@ -51,6 +57,13 @@ const clockText = (duration: number) => {
   const seconds = Math.max(0, Math.ceil(duration / 1000))
 
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
+}
+
+const hitOf = (usage: ModelUsage): CacheHit | null => {
+  const read = usage.cache_read_input_tokens
+  const total = usage.input_tokens + read + usage.cache_creation_input_tokens
+
+  return total > 0 ? { read, total } : null
 }
 
 const cacheTone = (percent: number): Color =>
@@ -181,7 +194,6 @@ export const register: Register = (on, options) => {
   on('session.start', async ($, e, next) => {
     const learned = await $.store.get(TTL_KEY)
     const at = await $.clock.now()
-
     if (learned === LONG_TTL_MS) {
       await update($, warmth, held => ({ ...held, ttlMs: LONG_TTL_MS }))
     }
@@ -246,13 +258,10 @@ export const register: Register = (on, options) => {
       const at = await $.clock.now()
       await update($, keepWarm, keep => (keep.isOn ? { ...keep, until: at + limitMs } : keep))
 
-      if (e.usage !== undefined) {
-        const served = e.usage.cache_read_input_tokens
-        const total = e.usage.input_tokens + served + e.usage.cache_creation_input_tokens
+      const hit = e.usage === undefined ? null : hitOf(e.usage)
 
-        if (total > 0) {
-          await update($, cache, () => ({ read: served, total }))
-        }
+      if (hit !== null) {
+        await update($, cache, () => hit)
       }
     }
 
