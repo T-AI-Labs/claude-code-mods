@@ -4,39 +4,37 @@
 
 <p align="center">
   <a href="https://github.com/T-AI-Labs/claude-code-mods/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/T-AI-Labs/claude-code-mods/ci.yml?branch=main&style=flat-square&label=ci" alt="CI"></a>
-  <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcontext-usage%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=context-usage&style=flat-square" alt="context-usage version"></a>
-  <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcache-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=cache-meter&style=flat-square" alt="cache-meter version"></a>
-  <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcontext-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=context-meter&style=flat-square" alt="context-meter version"></a>
-  <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fusage-limits%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=usage-limits&style=flat-square" alt="usage-limits version"></a>
-  <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcatalog-pane%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=catalog-pane&style=flat-square" alt="catalog-pane version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/T-AI-Labs/claude-code-mods?style=flat-square" alt="License"></a>
 </p>
 
 <p align="center">
-  <a href="#install"><strong>Install</strong></a> ·
-  <a href="#context-usage">context-usage</a> ·
-  <a href="#cache-meter">cache-meter</a> ·
-  <a href="#context-meter">context-meter</a> ·
-  <a href="#usage-limits">usage-limits</a> ·
-  <a href="#catalog-pane">catalog-pane</a> ·
-  <a href="#token-cost">Token cost</a> ·
+  <a href="#mods"><strong>Mods</strong></a> ·
+  <a href="#install">Install</a> ·
   <a href="#configure">Configure</a> ·
   <a href="#update-and-uninstall">Update</a> ·
   <a href="#credits">Credits</a>
 </p>
 
-<p align="center"><img src="docs/preview.svg" alt="context-usage above the Claude Code prompt" width="100%"></p>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/preview.svg">
+    <img src="docs/preview-light.svg" alt="context-usage above the Claude Code prompt" width="100%">
+  </picture>
+</p>
 
 <p align="center"><sub>Illustration of context-usage above the prompt, with the default settings.</sub></p>
 
-## TL;DR
+## Mods
 
-- **context-usage** is the one to start with: the context fill with the auto-compact threshold, Compact and Clear, and the 5-hour and weekly limits beneath it, in one mod. It replaces context-meter and usage-limits.
-- **cache-meter** shows how much of each turn the prompt cache served and how long the cache stays warm, and can keep it warm while you are away.
-- **context-meter** shows the context fill and puts the auto-compact threshold, Compact and Clear one click away.
-- **usage-limits** shows how much of the 5-hour and weekly limits is used, and how long until each resets.
-- **catalog-pane** lists every skill, command, agent, mod, plugin, settings hook, MCP server and tool in a pane, with usage, token cost and buttons to use or manage each one.
-- Each row is one quiet line. The figures stay neutral and only take a color when something needs attention.
+| Mod | What it adds | Version |
+| --- | --- | --- |
+| [context-usage](#context-usage) | **Start here.** The context fill with the auto-compact threshold, Compact and Clear, and the 5-hour and weekly limits beneath it. | <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcontext-usage%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=version&style=flat-square" alt="context-usage version"></a> |
+| [cache-meter](#cache-meter) | How much of each turn the prompt cache served and how long it stays warm, with a switch that keeps it warm while you are away. | <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcache-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=version&style=flat-square" alt="cache-meter version"></a> |
+| [catalog-pane](#catalog-pane) | A pane listing every skill, command, agent, mod, plugin, settings hook, MCP server and tool, with usage, token cost and buttons to use or manage each one. | <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcatalog-pane%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=version&style=flat-square" alt="catalog-pane version"></a> |
+| [context-meter](#context-meter) | The context row of context-usage on its own. | <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcontext-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=version&style=flat-square" alt="context-meter version"></a> |
+| [usage-limits](#usage-limits) | The usage row of context-usage on its own. | <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fusage-limits%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=version&style=flat-square" alt="usage-limits version"></a> |
+
+- Each row is one quiet line above the prompt. The figures stay neutral and only take a color when something needs attention.
 - All five work in the Claude Code CLI and in the desktop app. Together, the rows' columns line up.
 - The rows make no network calls, run no external programs and add no tokens; only cache-meter's Keep warm, when you switch it on, makes requests. See [Token cost](#token-cost) and, for the pane, [What catalog-pane reaches out to](#what-catalog-pane-reaches-out-to).
 
@@ -61,7 +59,11 @@ From the prompt of a running Claude Code terminal session, the same install is:
 
 The mods use Claude Code's function-hook plugin API, which is in early access and may change between releases. They are built and tested against Claude Code 2.1.295, the engine in the Claude desktop app 2.31226.1.
 
-## context-usage
+## Rows above the prompt
+
+context-usage, cache-meter, context-meter and usage-limits each draw their rows in the band above the prompt.
+
+### context-usage
 
 ```
 Context ▮▯▯▯▯  10% (100k/1M)  Auto 97% ▾  [ Compact ] [ Clear ]
@@ -72,7 +74,7 @@ context-meter and usage-limits in one mod: the context row with its auto-compact
 
 To switch from the two separate mods, install context-usage and uninstall context-meter and usage-limits. The threshold you picked does not carry over: pick it again.
 
-## cache-meter
+### cache-meter
 
 ```
 Cache   ▮▮▮▮▮  92% (92k/100k) warm 3:12  [ Keep warm ]
@@ -86,15 +88,15 @@ Cache   ▮▮▮▮▮  92% (92k/100k) warm 3:12  [ Keep warm ]
 
 The hit rate reads `–` until the first response of a session, and again after a clear.
 
-### Why the hit rate matters
+#### Why the hit rate matters
 
 Every turn sends the whole conversation again. Tokens the cache serves cost about a tenth of the normal input price, and a twentieth on Claude Opus 5.5; tokens written to it cost 1.25 times the input price. A high hit rate is a cheap turn, `0%` the most expensive kind. The cache lapses after a pause, on a model switch, and when something early in the context changes, such as CLAUDE.md or the tools.
 
-### What Keep warm costs
+#### What Keep warm costs
 
 Each refresh is a request that reads the cached context once, at the cache price, plus a one-word reply. With 200k tokens on Claude Opus 5.5 that is about $0.04 a refresh, against about $1.00 for writing the context again after it went cold. Refreshes come about every four and a half minutes, so an hour costs about half of one rewrite: worth it when you come back, lost when you don't. On a subscription the refreshes count against the usage limits instead.
 
-## context-meter
+### context-meter
 
 ```
 Context ▮▯▯▯▯  10% (100k/1M)  Auto 97% ▾  [ Compact ] [ Clear ]
@@ -109,19 +111,13 @@ Context ▮▯▯▯▯  10% (100k/1M)  Auto 97% ▾  [ Compact ] [ Clear ]
 
 The fill reads `0%` with the window size until the first response of a session, and again after a clear: the engine counts the system prompt and tools only once a response arrives.
 
-### How auto-compact works
+#### How auto-compact works
 
 After each turn the mod compares the context fill with the threshold and runs `/compact` once it is reached. It does not fire again until the fill has dropped below the threshold, so a compaction that lands above it does not loop.
 
 Claude Code's built-in auto-compaction stays on and still runs at its own limit. A threshold above that limit therefore never fires, and a long turn can pass the threshold before the mod gets to compact.
 
-### Token cost
-
-Showing the rows costs nothing. The mods read figures Claude Code already has and add nothing to the conversation; the one model request any of them makes is cache-meter's refresh while Keep warm is on.
-
-A compaction does cost tokens, whether you press Compact or the threshold triggers it: `/compact` is a model request that summarizes the conversation, and the next turn starts on a cold cache. The lower the threshold, the more often that happens. To keep usage down, leave the threshold high and compact by hand when it suits you.
-
-## usage-limits
+### usage-limits
 
 ```
  5h     ▮▮▯▯▯  42% (2h 13m)   Week    ▮▮▮▮▯  78% (3d 4h)
@@ -131,9 +127,20 @@ Each rate-limit window Claude Code reports gets a gauge, the percentage used and
 
 The readings arrive with the first response of a session and are only reported on a subscription plan. Until then, and again right after a `/clear`, the row shows the last reading, without the windows that have reset since. With nothing to show it reads `Usage limits: no reading yet`.
 
+### Token cost
+
+Showing the rows costs nothing. The mods read figures Claude Code already has and add nothing to the conversation; the one model request any of them makes is cache-meter's refresh while Keep warm is on.
+
+A compaction does cost tokens, whether you press Compact or the threshold triggers it: `/compact` is a model request that summarizes the conversation, and the next turn starts on a cold cache. The lower the threshold, the more often that happens. To keep usage down, leave the threshold high and compact by hand when it suits you.
+
 ## catalog-pane
 
-<p align="center"><img src="docs/catalog-pane.svg" alt="The catalog pane listing skills" width="100%"></p>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/catalog-pane.svg">
+    <img src="docs/catalog-pane-light.svg" alt="The catalog pane listing skills" width="100%">
+  </picture>
+</p>
 
 A pane that lists what the session can use, one tab per category: **Skills**, **Commands**, **Agents**, **Mods**, **Plugins**, **Hooks** (from the settings files), **MCP** servers and built-in **Tools**, each with its count. It stays closed until you ask for it: `/catalog` opens it, in the desktop app and in the terminal, `/catalog mods` on a category and `/catalog <text>` with a search.
 
@@ -146,7 +153,12 @@ Each row shows where the entry comes from, how often it was used, in total and i
 | GitHub stars, Trending, GitHub forks, Latest GitHub push | By the plugin's repository. Trending is stars gained per month. |
 | Installs, Newest installed | By the official directory's install count, or by install date. |
 
-<p align="center"><img src="docs/catalog-pane-detail.svg" alt="The catalog pane showing one mod" width="100%"></p>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/catalog-pane-detail.svg">
+    <img src="docs/catalog-pane-detail-light.svg" alt="The catalog pane showing one mod" width="100%">
+  </picture>
+</p>
 
 Pressing an entry opens its detail: usage over 7 and 30 days, token cost, version and install dates, what a mod hooks and which engine calls it makes, the repository with its stars, and the full description. **Explain with Haiku** writes three sentences on what the entry is for and when to use it. The buttons depend on the kind: insert or run a skill or command, insert an agent, MCP server or tool into the prompt, update, disable or uninstall a plugin or mod, and remove a local MCP server. Uninstalling and removing ask first.
 
