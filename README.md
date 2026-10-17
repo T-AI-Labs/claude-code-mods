@@ -65,10 +65,7 @@ context-usage, cache-meter, context-meter and usage-limits each draw their rows 
 
 ### context-usage
 
-```
-Context ▮▯▯▯▯  10% (100k/1M)  Auto 97% ▾  [ Compact ] [ Clear ]
- 5h     ▮▮▯▯▯  42% (2h 13m)   Week    ▮▮▮▮▯  78% (3d 4h)
-```
+<p align="center"><img src="docs/context-usage.svg" alt="The context-usage rows: context fill with the Auto threshold, Compact and Clear, and the 5-hour and weekly limits" width="100%"></p>
 
 context-meter and usage-limits in one mod: the context row with its auto-compact threshold, Compact and Clear, and the usage-limits row beneath it. Each row works as described under [context-meter](#context-meter) and [usage-limits](#usage-limits). With `usagePosition` set to `above`, the usage row moves on top of the context row; see [Configure](#configure).
 
@@ -76,9 +73,7 @@ To switch from the two separate mods, install context-usage and uninstall contex
 
 ### cache-meter
 
-```
-Cache   ▮▮▮▮▮  92% (92k/100k) warm 3:12  [ Keep warm ]
-```
+<p align="center"><img src="docs/cache-meter.svg" alt="The cache-meter row: hit rate, warm time and Keep warm" width="100%"></p>
 
 | Element | What it shows |
 | --- | --- |
@@ -98,9 +93,7 @@ Each refresh is a request that reads the cached context once, at the cache price
 
 ### context-meter
 
-```
-Context ▮▯▯▯▯  10% (100k/1M)  Auto 97% ▾  [ Compact ] [ Clear ]
-```
+<p align="center"><img src="docs/context-meter.svg" alt="The context-meter row: context fill with the Auto threshold, Compact and Clear" width="100%"></p>
 
 | Element | What it shows |
 | --- | --- |
@@ -119,9 +112,7 @@ Claude Code's built-in auto-compaction stays on and still runs at its own limit.
 
 ### usage-limits
 
-```
- 5h     ▮▮▯▯▯  42% (2h 13m)   Week    ▮▮▮▮▯  78% (3d 4h)
-```
+<p align="center"><img src="docs/usage-limits.svg" alt="The usage-limits row: the 5-hour and weekly limits with their resets" width="100%"></p>
 
 Each rate-limit window Claude Code reports gets a gauge, the percentage used and, in parentheses, the time left until it resets. `5h` is the 5-hour limit, `Week` the weekly one. A figure turns yellow from 75 % and red from 90 %.
 
@@ -202,9 +193,7 @@ catalog-pane takes its own two, set the same way:
 
 context-usage and context-meter need about 62 columns with the defaults. On a narrower window the buttons wrap to a second line. Turning `details` off saves about 11 columns, `display` set to `text` about 6:
 
-```
-Context ▮▯▯▯▯  10%  Auto 97% ▾  [ Compact ] [ Clear ]
-```
+<p align="center"><img src="docs/context-narrow.svg" alt="The context row without the token counts" width="100%"></p>
 
 In the terminal, use the mouse, or move the focus into the row with `ctrl+x tab`: Tab walks the controls, Enter presses a button, and the arrow keys pick a threshold. To hide the rows there, collapse the band with its `[-]` mark or `ctrl+x ctrl+a`.
 

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 82" width="640" height="82" role="img" aria-labelledby="t d">
+  <title id="t">The context-meter row</title>
+  <desc id="d">Illustration. Context fill 10 percent of a 1M window, the Auto 97 percent dropdown and the buttons Compact and Clear.</desc>
+  <rect width="640" height="82" rx="12" fill="#1a1a1a"/>
+  <g font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas, 'DejaVu Sans Mono', monospace" font-size="15">
+    <text x="28.0" y="50" fill="#8c8c8c" xml:space="preserve">Context</text>
+    <rect x="105.7" y="39" width="6" height="12" rx="1" fill="#e8e8e8"/>
+    <rect x="115.2" y="39.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+    <rect x="124.2" y="39.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+    <rect x="133.2" y="39.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+    <rect x="142.2" y="39.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+    <text x="195.7" y="50" fill="#e8e8e8" text-anchor="end">10%</text>
+    <text x="207.7" y="50" fill="#8c8c8c">(100k/1M)</text>
+    <rect x="319.9" y="31.5" width="108" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+    <text x="367.9" y="50" fill="#e8e8e8" text-anchor="middle">Auto 97%</text>
+    <path d="M410.4 42 l4 5 l4 -5 z" fill="#e8e8e8"/>
+    <rect x="435.9" y="31.5" width="78" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+    <text x="474.9" y="50" fill="#e8e8e8" text-anchor="middle">Compact</text>
+    <rect x="521.9" y="31.5" width="62" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+    <text x="552.9" y="50" fill="#e8e8e8" text-anchor="middle">Clear</text>
+  </g>
+</svg>

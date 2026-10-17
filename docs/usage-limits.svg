@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 82" width="640" height="82" role="img" aria-labelledby="t d">
+  <title id="t">The usage-limits row</title>
+  <desc id="d">Illustration. 5-hour limit 42 percent, resetting in 2 hours 13 minutes, and weekly limit 78 percent in yellow, resetting in 3 days 4 hours.</desc>
+  <rect width="640" height="82" rx="12" fill="#1a1a1a"/>
+  <g font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas, 'DejaVu Sans Mono', monospace" font-size="15">
+    <text x="28.0" y="50" fill="#8c8c8c" xml:space="preserve"> 5h</text>
+    <rect x="105.7" y="39" width="6" height="12" rx="1" fill="#e8e8e8"/>
+    <rect x="114.7" y="39" width="6" height="12" rx="1" fill="#e8e8e8"/>
+    <rect x="124.2" y="39.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+    <rect x="133.2" y="39.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+    <rect x="142.2" y="39.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+    <text x="195.7" y="50" fill="#e8e8e8" text-anchor="end">42%</text>
+    <text x="207.7" y="50" fill="#8c8c8c">(2h 13m)</text>
+    <text x="319.4" y="50" fill="#8c8c8c" xml:space="preserve">Week</text>
+    <rect x="397.1" y="39" width="6" height="12" rx="1" fill="#e0a83c"/>
+    <rect x="406.1" y="39" width="6" height="12" rx="1" fill="#e0a83c"/>
+    <rect x="415.1" y="39" width="6" height="12" rx="1" fill="#e0a83c"/>
+    <rect x="424.1" y="39" width="6" height="12" rx="1" fill="#e0a83c"/>
+    <rect x="433.6" y="39.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+    <text x="487.1" y="50" fill="#e0a83c" text-anchor="end">78%</text>
+    <text x="499.1" y="50" fill="#8c8c8c">(3d 4h)</text>
+  </g>
+</svg>

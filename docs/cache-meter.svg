@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 82" width="640" height="82" role="img" aria-labelledby="t d">
+  <title id="t">The cache-meter row</title>
+  <desc id="d">Illustration. Cache hit rate 92 percent, 92k of 100k input tokens, the cache warm for 3 minutes 12 seconds, and the Keep warm button.</desc>
+  <rect width="640" height="82" rx="12" fill="#1a1a1a"/>
+  <g font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas, 'DejaVu Sans Mono', monospace" font-size="15">
+    <text x="28.0" y="50" fill="#8c8c8c" xml:space="preserve">Cache</text>
+    <rect x="105.7" y="39" width="6" height="12" rx="1" fill="#e8e8e8"/>
+    <rect x="114.7" y="39" width="6" height="12" rx="1" fill="#e8e8e8"/>
+    <rect x="123.7" y="39" width="6" height="12" rx="1" fill="#e8e8e8"/>
+    <rect x="132.7" y="39" width="6" height="12" rx="1" fill="#e8e8e8"/>
+    <rect x="141.7" y="39" width="6" height="12" rx="1" fill="#e8e8e8"/>
+    <text x="195.7" y="50" fill="#e8e8e8" text-anchor="end">92%</text>
+    <text x="207.7" y="50" fill="#8c8c8c">(92k/100k)</text>
+    <text x="319.4" y="50" fill="#8c8c8c">warm 3:12</text>
+    <rect x="409.9" y="31.5" width="98" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+    <text x="458.9" y="50" fill="#e8e8e8" text-anchor="middle">Keep warm</text>
+  </g>
+</svg>
