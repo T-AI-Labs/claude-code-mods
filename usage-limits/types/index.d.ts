@@ -2,11 +2,16 @@ export type UsageWindow = {
   kind: string
   percentUsed: number
   resetsAt?: string
-  isStale?: boolean
 }
+
+export type Reading = { windows: UsageWindow[]; at: number }
 
 declare module 'claude-code' {
   interface PluginState {
-    'usage-limits': { windows: UsageWindow[]; now: number }
+    'usage-limits': {
+      windows: UsageWindow[]
+      now: number
+      staleSince: number | null
+    }
   }
 }
