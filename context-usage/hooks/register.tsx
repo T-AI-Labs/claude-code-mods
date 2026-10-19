@@ -22,6 +22,7 @@ const LABELS: Record<string, string> = {
   spend_limit: 'Spend',
 }
 const ORDER = ['five_hour', 'seven_day', 'spend_limit']
+const ALWAYS = ['five_hour', 'seven_day']
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
 const DAY = 24 * HOUR
@@ -95,15 +96,34 @@ const span = (duration: number) => {
 const untilReset = (resetsAt: string | undefined, at: number) => {
   const left = resetsAt === undefined ? Number.NaN : Date.parse(resetsAt) - at
 
-  if (Number.isNaN(left)) {
-    return ''
-  }
-
-  return left <= 0 ? '(now)' : `(${span(left)})`
+  return Number.isNaN(left) ? '' : `(${span(left)})`
 }
 
-const isOpen = (one: UsageWindow, at: number) =>
-  one.resetsAt === undefined || Date.parse(one.resetsAt) > at
+const hasReset = (one: UsageWindow, at: number) =>
+  one.resetsAt !== undefined && Date.parse(one.resetsAt) <= at
+
+const cellsOf = (list: readonly UsageWindow[], at: number): Cell[] =>
+  [...new Set([...ALWAYS, ...list.map(one => one.kind)])]
+    .sort((a, b) => rankOf(a) - rankOf(b))
+    .map(kind => {
+      const one = list.find(held => held.kind === kind)
+
+      if (one === undefined) {
+        return { label: labelOf(kind), percent: null, tone: 'text', detail: '' }
+      }
+
+      // A window past its reset has started over, but the engine reports that only with the next response.
+      if (hasReset(one, at)) {
+        return { label: labelOf(kind), percent: 0, tone: 'text', detail: '' }
+      }
+
+      return {
+        label: labelOf(kind),
+        percent: one.percentUsed,
+        tone: usageTone(one.percentUsed),
+        detail: untilReset(one.resetsAt, at),
+      }
+    })
 
 const meter = ({ Box, Text }: Tags, layout: Layout, one: Cell) => {
   const filled =
@@ -188,7 +208,7 @@ const restoreUsage = async ($: EngineInterface) => {
   await update($, now, () => at)
 
   if (stored !== undefined) {
-    await update($, windows, () => stored.windows.filter(one => isOpen(one, at)))
+    await update($, windows, () => stored.windows)
   }
 }
 
@@ -205,7 +225,12 @@ const refreshUsage = async ($: EngineInterface, list?: readonly UsageWindow[]) =
     return
   }
 
-  const sorted = [...list].sort((a, b) => rankOf(a.kind) - rankOf(b.kind))
+  const stored = (await $.store.get(READING_KEY)) as Reading | undefined
+  // A measurement can leave a window out, which then keeps its last reading.
+  const kept = (stored?.windows ?? []).filter(
+    one => !list.some(held => held.kind === one.kind),
+  )
+  const sorted = [...list, ...kept].sort((a, b) => rankOf(a.kind) - rankOf(b.kind))
   await update($, windows, () => sorted)
   await $.store.set(READING_KEY, { windows: sorted })
 }
@@ -347,23 +372,11 @@ export const register: Register = (on, options) => {
         </Box>
       </Box>
     )
-    const usageRow =
-      list.length === 0 ? (
-        <Text key="usage" dimColor>
-          Usage limits: no reading yet
-        </Text>
-      ) : (
-        <Box key="usage" flexDirection="row" flexWrap="wrap">
-          {list.map(one =>
-            meter({ Box, Text }, layout, {
-              label: labelOf(one.kind),
-              percent: one.percentUsed,
-              tone: usageTone(one.percentUsed),
-              detail: untilReset(one.resetsAt, at),
-            }),
-          )}
-        </Box>
-      )
+    const usageRow = (
+      <Box key="usage" flexDirection="row" flexWrap="wrap">
+        {cellsOf(list, at).map(one => meter({ Box, Text }, layout, one))}
+      </Box>
+    )
 
     return (
       <Box flexDirection="column">
