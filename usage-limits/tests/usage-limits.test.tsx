@@ -78,13 +78,41 @@ test('draws five-segment gauges by default', async ($, on) => {
   }
 })
 
-test('says so while no limit has a reading', async ($, on) => {
+test('shows 5h and Week without a figure while no limit has a reading', async ($, on) => {
   world(on)
 
   for (const surface of SURFACES) {
     const ui = await $.ui.mount({ ...BAND, surface })
+    const labels = (await ui.findAll({ type: 'Text', text: /^( 5h|Week)$/ })).map(
+      one => one.text.trim(),
+    )
 
-    expect(await ui.find({ text: 'no reading yet' })).toBeDefined()
+    expect(labels).toEqual(['5h', 'Week'])
+    expect(await ui.findAll({ type: 'Text', text: '–' })).toHaveLength(2)
+    await ui.unmount()
+  }
+})
+
+test('starts a window over at zero once it has reset', async ($, on) => {
+  const clock = world(on)
+  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true })
+  await $.session.measure({
+    context: { window: 200_000 },
+    rateLimits: [
+      { kind: 'five_hour', percentUsed: 42, resetsAt: '2026-10-12T12:13:00Z' },
+      { kind: 'seven_day', percentUsed: 18.4, resetsAt: '2026-10-15T14:00:00Z' },
+    ],
+    changed: ['rateLimits'],
+  })
+  await clock.advance(3 * 60 * 60_000)
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+
+    expect(await ui.find({ type: 'Text', text: ' 5h' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '0%' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '42%' })).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: '18%' })).toBeDefined()
     await ui.unmount()
   }
 })
@@ -123,7 +151,8 @@ test('shows the stored reading without its age until the first response', async 
 
     expect(await ui.find({ type: 'Text', text: '18%' })).toBeDefined()
     expect(await ui.find({ text: /as of/ })).toBeUndefined()
-    expect(await ui.find({ type: 'Text', text: ' 5h' })).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: ' 5h' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '0%' })).toBeDefined()
     await ui.unmount()
   }
 
@@ -174,7 +203,6 @@ test('keeps the last reading when a measurement carries no limits', async ($, on
 
     expect(await ui.find({ type: 'Text', text: '42%' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: '18%' })).toBeDefined()
-    expect(await ui.find({ text: 'no reading yet' })).toBeUndefined()
     await ui.unmount()
   }
 })
@@ -195,7 +223,6 @@ test('brings the stored reading back after a /clear', async ($, on) => {
 
     expect(await ui.find({ type: 'Text', text: '42%' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: '(2h 13m)' })).toBeDefined()
-    expect(await ui.find({ text: 'no reading yet' })).toBeUndefined()
     await ui.unmount()
   }
 })

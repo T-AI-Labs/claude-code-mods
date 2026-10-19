@@ -127,18 +127,34 @@ test('brings the threshold, an empty context and the usage reading back after a 
     expect(await ui.find({ type: 'Text', text: '(0/200k)' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: '42%' })).toBeDefined()
     expect((await ui.find({ key: 'threshold' }))?.props.value).toBe('70')
-    expect(await ui.find({ text: 'Usage limits: no reading yet' })).toBeUndefined()
     await ui.unmount()
   }
 })
 
-test('reads no reading yet without any usage limits', async ($, on) => {
+test('shows 5h and Week without a figure while no limit has a reading', async ($, on) => {
   world(on)
 
   for (const surface of SURFACES) {
     const ui = await $.ui.mount({ ...BAND, surface })
 
-    expect(await ui.find({ text: 'Usage limits: no reading yet' })).toBeDefined()
+    expect(await labels(ui)).toEqual(['Context', '5h', 'Week'])
+    expect(await ui.findAll({ type: 'Text', text: '–' })).toHaveLength(3)
+    await ui.unmount()
+  }
+})
+
+test('keeps a window that has reset since the stored reading, at zero, after a /clear', async ($, on) => {
+  const { clock } = world(on, { reading: { windows: LIMITS } })
+  await clock.advance(3 * 60 * 60_000)
+  await $.classic.SessionStart({ source: 'clear' })
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+
+    expect(await labels(ui)).toEqual(['Context', '5h', 'Week'])
+    expect(await ui.findAll({ type: 'Text', text: '0%' })).toHaveLength(2)
+    expect(await ui.find({ type: 'Text', text: '42%' })).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: '18%' })).toBeDefined()
     await ui.unmount()
   }
 })
