@@ -155,7 +155,12 @@ const refresh = async ($: EngineInterface, list?: readonly UsageWindow[]) => {
     return
   }
 
-  const sorted = [...list].sort((a, b) => rankOf(a.kind) - rankOf(b.kind))
+  const stored = (await $.store.get(STORE_KEY)) as Reading | undefined
+  // A measurement can leave a window out, which then keeps its last reading.
+  const kept = (stored?.windows ?? []).filter(
+    one => !list.some(held => held.kind === one.kind),
+  )
+  const sorted = [...list, ...kept].sort((a, b) => rankOf(a.kind) - rankOf(b.kind))
   await update($, windows, () => sorted)
   await $.store.set(STORE_KEY, { windows: sorted })
 }

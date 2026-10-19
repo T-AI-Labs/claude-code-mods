@@ -226,3 +226,30 @@ test('brings the stored reading back after a /clear', async ($, on) => {
     await ui.unmount()
   }
 })
+
+test('keeps the last reading of a window a measurement leaves out, also after a /clear', async ($, on) => {
+  world(on)
+  await $.session.measure({
+    context: { window: 200_000 },
+    rateLimits: [
+      { kind: 'five_hour', percentUsed: 42, resetsAt: '2026-10-12T12:13:00Z' },
+      { kind: 'seven_day', percentUsed: 18.4, resetsAt: '2026-10-15T14:00:00Z' },
+    ],
+    changed: ['rateLimits'],
+  })
+  await $.session.measure({
+    context: { window: 200_000 },
+    rateLimits: [{ kind: 'five_hour', percentUsed: 7, resetsAt: '2026-10-12T12:13:00Z' }],
+    changed: ['rateLimits'],
+  })
+  await $.classic.SessionStart({ source: 'clear' })
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+
+    expect(await ui.find({ type: 'Text', text: '7%' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '18%' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '–' })).toBeUndefined()
+    await ui.unmount()
+  }
+})

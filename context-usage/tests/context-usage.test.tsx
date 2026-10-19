@@ -202,3 +202,22 @@ test('the Compact and Clear buttons run their commands', async ($, on) => {
 
   expect(commands).toEqual(['compact', 'clear', 'compact', 'clear'])
 })
+
+test('keeps the last reading of a window a measurement leaves out, also after a /clear', async ($, on) => {
+  world(on)
+  await $.session.measure(measured(41))
+  await $.session.measure({
+    ...measured(41),
+    rateLimits: [{ kind: 'five_hour', percentUsed: 7, resetsAt: '2026-10-12T12:13:00Z' }],
+  })
+  await $.classic.SessionStart({ source: 'clear' })
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+
+    expect(await ui.find({ type: 'Text', text: '7%' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '18%' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '–' })).toBeUndefined()
+    await ui.unmount()
+  }
+})
