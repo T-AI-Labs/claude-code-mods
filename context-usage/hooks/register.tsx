@@ -55,7 +55,7 @@ const actionLinks = ({ Markdown }: Pick<Elements['desktop'], 'Markdown'>, action
 type Cell = {
   label: string
   percent: number | null
-  tone: Color
+  tone: Color | undefined
   detail: string
 }
 
@@ -84,14 +84,14 @@ const tokens = (count: number) => {
     : `${Number((count / 1_000_000).toFixed(1))}M`
 }
 
-const contextTone = (percent: number, threshold: number): Color => {
+const contextTone = (percent: number, threshold: number): Color | undefined => {
   const limit = threshold === OFF ? 100 : threshold
 
-  return percent >= limit ? 'error' : percent >= limit - 15 ? 'warning' : 'text'
+  return percent >= limit ? 'error' : percent >= limit - 15 ? 'warning' : undefined
 }
 
-const usageTone = (percent: number): Color =>
-  percent >= 90 ? 'error' : percent >= 75 ? 'warning' : 'text'
+const usageTone = (percent: number): Color | undefined =>
+  percent >= 90 ? 'error' : percent >= 75 ? 'warning' : undefined
 
 const labelOf = (kind: string) => LABELS[kind] ?? kind.replaceAll('_', ' ')
 
@@ -129,12 +129,12 @@ const cellsOf = (list: readonly UsageWindow[], at: number): Cell[] =>
       const one = list.find(held => held.kind === kind)
 
       if (one === undefined) {
-        return { label: labelOf(kind), percent: null, tone: 'text', detail: '' }
+        return { label: labelOf(kind), percent: null, tone: undefined, detail: '' }
       }
 
       // A window past its reset has started over, but the engine reports that only with the next response.
       if (hasReset(one, at)) {
-        return { label: labelOf(kind), percent: 0, tone: 'text', detail: '' }
+        return { label: labelOf(kind), percent: 0, tone: undefined, detail: '' }
       }
 
       return {

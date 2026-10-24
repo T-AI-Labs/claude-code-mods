@@ -27,7 +27,7 @@ type Layout = { hasGauge: boolean; hasDetails: boolean }
 type Cell = {
   label: string
   percent: number | null
-  tone: Color
+  tone: Color | undefined
   detail: string
 }
 
@@ -42,8 +42,8 @@ const rankOf = (kind: string) => {
   return rank === -1 ? ORDER.length : rank
 }
 
-const toneOf = (percent: number): Color =>
-  percent >= 90 ? 'error' : percent >= 75 ? 'warning' : 'text'
+const toneOf = (percent: number): Color | undefined =>
+  percent >= 90 ? 'error' : percent >= 75 ? 'warning' : undefined
 
 const span = (duration: number) => {
   const days = Math.floor(duration / DAY)
@@ -103,12 +103,12 @@ const cellsOf = (list: readonly UsageWindow[], at: number): Cell[] =>
       const one = list.find(held => held.kind === kind)
 
       if (one === undefined) {
-        return { label: labelOf(kind), percent: null, tone: 'text', detail: '' }
+        return { label: labelOf(kind), percent: null, tone: undefined, detail: '' }
       }
 
       // A window past its reset has started over, but the engine reports that only with the next response.
       if (hasReset(one, at)) {
-        return { label: labelOf(kind), percent: 0, tone: 'text', detail: '' }
+        return { label: labelOf(kind), percent: 0, tone: undefined, detail: '' }
       }
 
       return {

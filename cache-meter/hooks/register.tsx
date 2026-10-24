@@ -68,8 +68,8 @@ const hitOf = (usage: ModelUsage): CacheHit | null => {
   return total > 0 ? { read, total } : null
 }
 
-const cacheTone = (percent: number): Color =>
-  percent < 40 ? 'warning' : 'text'
+const cacheTone = (percent: number): Color | undefined =>
+  percent < 40 ? 'warning' : undefined
 
 const meter = (
   { Box, Text }: Tags,
