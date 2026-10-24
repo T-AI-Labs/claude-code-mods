@@ -1,8 +1,6 @@
 import { atom, read, update } from 'claude-code'
 import type {
-  ButtonProps,
   Color,
-  ElementChildren,
   Elements,
   EngineInterface,
   ModelUsage,
@@ -30,15 +28,6 @@ const DETAIL_WIDTH = 10
 
 type Tags = Pick<Elements['terminal'], 'Box' | 'Text'>
 type Layout = { hasGauge: boolean; hasDetails: boolean }
-
-// The desktop draws a Button at body size, too large in a one-line band; its label is the only size it takes.
-const smallButton =
-  ({ Button, Text }: Pick<Elements['terminal'], 'Button' | 'Text'>) =>
-  (props: ButtonProps & ElementChildren) => (
-    <Button {...props}>
-      {props.label === undefined ? props.children : <Text size="footnote">{props.label}</Text>}
-    </Button>
-  )
 
 const cache = atom({ plugin: 'cache-meter', key: 'cache' } as const, null)
 const warmth = atom({ plugin: 'cache-meter', key: 'warmth' } as const, {
@@ -286,8 +275,7 @@ export const register: Register = (on, options) => {
       return below
     }
 
-    const { Box, Text } = $.ui.resolve(e)
-    const Button = smallButton($.ui.resolve(e))
+    const { Box, Button, Text } = $.ui.resolve(e)
     const hit = await read($, cache)
     const held = await read($, warmth)
     const keep = await read($, keepWarm)
