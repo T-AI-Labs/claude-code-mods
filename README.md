@@ -32,24 +32,89 @@
 
 ## Install
 
-Install only the mods you want. context-usage holds context-meter and usage-limits; install it or those two, not both, or the rows show twice and two mods compact at their thresholds. Run these commands in any shell (cmd, PowerShell, bash):
+Install only the mods you want. context-usage holds context-meter and usage-limits; install it or those two, not both, or the rows show twice and two mods compact at their thresholds. The mods load in every session started afterwards, in the terminal and in the desktop app.
+
+<table>
+<tr><th colspan="2">In any shell (cmd, PowerShell, bash)</th></tr>
+<tr><td>Marketplace, once</td><td>
 
 ```
 claude plugin marketplace add T-AI-Labs/claude-code-mods
+```
+
+</td></tr>
+<tr><td><a href="#context-usage">context-usage</a></td><td>
+
+```
 claude plugin install context-usage@T-AI-Labs
+```
+
+</td></tr>
+<tr><td><a href="#context-meter">context-meter</a></td><td>
+
+```
+claude plugin install context-meter@T-AI-Labs
+```
+
+</td></tr>
+<tr><td><a href="#usage-limits">usage-limits</a></td><td>
+
+```
+claude plugin install usage-limits@T-AI-Labs
+```
+
+</td></tr>
+<tr><td><a href="#cache-meter">cache-meter</a></td><td>
+
+```
 claude plugin install cache-meter@T-AI-Labs
+```
+
+</td></tr>
+<tr><td><a href="#catalog-pane">catalog-pane</a></td><td>
+
+```
 claude plugin install catalog-pane@T-AI-Labs
 ```
 
-The mods load in every session started afterwards, in the terminal and in the desktop app.
-
-From the prompt of a running Claude Code terminal session, the same install is:
+</td></tr>
+<tr><th colspan="2">Or at the prompt of a running Claude Code terminal session</th></tr>
+<tr><td><a href="#context-usage">context-usage</a></td><td>
 
 ```
 /plugin install context-usage --marketplace T-AI-Labs/claude-code-mods
+```
+
+</td></tr>
+<tr><td><a href="#context-meter">context-meter</a></td><td>
+
+```
+/plugin install context-meter --marketplace T-AI-Labs/claude-code-mods
+```
+
+</td></tr>
+<tr><td><a href="#usage-limits">usage-limits</a></td><td>
+
+```
+/plugin install usage-limits --marketplace T-AI-Labs/claude-code-mods
+```
+
+</td></tr>
+<tr><td><a href="#cache-meter">cache-meter</a></td><td>
+
+```
 /plugin install cache-meter --marketplace T-AI-Labs/claude-code-mods
+```
+
+</td></tr>
+<tr><td><a href="#catalog-pane">catalog-pane</a></td><td>
+
+```
 /plugin install catalog-pane --marketplace T-AI-Labs/claude-code-mods
 ```
+
+</td></tr>
+</table>
 
 The mods use Claude Code's function-hook plugin API, which is in early access and may change between releases. They are built and tested against Claude Code 2.1.295, the engine in the Claude desktop app 2.31226.1.
 
