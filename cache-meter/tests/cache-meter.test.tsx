@@ -3,6 +3,7 @@ import type { Engine } from 'claude-code/testing'
 import { expect, mock, test } from 'claude-code/testing'
 
 const SURFACES = ['terminal', 'desktop'] as const
+const KEEP_WARM = { key: 'keep-warm', link: { href: 'https://cache-meter.invalid/keep-warm' } }
 const MINUTE = 60_000
 const BAND = {
   plugin: 'cache-meter',
@@ -159,18 +160,18 @@ test('Keep warm refreshes the cache before it lapses, up to the configured minut
   await start($)
   await turn($)
   const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
-  await ui.press({ key: 'keep-warm' })
+  await ui.press(KEEP_WARM)
   await clock.advance(4 * MINUTE + 25_000)
 
   expect(forks).toHaveLength(1)
   expect(await ui.find({ type: 'Text', text: /^warm 4:5\d$/ })).toBeDefined()
-  expect((await ui.find({ key: 'keep-warm' }))?.props.label).toMatch(/Keeping warm 11m · 1×/)
+  expect((await ui.find({ key: 'keep-warm' }))?.props.text).toMatch(/^\[Keeping warm 11m · 1×\]/)
 
   await clock.advance(20 * MINUTE)
 
   expect(forks).toHaveLength(3)
   expect(await ui.find({ type: 'Text', text: 'cold' })).toBeDefined()
-  expect((await ui.find({ key: 'keep-warm' }))?.props.label).toBe('Kept warm · 3×')
+  expect((await ui.find({ key: 'keep-warm' }))?.props.text).toBe(`[Kept warm · 3×](${KEEP_WARM.link.href})`)
   await ui.unmount()
 })
 
@@ -179,12 +180,12 @@ test('Keep warm stops when a refresh shows the cache had already lapsed', async 
   await start($)
   await turn($)
   const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
-  await ui.press({ key: 'keep-warm' })
+  await ui.press(KEEP_WARM)
   await clock.advance(10 * MINUTE)
 
   expect(forks).toHaveLength(1)
   expect(toasts).toEqual(['cache-meter: Keep warm stopped, the cache had already lapsed.'])
-  expect((await ui.find({ key: 'keep-warm' }))?.props.label).toBe('Keep warm')
+  expect((await ui.find({ key: 'keep-warm' }))?.props.text).toBe(`[Keep warm](${KEEP_WARM.link.href})`)
   await ui.unmount()
 })
 
@@ -221,4 +222,20 @@ test('shows a dash instead of a hit rate until the first turn', async ($, on) =>
     expect(await ui.find({ type: 'Text', text: '80%' })).toBeDefined()
     await ui.unmount()
   }
+})
+
+test('Keep warm is a button on the terminal and a text link on the desktop', async ($, on) => {
+  world(on)
+  const terminal = await $.ui.mount({ ...BAND, surface: 'terminal' })
+
+  expect((await terminal.find({ type: 'Button', key: 'keep-warm' }))?.props.label).toBe('Keep warm')
+  await terminal.unmount()
+
+  const desktop = await $.ui.mount({ ...BAND, surface: 'desktop' })
+
+  expect(await desktop.findAll({ type: 'Button' })).toHaveLength(0)
+  expect((await desktop.find({ type: 'Markdown', key: 'keep-warm' }))?.props.text).toBe(
+    `[Keep warm](${KEEP_WARM.link.href})`,
+  )
+  await desktop.unmount()
 })

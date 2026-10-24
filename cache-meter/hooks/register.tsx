@@ -29,6 +29,8 @@ const DETAIL_WIDTH = 10
 type Tags = Pick<Elements['terminal'], 'Box' | 'Text'>
 type Layout = { hasGauge: boolean; hasDetails: boolean }
 
+const KEEP_WARM_URL = 'https://cache-meter.invalid/keep-warm'
+
 const cache = atom({ plugin: 'cache-meter', key: 'cache' } as const, null)
 const warmth = atom({ plugin: 'cache-meter', key: 'warmth' } as const, {
   sentAt: null,
@@ -275,7 +277,7 @@ export const register: Register = (on, options) => {
       return below
     }
 
-    const { Box, Button, Text } = $.ui.resolve(e)
+    const { Box, Button, Markdown, Text } = $.ui.resolve(e)
     const hit = await read($, cache)
     const held = await read($, warmth)
     const keep = await read($, keepWarm)
@@ -304,12 +306,22 @@ export const register: Register = (on, options) => {
             </Box>
           )}
           <Box flexDirection="row" flexShrink={0}>
-            <Button
-              key="keep-warm"
-              label={keepLabel}
-              variant={keep.isOn ? 'primary' : 'secondary'}
-              onPress={() => void toggle($)}
-            />
+            {e.surface === 'desktop' ? (
+              // The desktop draws every Button as a full-height control; a Markdown link is drawn at text size.
+              <Markdown
+                key="keep-warm"
+                text={`[${keepLabel}](${KEEP_WARM_URL})`}
+                pressableLinks={[KEEP_WARM_URL]}
+                onLinkPress={() => void toggle($)}
+              />
+            ) : (
+              <Button
+                key="keep-warm"
+                label={keepLabel}
+                variant={keep.isOn ? 'primary' : 'secondary'}
+                onPress={() => void toggle($)}
+              />
+            )}
           </Box>
         </Box>
         {below}
