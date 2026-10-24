@@ -231,35 +231,27 @@ test('never compacts while the threshold is off', async ($, on) => {
   expect(commands).toEqual([])
 })
 
-test('Compact and Clear are buttons on the terminal and text links on the desktop', async ($, on) => {
+test('Compact and Clear are buttons on every surface', async ($, on) => {
   world(on)
-  const terminal = await $.ui.mount({ ...BAND, surface: 'terminal' })
 
-  expect((await terminal.findAll({ type: 'Button' })).map(one => one.key)).toEqual(['compact', 'clear'])
-  expect(await terminal.find({ type: 'Markdown' })).toBeUndefined()
-  await terminal.unmount()
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...BAND, surface })
 
-  const desktop = await $.ui.mount({ ...BAND, surface: 'desktop' })
-
-  expect(await desktop.findAll({ type: 'Button' })).toHaveLength(0)
-  expect((await desktop.find({ type: 'Markdown', key: 'actions' }))?.props.text).toBe(
-    '[/compact](https://context-usage.invalid/compact) \u00a0·\u00a0 [/clear](https://context-usage.invalid/clear)',
-  )
-  await desktop.unmount()
+    expect((await ui.findAll({ type: 'Button' })).map(one => one.key)).toEqual(['compact', 'clear'])
+    expect(await ui.find({ type: 'Markdown' })).toBeUndefined()
+    await ui.unmount()
+  }
 })
 
-test('Compact and Clear run their commands as buttons and as links', async ($, on) => {
+test('Compact and Clear run their commands on every surface', async ($, on) => {
   const { commands } = world(on)
 
-  const terminal = await $.ui.mount({ ...BAND, surface: 'terminal' })
-  await terminal.press({ key: 'compact' })
-  await terminal.press({ key: 'clear' })
-  await terminal.unmount()
-
-  const desktop = await $.ui.mount({ ...BAND, surface: 'desktop' })
-  await desktop.press({ key: 'actions', link: { href: 'https://context-usage.invalid/compact' } })
-  await desktop.press({ key: 'actions', link: { href: 'https://context-usage.invalid/clear' } })
-  await desktop.unmount()
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+    await ui.press({ key: 'compact' })
+    await ui.press({ key: 'clear' })
+    await ui.unmount()
+  }
 
   expect(commands).toEqual(['compact', 'clear', 'compact', 'clear'])
 })

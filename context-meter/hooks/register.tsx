@@ -25,19 +25,7 @@ const DETAIL_WIDTH = 10
 type Tags = Pick<Elements['terminal'], 'Box' | 'Text'>
 type Layout = { hasGauge: boolean; hasDetails: boolean }
 
-type Action = { id: string; label: string; onPress: () => void }
-
-const ACTIONS_URL = 'https://context-meter.invalid/'
-
-// The desktop draws every Button as a full-height control; a Markdown link is drawn at text size.
-const actionLinks = ({ Markdown }: Pick<Elements['desktop'], 'Markdown'>, actions: Action[]) => (
-  <Markdown
-    key="actions"
-    text={actions.map(one => `[/${one.id}](${ACTIONS_URL}${one.id})`).join(' \u00a0·\u00a0 ')}
-    pressableLinks={actions.map(one => ACTIONS_URL + one.id)}
-    onLinkPress={link => actions.find(one => ACTIONS_URL + one.id === link.href)?.onPress()}
-  />
-)
+const DESKTOP_BUTTON_ROWS = 2
 
 const context = atom({ plugin: 'context-meter', key: 'context' } as const, null)
 const threshold = atom(
@@ -229,10 +217,6 @@ export const register: Register = (on, options) => {
     }
 
     const { Box, Button, Text } = $.ui.resolve(e)
-    const actions: Action[] = [
-      { id: 'compact', label: 'Compact', onPress: () => runCommand($, 'compact') },
-      { id: 'clear', label: 'Clear', onPress: () => runCommand($, 'clear') },
-    ]
     const fill = await read($, context)
     const limit = await read($, threshold)
     let picker
@@ -261,13 +245,18 @@ export const register: Register = (on, options) => {
 
     return (
       <Box flexDirection="column">
-        <Box flexDirection="row" flexWrap="wrap">
+        <Box
+          flexDirection="row"
+          flexWrap="wrap"
+          alignItems="center"
+          // The desktop's native Button is taller than one text row and spills onto the row below.
+          minHeight={e.surface === 'desktop' ? DESKTOP_BUTTON_ROWS : undefined}
+        >
           {meter({ Box, Text }, layout, fill, limit)}
           <Box flexDirection="row" gap={1} flexShrink={0}>
             {picker}
-            {e.surface === 'desktop'
-              ? actionLinks($.ui.resolve(e), actions)
-              : actions.map(one => <Button key={one.id} label={one.label} onPress={one.onPress} />)}
+            <Button key="compact" label="Compact" onPress={() => runCommand($, 'compact')} />
+            <Button key="clear" label="Clear" onPress={() => runCommand($, 'clear')} />
           </Box>
         </Box>
         {below}
