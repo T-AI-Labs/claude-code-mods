@@ -22,7 +22,7 @@
 
 ## Mods
 
-| Mod | What it adds | Preview | Version |
+| Mod | Description | Preview | Version |
 | --- | --- | --- | --- |
 | [context-usage](#context-usage) | **Start here.** The context fill with the auto-compact threshold, Compact and Clear, and the 5-hour and weekly limits beneath it. | <img src="docs/context-usage.svg" alt="The context-usage rows" width="320"> | <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcontext-usage%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=version&style=flat-square" alt="context-usage version"></a> |
 | [context-meter](#context-meter) | The context row of context-usage on its own. | <img src="docs/context-meter.svg" alt="The context-meter row" width="320"> | <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcontext-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=version&style=flat-square" alt="context-meter version"></a> |
