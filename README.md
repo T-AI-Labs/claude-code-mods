@@ -37,7 +37,7 @@ claude plugin marketplace add T-AI-Labs/claude-code-mods
 claude plugin install context-usage@T-AI-Labs
 ```
 
-</td><td><img src="docs/context-usage.svg" alt="The context-usage rows" width="320"></td></tr>
+</td><td><img src=".docs/context-usage.svg" alt="The context-usage rows" width="320"></td></tr>
 <tr><td><a href="#context-meter">context&#8209;meter</a></td><td>
 
 The context row of context-usage on its own.
@@ -46,7 +46,7 @@ The context row of context-usage on its own.
 claude plugin install context-meter@T-AI-Labs
 ```
 
-</td><td><img src="docs/context-meter.svg" alt="The context-meter row" width="320"></td></tr>
+</td><td><img src=".docs/context-meter.svg" alt="The context-meter row" width="320"></td></tr>
 <tr><td><a href="#usage-limits">usage&#8209;limits</a></td><td>
 
 The usage row of context-usage on its own.
@@ -55,7 +55,7 @@ The usage row of context-usage on its own.
 claude plugin install usage-limits@T-AI-Labs
 ```
 
-</td><td><img src="docs/usage-limits.svg" alt="The usage-limits row" width="320"></td></tr>
+</td><td><img src=".docs/usage-limits.svg" alt="The usage-limits row" width="320"></td></tr>
 <tr><td><a href="#cache-meter">cache&#8209;meter</a></td><td>
 
 How much of each turn the prompt cache served and how long it stays warm, with a switch that keeps it warm while you are away.
@@ -64,7 +64,7 @@ How much of each turn the prompt cache served and how long it stays warm, with a
 claude plugin install cache-meter@T-AI-Labs
 ```
 
-</td><td><img src="docs/cache-meter.svg" alt="The cache-meter row" width="320"></td></tr>
+</td><td><img src=".docs/cache-meter.svg" alt="The cache-meter row" width="320"></td></tr>
 <tr><td><a href="#catalog-pane">catalog&#8209;pane</a></td><td>
 
 A pane listing every skill, command, agent, mod, plugin, settings hook, MCP server and tool, with usage, token cost and buttons to use or manage each one.
@@ -73,7 +73,7 @@ A pane listing every skill, command, agent, mod, plugin, settings hook, MCP serv
 claude plugin install catalog-pane@T-AI-Labs
 ```
 
-</td><td><img src="docs/catalog-pane.svg" alt="The catalog pane" width="320"></td></tr>
+</td><td><img src=".docs/catalog-pane.svg" alt="The catalog pane" width="320"></td></tr>
 </table>
 
 The mods use Claude Code's function-hook plugin API, which is in early access and may change between releases. They are built and tested against Claude Code 2.1.295, the engine in the Claude desktop app 2.31226.1.
@@ -84,7 +84,7 @@ context-usage, cache-meter, context-meter and usage-limits each draw their rows 
 
 ### context-usage
 
-<p align="center"><img src="docs/context-usage.svg" alt="The context-usage rows: context fill with the Auto threshold, Compact and Clear, and the 5-hour and weekly limits" width="100%"></p>
+<p align="center"><img src=".docs/context-usage.svg" alt="The context-usage rows: context fill with the Auto threshold, Compact and Clear, and the 5-hour and weekly limits" width="100%"></p>
 
 context-meter and usage-limits in one mod: the context row with its auto-compact threshold, Compact and Clear, and the usage-limits row beneath it. Each row works as described under [context-meter](#context-meter) and [usage-limits](#usage-limits). With `usagePosition` set to `above`, the usage row moves on top of the context row; see [Configure](#configure).
 
@@ -92,7 +92,7 @@ To switch from the two separate mods, install context-usage and uninstall contex
 
 ### cache-meter
 
-<p align="center"><img src="docs/cache-meter.svg" alt="The cache-meter row: hit rate, warm time and Keep warm" width="100%"></p>
+<p align="center"><img src=".docs/cache-meter.svg" alt="The cache-meter row: hit rate, warm time and Keep warm" width="100%"></p>
 
 | Element | What it shows |
 | --- | --- |
@@ -112,7 +112,7 @@ Each refresh is a request that reads the cached context once, at the cache price
 
 ### context-meter
 
-<p align="center"><img src="docs/context-meter.svg" alt="The context-meter row: context fill with the Auto threshold, Compact and Clear" width="100%"></p>
+<p align="center"><img src=".docs/context-meter.svg" alt="The context-meter row: context fill with the Auto threshold, Compact and Clear" width="100%"></p>
 
 | Element | What it shows |
 | --- | --- |
@@ -131,7 +131,7 @@ Claude Code's built-in auto-compaction stays on and still runs at its own limit.
 
 ### usage-limits
 
-<p align="center"><img src="docs/usage-limits.svg" alt="The usage-limits row: the 5-hour and weekly limits with their resets" width="100%"></p>
+<p align="center"><img src=".docs/usage-limits.svg" alt="The usage-limits row: the 5-hour and weekly limits with their resets" width="100%"></p>
 
 Each rate-limit window Claude Code reports gets a gauge, the percentage used and, in parentheses, the time left until it resets. `5h` is the 5-hour limit, `Week` the weekly one. A figure turns yellow from 75 % and red from 90 %.
 
@@ -147,7 +147,7 @@ A compaction does cost tokens, whether you press Compact or the threshold trigge
 
 ## catalog-pane
 
-<p align="center"><img src="docs/catalog-pane.svg" alt="The catalog pane listing skills" width="100%"></p>
+<p align="center"><img src=".docs/catalog-pane.svg" alt="The catalog pane listing skills" width="100%"></p>
 
 A pane that lists what the session can use, one tab per category: **Skills**, **Commands**, **Agents**, **Mods**, **Plugins**, **Hooks** (from the settings files), **MCP** servers and built-in **Tools**, each with its count. It stays closed until you ask for it: `/catalog` opens it, in the desktop app and in the terminal, `/catalog mods` on a category and `/catalog <text>` with a search.
 
@@ -160,7 +160,7 @@ Each row shows where the entry comes from, how often it was used, in total and i
 | GitHub stars, Trending, GitHub forks, Latest GitHub push | By the plugin's repository. Trending is stars gained per month. |
 | Installs, Newest installed | By the official directory's install count, or by install date. |
 
-<p align="center"><img src="docs/catalog-pane-detail.svg" alt="The catalog pane showing one mod" width="100%"></p>
+<p align="center"><img src=".docs/catalog-pane-detail.svg" alt="The catalog pane showing one mod" width="100%"></p>
 
 Pressing an entry opens its detail: usage over 7 and 30 days, token cost, version and install dates, what a mod hooks and which engine calls it makes, the repository with its stars, and the full description. **Explain with Haiku** writes three sentences on what the entry is for and when to use it. The buttons depend on the kind: insert or run a skill or command, insert an agent, MCP server or tool into the prompt, update, disable or uninstall a plugin or mod, and remove a local MCP server. Uninstalling and removing ask first.
 
@@ -214,7 +214,7 @@ catalog-pane takes its own two, set the same way:
 
 context-usage and context-meter need about 62 columns with the defaults. On a narrower window the buttons wrap to a second line. Turning `details` off saves about 11 columns, `display` set to `text` about 6:
 
-<p align="center"><img src="docs/context-narrow.svg" alt="The context row without the token counts" width="100%"></p>
+<p align="center"><img src=".docs/context-narrow.svg" alt="The context row without the token counts" width="100%"></p>
 
 In the terminal, use the mouse, or move the focus into the row with `ctrl+x tab`: Tab walks the controls, Enter presses a button, and the arrow keys pick a threshold. To hide the rows there, collapse the band with its `[-]` mark or `ctrl+x ctrl+a`.
 
