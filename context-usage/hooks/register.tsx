@@ -1,8 +1,6 @@
 import { atom, read, update } from 'claude-code'
 import type {
-  ButtonProps,
   Color,
-  ElementChildren,
   Elements,
   EngineInterface,
   Register,
@@ -40,14 +38,20 @@ const DETAIL_WIDTH = 10
 type Tags = Pick<Elements['terminal'], 'Box' | 'Text'>
 type Layout = { hasGauge: boolean; hasDetails: boolean; isUsageAbove: boolean }
 
-// The desktop draws a Button at body size, too large in a one-line band; its label is the only size it takes.
-const smallButton =
-  ({ Button, Text }: Pick<Elements['terminal'], 'Button' | 'Text'>) =>
-  (props: ButtonProps & ElementChildren) => (
-    <Button {...props}>
-      {props.label === undefined ? props.children : <Text size="footnote">{props.label}</Text>}
-    </Button>
-  )
+type Action = { id: string; label: string; onPress: () => void }
+
+const ACTIONS_URL = 'https://context-usage.invalid/'
+
+// The desktop draws every Button as a full-height control; a Markdown link is drawn at text size.
+const actionLinks = ({ Markdown }: Pick<Elements['desktop'], 'Markdown'>, actions: Action[]) => (
+  <Markdown
+    key="actions"
+    text={actions.map(one => `[${one.label}](${ACTIONS_URL}${one.id})`).join(' · ')}
+    pressableLinks={actions.map(one => ACTIONS_URL + one.id)}
+    onLinkPress={link => actions.find(one => ACTIONS_URL + one.id === link.href)?.onPress()}
+  />
+)
+
 type Cell = {
   label: string
   percent: number | null
@@ -366,8 +370,11 @@ export const register: Register = (on, options) => {
       return below
     }
 
-    const { Box, Text } = $.ui.resolve(e)
-    const Button = smallButton($.ui.resolve(e))
+    const { Box, Button, Text } = $.ui.resolve(e)
+    const actions: Action[] = [
+      { id: 'compact', label: 'Compact', onPress: () => runCommand($, 'compact') },
+      { id: 'clear', label: 'Clear', onPress: () => runCommand($, 'clear') },
+    ]
     const fill = await read($, context)
     const limit = await read($, threshold)
     const list = await read($, windows)
@@ -406,16 +413,9 @@ export const register: Register = (on, options) => {
         })}
         <Box flexDirection="row" gap={1} flexShrink={0}>
           {picker}
-          <Button
-            key="compact"
-            label="Compact"
-            onPress={() => runCommand($, 'compact')}
-          />
-          <Button
-            key="clear"
-            label="Clear"
-            onPress={() => runCommand($, 'clear')}
-          />
+          {e.surface === 'desktop'
+            ? actionLinks($.ui.resolve(e), actions)
+            : actions.map(one => <Button key={one.id} label={one.label} onPress={one.onPress} />)}
         </Box>
       </Box>
     )

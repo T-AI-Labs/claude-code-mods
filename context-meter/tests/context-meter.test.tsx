@@ -57,7 +57,8 @@ test('shows the context fill with the threshold, Compact and Clear in one row', 
     expect(await ui.find({ type: 'Text', text: 'Cache' })).toBeUndefined()
     expect(await ui.find({ type: 'Text', text: '(82k/200k)' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: 'below' })).toBeDefined()
-    expect(await ui.findAll({ type: 'Button' })).toHaveLength(2)
+    expect(await ui.find({ text: /Compact/ })).toBeDefined()
+    expect(await ui.find({ text: /Clear/ })).toBeDefined()
     expect(await ui.find({ type: 'Select', key: 'threshold' })).toBeDefined()
     await ui.unmount()
   }
@@ -152,16 +153,21 @@ test('on mobile the threshold is a button that steps through the values', async 
   await ui.unmount()
 })
 
-test('draws the button labels at footnote size', async ($, on) => {
+test('Compact and Clear are buttons on the terminal and text links on the desktop', async ($, on) => {
   world(on)
+  const terminal = await $.ui.mount({ ...BAND, surface: 'terminal' })
 
-  for (const surface of SURFACES) {
-    const ui = await $.ui.mount({ ...BAND, surface })
+  expect((await terminal.findAll({ type: 'Button' })).map(one => one.key)).toEqual(['compact', 'clear'])
+  expect(await terminal.find({ type: 'Markdown' })).toBeUndefined()
+  await terminal.unmount()
 
-    expect((await ui.find({ type: 'Text', text: 'Compact' }))?.props.size).toBe('footnote')
-    expect((await ui.find({ type: 'Text', text: 'Clear' }))?.props.size).toBe('footnote')
-    await ui.unmount()
-  }
+  const desktop = await $.ui.mount({ ...BAND, surface: 'desktop' })
+
+  expect(await desktop.findAll({ type: 'Button' })).toHaveLength(0)
+  expect((await desktop.find({ type: 'Markdown', key: 'actions' }))?.props.text).toBe(
+    '[Compact](https://context-meter.invalid/compact) · [Clear](https://context-meter.invalid/clear)',
+  )
+  await desktop.unmount()
 })
 
 test('never compacts while the threshold is off', async ($, on) => {
@@ -192,15 +198,18 @@ test('compacts once at the stored threshold and re-arms below it', async ($, on)
   expect(commands).toEqual(['compact', 'compact'])
 })
 
-test('the Compact and Clear buttons run their commands', async ($, on) => {
+test('Compact and Clear run their commands as buttons and as links', async ($, on) => {
   const { commands } = world(on)
 
-  for (const surface of SURFACES) {
-    const ui = await $.ui.mount({ ...BAND, surface })
-    await ui.press({ key: 'compact' })
-    await ui.press({ key: 'clear' })
-    await ui.unmount()
-  }
+  const terminal = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  await terminal.press({ key: 'compact' })
+  await terminal.press({ key: 'clear' })
+  await terminal.unmount()
+
+  const desktop = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  await desktop.press({ key: 'actions', link: { href: 'https://context-meter.invalid/compact' } })
+  await desktop.press({ key: 'actions', link: { href: 'https://context-meter.invalid/clear' } })
+  await desktop.unmount()
 
   expect(commands).toEqual(['compact', 'clear', 'compact', 'clear'])
 })

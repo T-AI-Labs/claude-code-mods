@@ -76,11 +76,11 @@ claude plugin install catalog-pane@T-AI-Labs
 </td><td><img src="docs/catalog-pane.svg" alt="The catalog pane" width="320"></td></tr>
 </table>
 
-The mods use Claude Code's function-hook plugin API, which is in early access and may change between releases. They need Claude Code 2.1.299 or newer, in the terminal and as the engine of the desktop app, and are tested against that version; an older engine refuses to draw their buttons and leaves the row or pane empty.
+The mods use Claude Code's function-hook plugin API, which is in early access and may change between releases. They are built and tested against Claude Code 2.1.295, the engine in the Claude desktop app 2.31226.1.
 
 ## Rows above the prompt
 
-context-usage, cache-meter, context-meter and usage-limits each draw their rows in the band above the prompt.
+context-usage, cache-meter, context-meter and usage-limits each draw their rows in the band above the prompt. In the desktop app, Compact, Clear and Keep warm are text links, as the app draws every button at its full control height; the terminal and the mobile app show them as buttons.
 
 ### context-usage
 
