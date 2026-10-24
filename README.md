@@ -28,7 +28,7 @@ claude plugin marketplace add T-AI-Labs/claude-code-mods
 ```
 
 <table>
-<tr><th>Mod</th><th>Description</th><th>Preview</th><th>Version</th></tr>
+<tr><th>Mod</th><th>Description</th><th width="35%">Preview</th></tr>
 <tr><td><a href="#context-usage">context&#8209;usage</a></td><td>
 
 **Start here.** The context fill with the auto-compact threshold, Compact and Clear, and the 5-hour and weekly limits beneath it.
@@ -37,7 +37,7 @@ claude plugin marketplace add T-AI-Labs/claude-code-mods
 claude plugin install context-usage@T-AI-Labs
 ```
 
-</td><td><img src="docs/context-usage.svg" alt="The context-usage rows" width="320"></td><td><a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcontext-usage%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=version&style=flat-square" alt="context-usage version"></a></td></tr>
+</td><td><img src="docs/context-usage.svg" alt="The context-usage rows" width="320"></td></tr>
 <tr><td><a href="#context-meter">context&#8209;meter</a></td><td>
 
 The context row of context-usage on its own.
@@ -46,7 +46,7 @@ The context row of context-usage on its own.
 claude plugin install context-meter@T-AI-Labs
 ```
 
-</td><td><img src="docs/context-meter.svg" alt="The context-meter row" width="320"></td><td><a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcontext-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=version&style=flat-square" alt="context-meter version"></a></td></tr>
+</td><td><img src="docs/context-meter.svg" alt="The context-meter row" width="320"></td></tr>
 <tr><td><a href="#usage-limits">usage&#8209;limits</a></td><td>
 
 The usage row of context-usage on its own.
@@ -55,7 +55,7 @@ The usage row of context-usage on its own.
 claude plugin install usage-limits@T-AI-Labs
 ```
 
-</td><td><img src="docs/usage-limits.svg" alt="The usage-limits row" width="320"></td><td><a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fusage-limits%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=version&style=flat-square" alt="usage-limits version"></a></td></tr>
+</td><td><img src="docs/usage-limits.svg" alt="The usage-limits row" width="320"></td></tr>
 <tr><td><a href="#cache-meter">cache&#8209;meter</a></td><td>
 
 How much of each turn the prompt cache served and how long it stays warm, with a switch that keeps it warm while you are away.
@@ -64,7 +64,7 @@ How much of each turn the prompt cache served and how long it stays warm, with a
 claude plugin install cache-meter@T-AI-Labs
 ```
 
-</td><td><img src="docs/cache-meter.svg" alt="The cache-meter row" width="320"></td><td><a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcache-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=version&style=flat-square" alt="cache-meter version"></a></td></tr>
+</td><td><img src="docs/cache-meter.svg" alt="The cache-meter row" width="320"></td></tr>
 <tr><td><a href="#catalog-pane">catalog&#8209;pane</a></td><td>
 
 A pane listing every skill, command, agent, mod, plugin, settings hook, MCP server and tool, with usage, token cost and buttons to use or manage each one.
@@ -73,7 +73,7 @@ A pane listing every skill, command, agent, mod, plugin, settings hook, MCP serv
 claude plugin install catalog-pane@T-AI-Labs
 ```
 
-</td><td><img src="docs/catalog-pane.svg" alt="The catalog pane" width="320"></td><td><a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcatalog-pane%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=version&style=flat-square" alt="catalog-pane version"></a></td></tr>
+</td><td><img src="docs/catalog-pane.svg" alt="The catalog pane" width="320"></td></tr>
 </table>
 
 The mods use Claude Code's function-hook plugin API, which is in early access and may change between releases. They need Claude Code 2.1.299 or newer, in the terminal and as the engine of the desktop app, and are tested against that version; an older engine refuses to draw their buttons and leaves the row or pane empty.
