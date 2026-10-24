@@ -1,6 +1,8 @@
 import { atom, read, update } from 'claude-code'
 import type {
+  ButtonProps,
   Color,
+  ElementChildren,
   Elements,
   EngineInterface,
   Register,
@@ -9,8 +11,10 @@ import type {
 
 import type { ContextFill, Reading, UsageWindow } from '../types'
 
-const STEPS = [97, 90, 70, 60, 50]
-const OPTIONS = STEPS.map(step => ({ value: String(step), label: `${step}%` }))
+const OFF = 0
+const STEPS = [OFF, 97, 90, 70, 60, 50]
+const stepLabel = (step: number) => (step === OFF ? 'Off' : `${step}%`)
+const OPTIONS = STEPS.map(step => ({ value: String(step), label: stepLabel(step) }))
 const DEFAULT_THRESHOLD = 97
 const THRESHOLD_KEY = 'threshold'
 const READING_KEY = 'reading'
@@ -35,6 +39,15 @@ const DETAIL_WIDTH = 10
 
 type Tags = Pick<Elements['terminal'], 'Box' | 'Text'>
 type Layout = { hasGauge: boolean; hasDetails: boolean; isUsageAbove: boolean }
+
+// The desktop draws a Button at body size, too large in a one-line band; its label is the only size it takes.
+const smallButton =
+  ({ Button, Text }: Pick<Elements['terminal'], 'Button' | 'Text'>) =>
+  (props: ButtonProps & ElementChildren) => (
+    <Button {...props}>
+      {props.label === undefined ? props.children : <Text size="footnote">{props.label}</Text>}
+    </Button>
+  )
 type Cell = {
   label: string
   percent: number | null
@@ -67,8 +80,11 @@ const tokens = (count: number) => {
     : `${Number((count / 1_000_000).toFixed(1))}M`
 }
 
-const contextTone = (percent: number, limit: number): Color =>
-  percent >= limit ? 'error' : percent >= limit - 15 ? 'warning' : 'text'
+const contextTone = (percent: number, threshold: number): Color => {
+  const limit = threshold === OFF ? 100 : threshold
+
+  return percent >= limit ? 'error' : percent >= limit - 15 ? 'warning' : 'text'
+}
 
 const usageTone = (percent: number): Color =>
   percent >= 90 ? 'error' : percent >= 75 ? 'warning' : 'text'
@@ -281,7 +297,7 @@ export const register: Register = (on, options) => {
       const limit = await read($, threshold)
       await update($, context, () => fill)
 
-      if (fill !== null && fill.percent < limit) {
+      if (fill !== null && (limit === OFF || fill.percent < limit)) {
         isArmed = true
       } else if (fill !== null && isArmed) {
         isArmed = false
@@ -320,7 +336,8 @@ export const register: Register = (on, options) => {
       return below
     }
 
-    const { Box, Button, Text } = $.ui.resolve(e)
+    const { Box, Text } = $.ui.resolve(e)
+    const Button = smallButton($.ui.resolve(e))
     const fill = await read($, context)
     const limit = await read($, threshold)
     const list = await read($, windows)
@@ -332,7 +349,7 @@ export const register: Register = (on, options) => {
       picker = (
         <Button
           key="threshold"
-          label={`Auto ${limit}%`}
+          label={`Auto ${stepLabel(limit)}`}
           onPress={() => void cycleThreshold($)}
         />
       )

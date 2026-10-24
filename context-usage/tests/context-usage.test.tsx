@@ -182,12 +182,49 @@ test('on mobile the threshold is a button that steps through the values', async 
   world(on)
   const ui = await $.ui.mount({ ...BAND, surface: 'mobile' })
 
-  for (const step of [90, 70, 60, 50, 97]) {
+  for (const label of ['90%', '70%', '60%', '50%', 'Off', '97%']) {
     await ui.press({ key: 'threshold' })
-    expect((await ui.find({ key: 'threshold' }))?.props.label).toBe(`Auto ${step}%`)
+    expect((await ui.find({ key: 'threshold' }))?.props.label).toBe(`Auto ${label}`)
   }
 
   await ui.unmount()
+})
+
+test('the threshold picker starts with Off', async ($, on) => {
+  world(on)
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+
+    expect((await ui.find({ key: 'threshold' }))?.props.options).toEqual([
+      { value: '0', label: 'Off' },
+      ...[97, 90, 70, 60, 50].map(step => ({ value: `${step}`, label: `${step}%` })),
+    ])
+    await ui.select({ key: 'threshold', value: '0' })
+    expect((await ui.find({ key: 'threshold' }))?.props.value).toBe('0')
+    await ui.unmount()
+  }
+})
+
+test('never compacts while the threshold is off', async ($, on) => {
+  const { commands, clock } = world(on, { threshold: 0 })
+  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true })
+
+  await $.session.measure(measured(99))
+  await clock.advance(1000)
+  expect(commands).toEqual([])
+})
+
+test('draws the button labels at footnote size', async ($, on) => {
+  world(on)
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+
+    expect((await ui.find({ type: 'Text', text: 'Compact' }))?.props.size).toBe('footnote')
+    expect((await ui.find({ type: 'Text', text: 'Clear' }))?.props.size).toBe('footnote')
+    await ui.unmount()
+  }
 })
 
 test('the Compact and Clear buttons run their commands', async ($, on) => {

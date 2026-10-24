@@ -119,8 +119,8 @@ Each refresh is a request that reads the cached context once, at the cache price
 
 | Element | What it shows |
 | --- | --- |
-| **Context** | Fill of the model's context window, with tokens used and window size in parentheses. Turns yellow within 15 points of the auto-compact threshold and red at it. |
-| **Auto** | The auto-compact threshold: the context fill, as shown under **Context**, at which the mod compacts on its own. A dropdown over 97, 90, 70, 60 and 50 %. The choice is kept across sessions. |
+| **Context** | Fill of the model's context window, with tokens used and window size in parentheses. Turns yellow within 15 points of the auto-compact threshold and red at it; with Auto off, within 15 points of 100 % and red at 100 %. |
+| **Auto** | The auto-compact threshold: the context fill, as shown under **Context**, at which the mod compacts on its own. A dropdown over Off, 97, 90, 70, 60 and 50 %; Off leaves compacting to you and to Claude Code's built-in auto-compaction. The choice is kept across sessions. |
 | **Compact** | Runs `/compact` now. |
 | **Clear** | Runs `/clear`. |
 
