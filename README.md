@@ -30,9 +30,9 @@
 | [cache-meter](#cache-meter) | How much of each turn the prompt cache served and how long it stays warm, with a switch that keeps it warm while you are away. | <img src="docs/cache-meter.svg" alt="The cache-meter row" width="320"> | <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcache-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=version&style=flat-square" alt="cache-meter version"></a> |
 | [catalog-pane](#catalog-pane) | A pane listing every skill, command, agent, mod, plugin, settings hook, MCP server and tool, with usage, token cost and buttons to use or manage each one. | <img src="docs/catalog-pane.svg" alt="The catalog pane" width="320"> | <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcatalog-pane%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=version&style=flat-square" alt="catalog-pane version"></a> |
 
-- Each row is one quiet line above the prompt. The figures stay neutral and only take a color when something needs attention.
-- All five work in the Claude Code CLI and in the desktop app. Together, the rows' columns line up.
-- The rows make no network calls, run no external programs and add no tokens; only cache-meter's Keep warm, when you switch it on, makes requests. See [Token cost](#token-cost) and, for the pane, [What catalog-pane reaches out to](#what-catalog-pane-reaches-out-to).
+## Install
+
+Install only the mods you want. context-usage holds context-meter and usage-limits; install it or those two, not both, or the rows show twice and two mods compact at their thresholds. Run these commands in any shell (cmd, PowerShell, bash):
 
 ```
 claude plugin marketplace add T-AI-Labs/claude-code-mods
@@ -41,9 +41,7 @@ claude plugin install cache-meter@T-AI-Labs
 claude plugin install catalog-pane@T-AI-Labs
 ```
 
-## Install
-
-Install only the mods you want. context-usage holds context-meter and usage-limits; install it or those two, not both, or the rows show twice and two mods compact at their thresholds. Run the commands above in any shell (cmd, PowerShell, bash). The mods load in every session started afterwards, in the terminal and in the desktop app.
+The mods load in every session started afterwards, in the terminal and in the desktop app.
 
 From the prompt of a running Claude Code terminal session, the same install is:
 
