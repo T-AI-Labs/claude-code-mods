@@ -1,8 +1,8 @@
 {
   "name": "T-AI-Labs",
   "owner": {
-    "name": "Claude",
-    "email": "noreply@anthropic.com"
+    "name": "Thorsten Alpers",
+    "email": "CleanMyPost@gmx.de"
   },
   "metadata": {
     "description": "Mods for Claude Code: a context and usage-limits band with compaction controls, a prompt-cache row that keeps the cache warm, the context and usage-limits rows on their own, and a catalog pane of everything the setup provides."
