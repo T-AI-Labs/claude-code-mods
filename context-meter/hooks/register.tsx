@@ -78,10 +78,10 @@ const tokens = (count: number) => {
     : `${Number((count / 1_000_000).toFixed(1))}M`
 }
 
-const contextTone = (percent: number, threshold: number): Color => {
+const contextTone = (percent: number, threshold: number): Color | undefined => {
   const limit = threshold === OFF ? 100 : threshold
 
-  return percent >= limit ? 'error' : percent >= limit - 15 ? 'warning' : 'text'
+  return percent >= limit ? 'error' : percent >= limit - 15 ? 'warning' : undefined
 }
 
 const meter = (
