@@ -14,7 +14,6 @@
 
 <p align="center">
   <a href="#mods"><strong>Mods</strong></a> ·
-  <a href="#install">Install</a> ·
   <a href="#configure">Configure</a> ·
   <a href="#update-and-uninstall">Update</a> ·
   <a href="#credits">Credits</a>
@@ -22,64 +21,62 @@
 
 ## Mods
 
-| Mod | Description | Preview | Version |
-| --- | --- | --- | --- |
-| [context&#8209;usage](#context-usage) | **Start here.** The context fill with the auto-compact threshold, Compact and Clear, and the 5-hour and weekly limits beneath it. | <img src="docs/context-usage.svg" alt="The context-usage rows" width="320"> | <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcontext-usage%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=version&style=flat-square" alt="context-usage version"></a> |
-| [context&#8209;meter](#context-meter) | The context row of context-usage on its own. | <img src="docs/context-meter.svg" alt="The context-meter row" width="320"> | <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcontext-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=version&style=flat-square" alt="context-meter version"></a> |
-| [usage&#8209;limits](#usage-limits) | The usage row of context-usage on its own. | <img src="docs/usage-limits.svg" alt="The usage-limits row" width="320"> | <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fusage-limits%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=version&style=flat-square" alt="usage-limits version"></a> |
-| [cache&#8209;meter](#cache-meter) | How much of each turn the prompt cache served and how long it stays warm, with a switch that keeps it warm while you are away. | <img src="docs/cache-meter.svg" alt="The cache-meter row" width="320"> | <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcache-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=version&style=flat-square" alt="cache-meter version"></a> |
-| [catalog&#8209;pane](#catalog-pane) | A pane listing every skill, command, agent, mod, plugin, settings hook, MCP server and tool, with usage, token cost and buttons to use or manage each one. | <img src="docs/catalog-pane.svg" alt="The catalog pane" width="320"> | <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcatalog-pane%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=version&style=flat-square" alt="catalog-pane version"></a> |
-
-## Install
-
-Install only the mods you want, but not context-usage together with context-meter or usage-limits: it already contains both. Run the commands in any shell, or in Claude Code with `/plugin` in place of `claude plugin`. New sessions load them.
-
-<table>
-<tr><td>Marketplace, once</td><td>
+Install only the mods you want, but not context-usage together with context-meter or usage-limits: it already contains both. Add the marketplace once, then install each mod with the command under its description, in any shell or in Claude Code with `/plugin` in place of `claude plugin`. New sessions load them.
 
 ```
 claude plugin marketplace add T-AI-Labs/claude-code-mods
 ```
 
-</td></tr>
-<tr><td><a href="#context-usage">context-usage</a></td><td>
+<table>
+<tr><th>Mod</th><th>Description</th><th width="35%">Preview</th></tr>
+<tr><td><a href="#context-usage">context&#8209;usage</a></td><td>
+
+**Start here.** The context fill with the auto-compact threshold, Compact and Clear, and the 5-hour and weekly limits beneath it.
 
 ```
 claude plugin install context-usage@T-AI-Labs
 ```
 
-</td></tr>
-<tr><td><a href="#context-meter">context-meter</a></td><td>
+</td><td><img src="docs/context-usage.svg" alt="The context-usage rows" width="320"></td></tr>
+<tr><td><a href="#context-meter">context&#8209;meter</a></td><td>
+
+The context row of context-usage on its own.
 
 ```
 claude plugin install context-meter@T-AI-Labs
 ```
 
-</td></tr>
-<tr><td><a href="#usage-limits">usage-limits</a></td><td>
+</td><td><img src="docs/context-meter.svg" alt="The context-meter row" width="320"></td></tr>
+<tr><td><a href="#usage-limits">usage&#8209;limits</a></td><td>
+
+The usage row of context-usage on its own.
 
 ```
 claude plugin install usage-limits@T-AI-Labs
 ```
 
-</td></tr>
-<tr><td><a href="#cache-meter">cache-meter</a></td><td>
+</td><td><img src="docs/usage-limits.svg" alt="The usage-limits row" width="320"></td></tr>
+<tr><td><a href="#cache-meter">cache&#8209;meter</a></td><td>
+
+How much of each turn the prompt cache served and how long it stays warm, with a switch that keeps it warm while you are away.
 
 ```
 claude plugin install cache-meter@T-AI-Labs
 ```
 
-</td></tr>
-<tr><td><a href="#catalog-pane">catalog-pane</a></td><td>
+</td><td><img src="docs/cache-meter.svg" alt="The cache-meter row" width="320"></td></tr>
+<tr><td><a href="#catalog-pane">catalog&#8209;pane</a></td><td>
+
+A pane listing every skill, command, agent, mod, plugin, settings hook, MCP server and tool, with usage, token cost and buttons to use or manage each one.
 
 ```
 claude plugin install catalog-pane@T-AI-Labs
 ```
 
-</td></tr>
+</td><td><img src="docs/catalog-pane.svg" alt="The catalog pane" width="320"></td></tr>
 </table>
 
-The mods use Claude Code's function-hook plugin API, which is in early access and may change between releases. They are built and tested against Claude Code 2.1.295, the engine in the Claude desktop app 2.31226.1.
+The mods use Claude Code's function-hook plugin API, which is in early access and may change between releases. They need Claude Code 2.1.299 or newer, in the terminal and as the engine of the desktop app, and are tested against that version; an older engine refuses to draw their buttons and leaves the row or pane empty.
 
 ## Rows above the prompt
 
@@ -119,8 +116,8 @@ Each refresh is a request that reads the cached context once, at the cache price
 
 | Element | What it shows |
 | --- | --- |
-| **Context** | Fill of the model's context window, with tokens used and window size in parentheses. Turns yellow within 15 points of the auto-compact threshold and red at it. |
-| **Auto** | The auto-compact threshold: the context fill, as shown under **Context**, at which the mod compacts on its own. A dropdown over 97, 90, 70, 60 and 50 %. The choice is kept across sessions. |
+| **Context** | Fill of the model's context window, with tokens used and window size in parentheses. Turns yellow within 15 points of the auto-compact threshold and red at it; with Auto off, within 15 points of 100 % and red at 100 %. |
+| **Auto** | The auto-compact threshold: the context fill, as shown under **Context**, at which the mod compacts on its own. A dropdown over Off, 97, 90, 70, 60 and 50 %; Off leaves compacting to you and to Claude Code's built-in auto-compaction. The choice is kept across sessions. |
 | **Compact** | Runs `/compact` now. |
 | **Clear** | Runs `/clear`. |
 
@@ -139,6 +136,8 @@ Claude Code's built-in auto-compaction stays on and still runs at its own limit.
 Each rate-limit window Claude Code reports gets a gauge, the percentage used and, in parentheses, the time left until it resets. `5h` is the 5-hour limit, `Week` the weekly one. A figure turns yellow from 75 % and red from 90 %.
 
 `5h` and `Week` are always shown. The readings arrive with the first response of a session and are only reported on a subscription plan. Until then, and again right after a `/clear`, the row shows the last reading, with a window that has reset since at 0 %. A window a measurement leaves out keeps its last reading, and only a window that never had one shows `–`.
+
+Sessions running side by side share their readings. Each one stores what it measures, and once a minute every session takes in what the others stored: of two readings of the same window the higher one, and a window that resets later over the one before it. A session that has been idle for a while therefore shows the use of the others too, at no token cost, since it only reads a file on your machine. context-usage and usage-limits keep separate stores and do not share with each other.
 
 ### Token cost
 

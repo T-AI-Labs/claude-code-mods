@@ -119,18 +119,19 @@ test('leaves the token counts out when details is off', { options: { details: fa
   }
 })
 
-test('the threshold is a picker over 97, 90, 70, 60 and 50', async ($, on) => {
+test('the threshold is a picker over Off, 97, 90, 70, 60 and 50', async ($, on) => {
   world(on)
 
   for (const surface of SURFACES) {
     const ui = await $.ui.mount({ ...BAND, surface })
     const options = (await ui.find({ key: 'threshold' }))?.props.options
 
-    expect(options).toEqual(
-      [97, 90, 70, 60, 50].map(step => ({ value: `${step}`, label: `${step}%` })),
-    )
+    expect(options).toEqual([
+      { value: '0', label: 'Off' },
+      ...[97, 90, 70, 60, 50].map(step => ({ value: `${step}`, label: `${step}%` })),
+    ])
 
-    for (const step of [70, 50, 97]) {
+    for (const step of [70, 0, 50, 97]) {
       await ui.select({ key: 'threshold', value: `${step}` })
       expect((await ui.find({ key: 'threshold' }))?.props.value).toBe(`${step}`)
     }
@@ -143,14 +144,33 @@ test('on mobile the threshold is a button that steps through the values', async 
   world(on)
   const ui = await $.ui.mount({ ...BAND, surface: 'mobile' })
 
-  for (const step of [90, 70, 60, 50, 97]) {
+  for (const label of ['90%', '70%', '60%', '50%', 'Off', '97%']) {
     await ui.press({ key: 'threshold' })
-    expect((await ui.find({ key: 'threshold' }))?.props.label).toBe(
-      `Auto ${step}%`,
-    )
+    expect((await ui.find({ key: 'threshold' }))?.props.label).toBe(`Auto ${label}`)
   }
 
   await ui.unmount()
+})
+
+test('draws the button labels at footnote size', async ($, on) => {
+  world(on)
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+
+    expect((await ui.find({ type: 'Text', text: 'Compact' }))?.props.size).toBe('footnote')
+    expect((await ui.find({ type: 'Text', text: 'Clear' }))?.props.size).toBe('footnote')
+    await ui.unmount()
+  }
+})
+
+test('never compacts while the threshold is off', async ($, on) => {
+  const { commands, clock } = world(on, 0)
+  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true })
+
+  await $.session.measure(measured(99))
+  await clock.advance(1000)
+  expect(commands).toEqual([])
 })
 
 test('compacts once at the stored threshold and re-arms below it', async ($, on) => {

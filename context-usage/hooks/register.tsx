@@ -1,6 +1,8 @@
 import { atom, read, update } from 'claude-code'
 import type {
+  ButtonProps,
   Color,
+  ElementChildren,
   Elements,
   EngineInterface,
   Register,
@@ -9,8 +11,10 @@ import type {
 
 import type { ContextFill, Reading, UsageWindow } from '../types'
 
-const STEPS = [97, 90, 70, 60, 50]
-const OPTIONS = STEPS.map(step => ({ value: String(step), label: `${step}%` }))
+const OFF = 0
+const STEPS = [OFF, 97, 90, 70, 60, 50]
+const stepLabel = (step: number) => (step === OFF ? 'Off' : `${step}%`)
+const OPTIONS = STEPS.map(step => ({ value: String(step), label: stepLabel(step) }))
 const DEFAULT_THRESHOLD = 97
 const THRESHOLD_KEY = 'threshold'
 const READING_KEY = 'reading'
@@ -35,6 +39,15 @@ const DETAIL_WIDTH = 10
 
 type Tags = Pick<Elements['terminal'], 'Box' | 'Text'>
 type Layout = { hasGauge: boolean; hasDetails: boolean; isUsageAbove: boolean }
+
+// The desktop draws a Button at body size, too large in a one-line band; its label is the only size it takes.
+const smallButton =
+  ({ Button, Text }: Pick<Elements['terminal'], 'Button' | 'Text'>) =>
+  (props: ButtonProps & ElementChildren) => (
+    <Button {...props}>
+      {props.label === undefined ? props.children : <Text size="footnote">{props.label}</Text>}
+    </Button>
+  )
 type Cell = {
   label: string
   percent: number | null
@@ -67,8 +80,11 @@ const tokens = (count: number) => {
     : `${Number((count / 1_000_000).toFixed(1))}M`
 }
 
-const contextTone = (percent: number, limit: number): Color =>
-  percent >= limit ? 'error' : percent >= limit - 15 ? 'warning' : 'text'
+const contextTone = (percent: number, threshold: number): Color => {
+  const limit = threshold === OFF ? 100 : threshold
+
+  return percent >= limit ? 'error' : percent >= limit - 15 ? 'warning' : 'text'
+}
 
 const usageTone = (percent: number): Color =>
   percent >= 90 ? 'error' : percent >= 75 ? 'warning' : 'text'
@@ -212,6 +228,36 @@ const restoreUsage = async ($: EngineInterface) => {
   }
 }
 
+// The next window starts no earlier than this one resets, so it resets at least a whole window later.
+const SAME_WINDOW = HOUR
+
+const newer = (first: UsageWindow, second: UsageWindow) => {
+  const gap = Date.parse(first.resetsAt ?? '') - Date.parse(second.resetsAt ?? '')
+
+  // Without a reset time there is no telling which is newer, so the session's own reading stays.
+  if (Number.isNaN(gap)) {
+    return first
+  }
+
+  if (Math.abs(gap) > SAME_WINDOW) {
+    return gap > 0 ? first : second
+  }
+
+  return second.percentUsed > first.percentUsed ? second : first
+}
+
+// Every session writes the same store, so the readings of all of them meet there.
+const merge = (...lists: (readonly UsageWindow[])[]) => {
+  const byKind = new Map<string, UsageWindow>()
+
+  for (const one of lists.flat()) {
+    const held = byKind.get(one.kind)
+    byKind.set(one.kind, held === undefined ? one : newer(held, one))
+  }
+
+  return [...byKind.values()].sort((a, b) => rankOf(a.kind) - rankOf(b.kind))
+}
+
 const refreshUsage = async ($: EngineInterface, list?: readonly UsageWindow[]) => {
   // The engine has no reading before the first response of a session.
   if (list !== undefined && list.length === 0) {
@@ -219,20 +265,20 @@ const refreshUsage = async ($: EngineInterface, list?: readonly UsageWindow[]) =
   }
 
   const at = await $.clock.now()
+  const stored = (await $.store.get(READING_KEY)) as Reading | undefined
   await update($, now, () => at)
 
+  // Without a measurement this only takes in what other sessions stored since.
   if (list === undefined) {
+    await update($, windows, held => merge(held, stored?.windows ?? []))
+
     return
   }
 
-  const stored = (await $.store.get(READING_KEY)) as Reading | undefined
   // A measurement can leave a window out, which then keeps its last reading.
-  const kept = (stored?.windows ?? []).filter(
-    one => !list.some(held => held.kind === one.kind),
-  )
-  const sorted = [...list, ...kept].sort((a, b) => rankOf(a.kind) - rankOf(b.kind))
-  await update($, windows, () => sorted)
-  await $.store.set(READING_KEY, { windows: sorted })
+  const merged = merge(list, stored?.windows ?? [])
+  await update($, windows, () => merged)
+  await $.store.set(READING_KEY, { windows: merged })
 }
 
 export const register: Register = (on, options) => {
@@ -281,7 +327,7 @@ export const register: Register = (on, options) => {
       const limit = await read($, threshold)
       await update($, context, () => fill)
 
-      if (fill !== null && fill.percent < limit) {
+      if (fill !== null && (limit === OFF || fill.percent < limit)) {
         isArmed = true
       } else if (fill !== null && isArmed) {
         isArmed = false
@@ -320,7 +366,8 @@ export const register: Register = (on, options) => {
       return below
     }
 
-    const { Box, Button, Text } = $.ui.resolve(e)
+    const { Box, Text } = $.ui.resolve(e)
+    const Button = smallButton($.ui.resolve(e))
     const fill = await read($, context)
     const limit = await read($, threshold)
     const list = await read($, windows)
@@ -332,7 +379,7 @@ export const register: Register = (on, options) => {
       picker = (
         <Button
           key="threshold"
-          label={`Auto ${limit}%`}
+          label={`Auto ${stepLabel(limit)}`}
           onPress={() => void cycleThreshold($)}
         />
       )
