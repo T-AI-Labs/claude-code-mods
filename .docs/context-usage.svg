@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 114" width="640" height="114" role="img" aria-labelledby="t d">
   <title id="t">The context-usage rows</title>
-  <desc id="d">Illustration. First row: context fill 10 percent of a 1M window, the Auto 97 percent dropdown and the links /compact and /clear. Second row: 5-hour limit 42 percent, resetting in 2 hours 13 minutes, and weekly limit 78 percent in yellow, resetting in 3 days 4 hours.</desc>
+  <desc id="d">Illustration. First row: context fill 10 percent of a 1M window, the Auto 97 percent dropdown and the buttons Compact and Clear. Second row: 5-hour limit 42 percent, resetting in 2 hours 13 minutes, and weekly limit 78 percent in yellow, resetting in 3 days 4 hours.</desc>
   <rect width="640" height="114" rx="12" fill="#1a1a1a"/>
   <g font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas, 'DejaVu Sans Mono', monospace" font-size="15">
     <text x="28.0" y="50" fill="#8c8c8c" xml:space="preserve">Context</text>
@@ -14,9 +14,10 @@
     <rect x="319.9" y="31.5" width="108" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
     <text x="367.9" y="50" fill="#e8e8e8" text-anchor="middle">Auto 97%</text>
     <path d="M410.4 42 l4 5 l4 -5 z" fill="#e8e8e8"/>
-    <text x="439.9" y="50" fill="#e8e8e8" text-decoration="underline">/compact</text>
-    <text x="511.9" y="50" fill="#8c8c8c" xml:space="preserve">  ·  </text>
-    <text x="556.9" y="50" fill="#e8e8e8" text-decoration="underline">/clear</text>
+    <rect x="435.9" y="31.5" width="78" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+    <text x="474.9" y="50" fill="#e8e8e8" text-anchor="middle">Compact</text>
+    <rect x="521.9" y="31.5" width="62" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+    <text x="552.9" y="50" fill="#e8e8e8" text-anchor="middle">Clear</text>
     <text x="28.0" y="82" fill="#8c8c8c" xml:space="preserve"> 5h</text>
     <rect x="105.7" y="71" width="6" height="12" rx="1" fill="#e8e8e8"/>
     <rect x="114.7" y="71" width="6" height="12" rx="1" fill="#e8e8e8"/>

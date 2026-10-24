@@ -80,7 +80,7 @@ The mods use Claude Code's function-hook plugin API, which is in early access an
 
 ## Rows above the prompt
 
-context-usage, cache-meter, context-meter and usage-limits each draw their rows in the band above the prompt. In the desktop app, Compact, Clear and Keep warm are text links (`/compact` and `/clear`), as the app draws every button at its full control height; the terminal and the mobile app show them as buttons.
+context-usage, cache-meter, context-meter and usage-limits each draw their rows in the band above the prompt. Compact and Clear are buttons on every surface; in the desktop app their row is drawn two lines high, so the app's taller buttons stay clear of the row below. Keep warm is a text link in the desktop app and a button in the terminal and the mobile app.
 
 ### context-usage
 
