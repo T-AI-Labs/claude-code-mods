@@ -84,8 +84,8 @@ test('shows the context row with its controls and the usage row beneath it', asy
     expect(await ui.find({ type: 'Text', text: '(2h 13m)' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: '(3d 4h)' })).toBeDefined()
     expect(await ui.find({ type: 'Select', key: 'threshold' })).toBeDefined()
-    expect(await ui.find({ text: /Compact/ })).toBeDefined()
-    expect(await ui.find({ text: /Clear/ })).toBeDefined()
+    expect(await ui.find({ text: /compact/i })).toBeDefined()
+    expect(await ui.find({ text: /clear/i })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: 'below' })).toBeDefined()
     await ui.unmount()
   }
@@ -243,7 +243,7 @@ test('Compact and Clear are buttons on the terminal and text links on the deskto
 
   expect(await desktop.findAll({ type: 'Button' })).toHaveLength(0)
   expect((await desktop.find({ type: 'Markdown', key: 'actions' }))?.props.text).toBe(
-    '[Compact](https://context-usage.invalid/compact) · [Clear](https://context-usage.invalid/clear)',
+    '[/compact](https://context-usage.invalid/compact) \u00a0·\u00a0 [/clear](https://context-usage.invalid/clear)',
   )
   await desktop.unmount()
 })

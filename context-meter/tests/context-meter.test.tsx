@@ -57,8 +57,8 @@ test('shows the context fill with the threshold, Compact and Clear in one row', 
     expect(await ui.find({ type: 'Text', text: 'Cache' })).toBeUndefined()
     expect(await ui.find({ type: 'Text', text: '(82k/200k)' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: 'below' })).toBeDefined()
-    expect(await ui.find({ text: /Compact/ })).toBeDefined()
-    expect(await ui.find({ text: /Clear/ })).toBeDefined()
+    expect(await ui.find({ text: /compact/i })).toBeDefined()
+    expect(await ui.find({ text: /clear/i })).toBeDefined()
     expect(await ui.find({ type: 'Select', key: 'threshold' })).toBeDefined()
     await ui.unmount()
   }
@@ -165,7 +165,7 @@ test('Compact and Clear are buttons on the terminal and text links on the deskto
 
   expect(await desktop.findAll({ type: 'Button' })).toHaveLength(0)
   expect((await desktop.find({ type: 'Markdown', key: 'actions' }))?.props.text).toBe(
-    '[Compact](https://context-meter.invalid/compact) · [Clear](https://context-meter.invalid/clear)',
+    '[/compact](https://context-meter.invalid/compact) \u00a0·\u00a0 [/clear](https://context-meter.invalid/clear)',
   )
   await desktop.unmount()
 })

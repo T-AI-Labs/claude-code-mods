@@ -46,7 +46,7 @@ const ACTIONS_URL = 'https://context-usage.invalid/'
 const actionLinks = ({ Markdown }: Pick<Elements['desktop'], 'Markdown'>, actions: Action[]) => (
   <Markdown
     key="actions"
-    text={actions.map(one => `[${one.label}](${ACTIONS_URL}${one.id})`).join(' · ')}
+    text={actions.map(one => `[/${one.id}](${ACTIONS_URL}${one.id})`).join(' \u00a0·\u00a0 ')}
     pressableLinks={actions.map(one => ACTIONS_URL + one.id)}
     onLinkPress={link => actions.find(one => ACTIONS_URL + one.id === link.href)?.onPress()}
   />
