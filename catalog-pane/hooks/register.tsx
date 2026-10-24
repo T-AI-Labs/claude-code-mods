@@ -1,6 +1,8 @@
 import { atom, read, update } from 'claude-code'
 import type {
+  ButtonProps,
   CommandInfo,
+  ElementChildren,
   Elements,
   EngineInterface,
   FsEntry,
@@ -100,6 +102,15 @@ type DetailTags = Pick<
   Elements['terminal'],
   'Box' | 'Text' | 'Button' | 'Markdown' | 'Link'
 >
+
+// The desktop draws a Button at body size, too large beside the pane's text; its label is the only size it takes.
+const smallButton =
+  ({ Button, Text }: Pick<Elements['terminal'], 'Button' | 'Text'>) =>
+  (props: ButtonProps & ElementChildren) => (
+    <Button {...props}>
+      {props.label === undefined ? props.children : <Text size="footnote">{props.label}</Text>}
+    </Button>
+  )
 
 type DetailProps = {
   entry: Entry
@@ -1494,7 +1505,8 @@ export const register: Register = (on, options) => {
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const tags = $.ui.resolve(e)
+    const resolved = $.ui.resolve(e)
+    const tags = { ...resolved, Button: smallButton(resolved) }
     const { Box, Button, Text } = tags
     const { list, stats, repos, scans, now, notes, busy, confirming, working, isLoading: loading } = await snapshot($)
     const state = await read($, view)

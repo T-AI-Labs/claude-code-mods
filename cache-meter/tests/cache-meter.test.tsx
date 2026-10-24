@@ -222,3 +222,14 @@ test('shows a dash instead of a hit rate until the first turn', async ($, on) =>
     await ui.unmount()
   }
 })
+
+test('draws the Keep warm label at footnote size', async ($, on) => {
+  world(on)
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+
+    expect((await ui.find({ type: 'Text', text: 'Keep warm' }))?.props.size).toBe('footnote')
+    await ui.unmount()
+  }
+})

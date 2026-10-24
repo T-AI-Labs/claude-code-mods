@@ -481,3 +481,22 @@ test('measures trending from the stored star history, else from the repo age', a
   expect((await ui.find({ key: 'open-plugin:agents-kit' }))?.text).toMatch(/~2.7k ★ a month on average/)
   await ui.unmount()
 })
+
+test('draws labelled buttons at footnote size and keeps the rows as they are', async ($, on) => {
+  const { clock } = world(on)
+  await openCatalog($, 'tools')
+  await clock.settle()
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...PANE, surface })
+
+    expect((await ui.find({ type: 'Text', text: 'Skills 2' }))?.props.size).toBe('footnote')
+    expect((await ui.find({ key: 'open-tool:Bash' }))?.children[0]).toBe('Bash')
+    await ui.unmount()
+  }
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await ui.press({ key: 'open-tool:Bash' })
+  expect((await ui.find({ type: 'Text', text: 'Explain with Haiku' }))?.props.size).toBe('footnote')
+  await ui.unmount()
+})
