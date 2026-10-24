@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  CLAUDE_CODE_VERSION: 2.1.299
+  CLAUDE_CODE_VERSION: 2.1.295
 
 jobs:
   validate:
