@@ -66,6 +66,36 @@ const untilReset = (resetsAt: string | undefined, at: number) => {
 const hasReset = (one: UsageWindow, at: number) =>
   one.resetsAt !== undefined && Date.parse(one.resetsAt) <= at
 
+// The next window starts no earlier than this one resets, so it resets at least a whole window later.
+const SAME_WINDOW = HOUR
+
+const newer = (first: UsageWindow, second: UsageWindow) => {
+  const gap = Date.parse(first.resetsAt ?? '') - Date.parse(second.resetsAt ?? '')
+
+  // Without a reset time there is no telling which is newer, so the session's own reading stays.
+  if (Number.isNaN(gap)) {
+    return first
+  }
+
+  if (Math.abs(gap) > SAME_WINDOW) {
+    return gap > 0 ? first : second
+  }
+
+  return second.percentUsed > first.percentUsed ? second : first
+}
+
+// Every session writes the same store, so the readings of all of them meet there.
+const merge = (...lists: (readonly UsageWindow[])[]) => {
+  const byKind = new Map<string, UsageWindow>()
+
+  for (const one of lists.flat()) {
+    const held = byKind.get(one.kind)
+    byKind.set(one.kind, held === undefined ? one : newer(held, one))
+  }
+
+  return [...byKind.values()].sort((a, b) => rankOf(a.kind) - rankOf(b.kind))
+}
+
 const cellsOf = (list: readonly UsageWindow[], at: number): Cell[] =>
   [...new Set([...ALWAYS, ...list.map(one => one.kind)])]
     .sort((a, b) => rankOf(a) - rankOf(b))
@@ -149,20 +179,20 @@ const refresh = async ($: EngineInterface, list?: readonly UsageWindow[]) => {
   }
 
   const at = await $.clock.now()
+  const stored = (await $.store.get(STORE_KEY)) as Reading | undefined
   await update($, now, () => at)
 
+  // Without a measurement this only takes in what other sessions stored since.
   if (list === undefined) {
+    await update($, windows, held => merge(held, stored?.windows ?? []))
+
     return
   }
 
-  const stored = (await $.store.get(STORE_KEY)) as Reading | undefined
   // A measurement can leave a window out, which then keeps its last reading.
-  const kept = (stored?.windows ?? []).filter(
-    one => !list.some(held => held.kind === one.kind),
-  )
-  const sorted = [...list, ...kept].sort((a, b) => rankOf(a.kind) - rankOf(b.kind))
-  await update($, windows, () => sorted)
-  await $.store.set(STORE_KEY, { windows: sorted })
+  const merged = merge(list, stored?.windows ?? [])
+  await update($, windows, () => merged)
+  await $.store.set(STORE_KEY, { windows: merged })
 }
 
 export const register: Register = (on, options) => {

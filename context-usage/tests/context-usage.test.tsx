@@ -1,4 +1,5 @@
 import type { On } from 'claude-code'
+import type { Engine } from 'claude-code/testing'
 import { expect, mock, test } from 'claude-code/testing'
 
 const SURFACES = ['terminal', 'desktop'] as const
@@ -26,10 +27,24 @@ const measured = (percent: number) => ({
   changed: ['context' as const, 'rateLimits' as const],
 })
 
-const world = (on: On, stored: Record<string, unknown> = {}) => {
+// A Map stands for the store file every session shares: the test writes to it as another session would.
+const share = (on: On, stored: Record<string, unknown> | Map<string, unknown>) => {
+  if (!(stored instanceof Map)) {
+    return mock.store(on, stored)
+  }
+
+  on('store.get', ($, e) => ({ value: stored.get(e.key) }))
+  on('store.set', ($, e) => {
+    stored.set(e.key, e.value)
+
+    return { value: undefined }
+  })
+}
+
+const world = (on: On, stored: Record<string, unknown> | Map<string, unknown> = {}) => {
   const commands: string[] = []
   const clock = mock.clock(on, { now: NOW })
-  mock.store(on, stored)
+  share(on, stored)
   on('session.start', ($, e) => ({ cwd: e.cwd }))
   on('session.usage', () => ({
     value: { startedAt: 0, context: { window: 200_000 }, rateLimits: [] },
@@ -245,16 +260,89 @@ test('keeps the last reading of a window a measurement leaves out, also after a 
   await $.session.measure(measured(41))
   await $.session.measure({
     ...measured(41),
-    rateLimits: [{ kind: 'five_hour', percentUsed: 7, resetsAt: '2026-10-12T12:13:00Z' }],
+    rateLimits: [{ kind: 'five_hour', percentUsed: 47, resetsAt: '2026-10-12T12:13:00Z' }],
   })
   await $.classic.SessionStart({ source: 'clear' })
 
   for (const surface of SURFACES) {
     const ui = await $.ui.mount({ ...BAND, surface })
 
-    expect(await ui.find({ type: 'Text', text: '7%' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '47%' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: '18%' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: '–' })).toBeUndefined()
     await ui.unmount()
+  }
+})
+
+const MINUTE = 60_000
+const FIVE_HOUR = '2026-10-12T12:13:00Z'
+const NEXT_FIVE_HOUR = '2026-10-12T17:13:00Z'
+const WEEK = '2026-10-15T14:00:00Z'
+
+const limits = (fiveHour: number, resetsAt = FIVE_HOUR) => ({
+  context: { tokens: 0, window: 200_000, percent: 0 },
+  rateLimits: [{ kind: 'five_hour', percentUsed: fiveHour, resetsAt }],
+  changed: ['rateLimits' as const],
+})
+
+const usage = async ($: Engine, surface: (typeof SURFACES)[number]) => {
+  const ui = await $.ui.mount({ ...BAND, surface })
+  const shown = (await ui.findAll({ type: 'Text', text: /^\d+%$/ })).map(one => one.text).slice(1)
+  await ui.unmount()
+
+  return shown
+}
+
+test('takes in a higher reading another session stored, within a minute and without a turn', async ($, on) => {
+  const store = new Map<string, unknown>()
+  const { clock } = world(on, store)
+  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true })
+  await $.session.measure(limits(42))
+
+  store.set('reading', {
+    windows: [
+      { kind: 'five_hour', percentUsed: 55, resetsAt: FIVE_HOUR },
+      { kind: 'seven_day', percentUsed: 30, resetsAt: WEEK },
+    ],
+  })
+  await clock.advance(MINUTE)
+
+  for (const surface of SURFACES) {
+    expect(await usage($, surface)).toEqual(['55%', '30%'])
+  }
+})
+
+test('keeps the higher reading of a window when its own measurement is lower', async ($, on) => {
+  const store = new Map<string, unknown>([
+    ['reading', { windows: [{ kind: 'five_hour', percentUsed: 55, resetsAt: FIVE_HOUR }] }],
+  ])
+  world(on, store)
+  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true })
+  await $.session.measure(limits(42))
+
+  for (const surface of SURFACES) {
+    expect(await usage($, surface)).toEqual(['55%'])
+  }
+
+  expect(store.get('reading')).toEqual({
+    windows: [{ kind: 'five_hour', percentUsed: 55, resetsAt: FIVE_HOUR }],
+  })
+})
+
+test('a later window wins over a higher reading of the one before it', async ($, on) => {
+  const store = new Map<string, unknown>([
+    ['reading', { windows: [{ kind: 'five_hour', percentUsed: 80, resetsAt: FIVE_HOUR }] }],
+  ])
+  const { clock } = world(on, store)
+  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true })
+  await $.session.measure(limits(5, NEXT_FIVE_HOUR))
+
+  store.set('reading', {
+    windows: [{ kind: 'five_hour', percentUsed: 90, resetsAt: FIVE_HOUR }],
+  })
+  await clock.advance(MINUTE)
+
+  for (const surface of SURFACES) {
+    expect(await usage($, surface)).toEqual(['5%'])
   }
 })

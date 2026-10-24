@@ -140,6 +140,8 @@ Each rate-limit window Claude Code reports gets a gauge, the percentage used and
 
 `5h` and `Week` are always shown. The readings arrive with the first response of a session and are only reported on a subscription plan. Until then, and again right after a `/clear`, the row shows the last reading, with a window that has reset since at 0 %. A window a measurement leaves out keeps its last reading, and only a window that never had one shows `–`.
 
+Sessions running side by side share their readings. Each one stores what it measures, and once a minute every session takes in what the others stored: of two readings of the same window the higher one, and a window that resets later over the one before it. A session that has been idle for a while therefore shows the use of the others too, at no token cost, since it only reads a file on your machine. context-usage and usage-limits keep separate stores and do not share with each other.
+
 ### Token cost
 
 Showing the rows costs nothing. The mods read figures Claude Code already has and add nothing to the conversation; the one model request any of them makes is cache-meter's refresh while Keep warm is on.
