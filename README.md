@@ -32,10 +32,9 @@
 
 ## Install
 
-Install only the mods you want. context-usage holds context-meter and usage-limits; install it or those two, not both, or the rows show twice and two mods compact at their thresholds. The mods load in every session started afterwards, in the terminal and in the desktop app.
+Install only the mods you want, but not context-usage together with context-meter or usage-limits: it already contains both. Run the commands in any shell, or in Claude Code with `/plugin` in place of `claude plugin`. New sessions load them.
 
 <table>
-<tr><th colspan="2">In any shell (cmd, PowerShell, bash)</th></tr>
 <tr><td>Marketplace, once</td><td>
 
 ```
@@ -75,42 +74,6 @@ claude plugin install cache-meter@T-AI-Labs
 
 ```
 claude plugin install catalog-pane@T-AI-Labs
-```
-
-</td></tr>
-<tr><th colspan="2">Or at the prompt of a running Claude Code terminal session</th></tr>
-<tr><td><a href="#context-usage">context-usage</a></td><td>
-
-```
-/plugin install context-usage --marketplace T-AI-Labs/claude-code-mods
-```
-
-</td></tr>
-<tr><td><a href="#context-meter">context-meter</a></td><td>
-
-```
-/plugin install context-meter --marketplace T-AI-Labs/claude-code-mods
-```
-
-</td></tr>
-<tr><td><a href="#usage-limits">usage-limits</a></td><td>
-
-```
-/plugin install usage-limits --marketplace T-AI-Labs/claude-code-mods
-```
-
-</td></tr>
-<tr><td><a href="#cache-meter">cache-meter</a></td><td>
-
-```
-/plugin install cache-meter --marketplace T-AI-Labs/claude-code-mods
-```
-
-</td></tr>
-<tr><td><a href="#catalog-pane">catalog-pane</a></td><td>
-
-```
-/plugin install catalog-pane --marketplace T-AI-Labs/claude-code-mods
 ```
 
 </td></tr>
