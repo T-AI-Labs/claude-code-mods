@@ -1,6 +1,6 @@
 <h1 align="center">Claude Code Mods</h1>
 
-<p align="center"><em>See your prompt-cache hit rate, context fill and usage limits at a glance, right above the Claude Code prompt, and browse everything your setup provides in one pane.</em></p>
+<p align="center"><em>Extend Claude Code with practical features.</em></p>
 
 <p align="center">
   <a href="https://github.com/T-AI-Labs/claude-code-mods/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/T-AI-Labs/claude-code-mods/ci.yml?branch=main&style=flat-square&label=ci" alt="CI"></a>
