@@ -81,27 +81,17 @@ claude plugin update catalog-pane@T-AI-Labs
 </td><td><img src=".docs/catalog-pane.svg" alt="The catalog pane" width="320"></td></tr>
 </table>
 
-## Usage
-
-context-usage, context-meter, usage-limits and cache-meter each draw a row in the band above the prompt; catalog-pane opens with `/catalog`. Showing the rows costs no tokens: the mods only read figures Claude Code already has.
-
-In the terminal, use the mouse or press `ctrl+x tab` to move into the band: Tab walks the controls, Enter presses a button, the arrow keys pick a value. `ctrl+x ctrl+a` or the band's `[-]` mark collapses it.
-
-## Options
-
-Each mod lists its options in its own section below. Change them from a shell, here in PowerShell:
-
-```
-'{"display":"text","details":"false"}' | claude plugin configure cache-meter@T-AI-Labs --values-stdin
-```
-
-In cmd, use `echo {"display":"text","details":"false"} | …` instead. Options you leave out keep their value, `claude plugin configure cache-meter@T-AI-Labs` alone shows what is set, and a new session picks up the change. You can also pass `--config display=text` when installing, or use the `/config` menu in a terminal session. Give the row mods the same `display` and `details` to keep their columns aligned.
-
 ## context-usage
 
 <p align="center"><img src=".docs/context-usage.svg" alt="The context-usage rows: context fill with the Auto threshold, Compact and Clear, and the 5-hour and weekly limits" width="640"></p>
 
-context-meter and usage-limits in one mod: the context row and the usage row beneath it. Both work as described under [context-meter](#context-meter) and [usage-limits](#usage-limits).
+context-meter and usage-limits in one mod: the context row and the usage row beneath it. Both work as described under [context-meter](#context-meter) and [usage-limits](#usage-limits). To switch from the two separate mods, install context-usage, uninstall context-meter and usage-limits, and pick the threshold again.
+
+### Usage
+
+The rows sit in the band above the prompt and cost no tokens: they only read figures Claude Code already has. In the terminal, `ctrl+x tab` moves into the band: Tab walks the controls, Enter presses a button, the arrow keys pick a threshold. `ctrl+x ctrl+a` or the band's `[-]` mark collapses it.
+
+### Options
 
 | Option | Values | Default | Effect |
 | --- | --- | --- | --- |
@@ -109,7 +99,11 @@ context-meter and usage-limits in one mod: the context row and the usage row ben
 | `details` | `true`, `false` | `true` | Shows the figures in parentheses. |
 | `usagePosition` | `below`, `above` | `below` | Puts the usage row under or on top of the context row. |
 
-To switch from the two separate mods, install context-usage and uninstall context-meter and usage-limits, then pick the threshold again.
+```
+'{"display":"text","usagePosition":"above"}' | claude plugin configure context-usage@T-AI-Labs --values-stdin
+```
+
+That is PowerShell; in cmd, use `echo {"display":"text"} | …`. Options you leave out keep their value, the command without `--values-stdin` shows what is set, and a new session picks up the change. `--config display=text` sets an option while installing, and in a terminal session the options are rows of the `/config` menu.
 
 ## context-meter
 
@@ -122,14 +116,24 @@ To switch from the two separate mods, install context-usage and uninstall contex
 | **Compact** | Runs `/compact` now. |
 | **Clear** | Runs `/clear`. |
 
-Until the first response of a session, and again after a clear, the fill reads `0%`: the engine counts the system prompt and tools only once a response arrives. In the desktop app the row is two lines high so the app's taller buttons fit.
+### Usage
+
+The row sits in the band above the prompt and costs no tokens: it only reads figures Claude Code already has. In the desktop app it is two lines high so the app's taller buttons fit. In the terminal, `ctrl+x tab` moves into the band: Tab walks the controls, Enter presses a button, the arrow keys pick a threshold. `ctrl+x ctrl+a` or the band's `[-]` mark collapses it.
+
+Until the first response of a session, and again after a clear, the fill reads `0%`: the engine counts the system prompt and tools only once a response arrives.
+
+### Options
 
 | Option | Values | Default | Effect |
 | --- | --- | --- | --- |
 | `display` | `gauge`, `text` | `gauge` | `gauge` draws a five-segment gauge before the percentage; `text` leaves it out. |
 | `details` | `true`, `false` | `true` | Shows the figures in parentheses. |
 
-The row needs about 62 columns with the defaults; on a narrower window the buttons wrap to a second line. `details` off saves about 11 columns, `display` set to `text` about 6:
+```
+'{"display":"text","details":"false"}' | claude plugin configure context-meter@T-AI-Labs --values-stdin
+```
+
+Set them as for [context-usage](#options). The row needs about 62 columns with the defaults; on a narrower window the buttons wrap to a second line. `details` off saves about 11 columns, `display` set to `text` about 6:
 
 <p align="center"><img src=".docs/context-narrow.svg" alt="The context row without the token counts" width="640"></p>
 
@@ -145,14 +149,26 @@ Every compaction costs tokens, whether you press Compact or the threshold trigge
 
 A gauge for each rate-limit window, with the percentage used and the time until it resets: `5h` for the 5-hour limit, `Week` for the weekly one. Yellow from 75 %, red from 90 %.
 
+### Usage
+
+The row sits in the band above the prompt and costs no tokens. `ctrl+x ctrl+a` or the band's `[-]` mark collapses it in the terminal.
+
 Claude Code reports the limits only on a subscription plan, with each response. Until the first one, and right after a `/clear`, the row shows the last reading, with a window that has reset since at 0 %. A window that never had a reading shows `–`.
 
 Sessions running side by side share their readings through a file on your machine, once a minute and at no token cost, so an idle session still shows what the others used. context-usage and usage-limits keep separate stores and do not share with each other.
+
+### Options
 
 | Option | Values | Default | Effect |
 | --- | --- | --- | --- |
 | `display` | `gauge`, `text` | `gauge` | `gauge` draws a five-segment gauge before each percentage; `text` leaves it out. |
 | `details` | `true`, `false` | `true` | Shows the reset times in parentheses. |
+
+```
+'{"display":"text"}' | claude plugin configure usage-limits@T-AI-Labs --values-stdin
+```
+
+Set them as for [context-usage](#options). Give the row mods the same `display` and `details` to keep their columns aligned.
 
 ## cache-meter
 
@@ -162,7 +178,15 @@ Sessions running side by side share their readings through a file on your machin
 | --- | --- |
 | **Cache** | Share of the last turn's input tokens served from the prompt cache, with tokens read and total input. Yellow below 40 %; `–` until the first response and after a clear. |
 | **warm** / **cold** | How long the cache stays valid: five minutes after the last request starts, or an hour once the session has used the hour-long cache. `cold` means the next turn writes the whole context again at full price, the cheapest moment to compact or clear. |
-| **Keep warm** | Off by default. Refreshes the cache shortly before it lapses, for up to `keepWarmMinutes` after the last turn, and counts the refreshes. Stops when a refresh finds the cache already gone. A text link in the desktop app, a button elsewhere. |
+| **Keep warm** | Off by default. Refreshes the cache shortly before it lapses, for up to `keepWarmMinutes` after the last turn, and counts the refreshes. Stops when a refresh finds the cache already gone. |
+
+### Usage
+
+The row sits in the band above the prompt and costs no tokens; only Keep warm's refreshes are model requests. Keep warm is a text link in the desktop app and a button elsewhere. In the terminal, `ctrl+x tab` moves into the band, Tab walks the controls and Enter presses one. `ctrl+x ctrl+a` or the band's `[-]` mark collapses it.
+
+Before 0.4.0 cache-meter also showed the context fill, threshold, Compact and Clear. They moved to context-meter, which an update does not install: install it and pick the threshold again.
+
+### Options
 
 | Option | Values | Default | Effect |
 | --- | --- | --- | --- |
@@ -170,7 +194,11 @@ Sessions running side by side share their readings through a file on your machin
 | `details` | `true`, `false` | `true` | Shows the figures in parentheses. |
 | `keepWarmMinutes` | `15`, `30`, `60`, `120` | `60` | How long after the last turn Keep warm goes on refreshing. |
 
-Before 0.4.0 cache-meter also showed the context fill, threshold, Compact and Clear. They moved to context-meter, which an update does not install: install it and pick the threshold again.
+```
+'{"keepWarmMinutes":"120"}' | claude plugin configure cache-meter@T-AI-Labs --values-stdin
+```
+
+Set them as for [context-usage](#options).
 
 ### Why the hit rate matters
 
@@ -184,9 +212,11 @@ Each refresh reads the cached context once at the cache price, plus a one-word r
 
 <p align="center"><img src=".docs/catalog-pane.svg" alt="The catalog pane listing skills" width="882"></p>
 
-A pane with one tab per category: **Skills**, **Commands**, **Agents**, **Mods**, **Plugins**, **Hooks** (from the settings files), **MCP** servers and built-in **Tools**. `/catalog` opens it, in the desktop app and in the terminal; `/catalog mods` opens a category, `/catalog <text>` a search.
+A pane with one tab per category: **Skills**, **Commands**, **Agents**, **Mods**, **Plugins**, **Hooks** (from the settings files), **MCP** servers and built-in **Tools**.
 
-Each row shows the entry's origin, how often it was used in total and in the last 30 days, and for plugin parts the tokens it adds to every session. Usage is counted from the install of the mod on. On the desktop you can filter by text and origin and sort:
+### Usage
+
+`/catalog` opens the pane, in the desktop app and in the terminal; `/catalog mods` opens a category, `/catalog <text>` a search. Each row shows the entry's origin, how often it was used in total and in the last 30 days, and for plugin parts the tokens it adds to every session. Usage is counted from the install of the mod on. On the desktop you can filter by text and origin and sort:
 
 | Sort | Order |
 | --- | --- |
@@ -199,10 +229,18 @@ Each row shows the entry's origin, how often it was used in total and in the las
 
 Pressing an entry opens its detail: usage over 7 and 30 days, token cost, version and install dates, what a mod hooks and calls, the repository and the full description. **Explain with Haiku** sums up in three sentences what the entry is for. The buttons depend on the kind: insert or run a skill or command, insert an agent, MCP server or tool into the prompt, update, disable or uninstall a plugin or mod, remove a local MCP server. Uninstalling and removing ask first.
 
+### Options
+
 | Option | Values | Default | Effect |
 | --- | --- | --- | --- |
 | `language` | any language name | `English` | The language **Explain with Haiku** answers in. |
 | `githubStats` | `true`, `false` | `true` | Fetches the GitHub stats of each plugin's repository once a day. |
+
+```
+'{"language":"German"}' | claude plugin configure catalog-pane@T-AI-Labs --values-stdin
+```
+
+Set them as for [context-usage](#options).
 
 ### Network and model requests
 
