@@ -15,7 +15,7 @@
 <p align="center">
   <a href="#mods"><strong>Mods</strong></a> ·
   <a href="#configure">Configure</a> ·
-  <a href="#update-and-uninstall">Update</a> ·
+  <a href="#update-and-uninstall">Update</a>
 </p>
 
 ## Mods
