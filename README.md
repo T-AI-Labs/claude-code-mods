@@ -1,6 +1,6 @@
 <h1 align="center">Claude Code Mods</h1>
 
-<p align="center"><em>Extend Claude Code with practical features.</em></p>
+<p align="center"><em>Context, prompt-cache and usage-limit meters right above the Claude Code prompt, and a pane that lists everything your setup provides.</em></p>
 
 <p align="center">
   <a href="https://github.com/T-AI-Labs/claude-code-mods/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/T-AI-Labs/claude-code-mods/ci.yml?branch=main&style=flat-square&label=ci" alt="CI"></a>
@@ -12,19 +12,20 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/T-AI-Labs/claude-code-mods?style=flat-square" alt="License"></a>
 </p>
 
-<p align="center">
-  <a href="#mods"><strong>Mods</strong></a> ·
-  <a href="#uninstall">Uninstall</a>
-</p>
+## Installation
 
-## Mods
-
-Install only the mods you want, but not context-usage together with context-meter or usage-limits: it already contains both. Add the marketplace once, then install each mod with the first command under its description. To update later, run the second line of each block: first the marketplace, then the mods. Run them in any shell or in Claude Code with `/plugin` in place of `claude plugin`. New sessions load them.
+Add the marketplace once, then install the mods you want with the first command in their row of the [Mods](#mods) table. To update, run the second lines: the marketplace first, then each mod. The commands work in any shell, or inside Claude Code with `/plugin` in place of `claude plugin`. New sessions load the changes.
 
 ```
 claude plugin marketplace add T-AI-Labs/claude-code-mods
 claude plugin marketplace update T-AI-Labs
 ```
+
+The mods use Claude Code's function-hook plugin API, which is in early access and may change between releases. They are built and tested against Claude Code 2.1.295, the engine in the Claude desktop app 2.31226.1.
+
+## Mods
+
+context-usage already contains context-meter and usage-limits: install either it or those two, not both.
 
 <table>
 <tr><th>Mod</th><th>Description</th><th width="35%">Preview</th></tr>
@@ -80,13 +81,15 @@ claude plugin update catalog-pane@T-AI-Labs
 </td><td><img src=".docs/catalog-pane.svg" alt="The catalog pane" width="320"></td></tr>
 </table>
 
-The mods use Claude Code's function-hook plugin API, which is in early access and may change between releases. They are built and tested against Claude Code 2.1.295, the engine in the Claude desktop app 2.31226.1.
+## Usage
 
-### Using and configuring the mods
+context-usage, context-meter, usage-limits and cache-meter each draw a row in the band above the prompt; catalog-pane opens with `/catalog`. Showing the rows costs no tokens: the mods only read figures Claude Code already has.
 
-context-usage, context-meter, usage-limits and cache-meter each draw a row in the band above the prompt. Showing it costs no tokens: the mods only read figures Claude Code already has. In the terminal, use the mouse or press `ctrl+x tab` to move into the band: Tab walks the controls, Enter presses a button, the arrow keys pick a value. `ctrl+x ctrl+a` or the band's `[-]` mark collapses it.
+In the terminal, use the mouse or press `ctrl+x tab` to move into the band: Tab walks the controls, Enter presses a button, the arrow keys pick a value. `ctrl+x ctrl+a` or the band's `[-]` mark collapses it.
 
-Each mod lists its options in its section below. Change them from a shell, here in PowerShell:
+## Options
+
+Each mod lists its options in its own section below. Change them from a shell, here in PowerShell:
 
 ```
 '{"display":"text","details":"false"}' | claude plugin configure cache-meter@T-AI-Labs --values-stdin
@@ -167,6 +170,8 @@ Sessions running side by side share their readings through a file on your machin
 | `details` | `true`, `false` | `true` | Shows the figures in parentheses. |
 | `keepWarmMinutes` | `15`, `30`, `60`, `120` | `60` | How long after the last turn Keep warm goes on refreshing. |
 
+Before 0.4.0 cache-meter also showed the context fill, threshold, Compact and Clear. They moved to context-meter, which an update does not install: install it and pick the threshold again.
+
 ### Why the hit rate matters
 
 Every turn sends the whole conversation again. Cached tokens cost about a tenth of the input price, a twentieth on Claude Opus 5.5; writing them to the cache costs 1.25 times the input price. The cache lapses after a pause, on a model switch, and when something early in the context changes, such as CLAUDE.md or the tools.
@@ -206,16 +211,6 @@ Pressing an entry opens its detail: usage over 7 and 30 days, token cost, versio
 - **Claude Code CLI:** `claude plugin details` once per plugin version for its token cost, `claude plugin validate` once per mod version, and `update`, `disable`, `enable` or `uninstall` when you press those buttons.
 
 Everything else comes from Claude Code and the configuration files, and is kept in the mod's own store.
-
-## Uninstall
-
-```
-claude plugin uninstall context-usage@T-AI-Labs
-```
-
-Run it once per mod you have installed. A new session picks up the change.
-
-Since 0.4.0 cache-meter shows the cache alone. The context fill, threshold, Compact and Clear moved to context-meter, which an update does not install: run `claude plugin install context-meter@T-AI-Labs` and pick the threshold again.
 
 ## License
 
