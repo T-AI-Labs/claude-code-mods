@@ -14,15 +14,16 @@
 
 <p align="center">
   <a href="#mods"><strong>Mods</strong></a> ·
-  <a href="#update-and-uninstall">Update</a>
+  <a href="#uninstall">Uninstall</a>
 </p>
 
 ## Mods
 
-Install only the mods you want, but not context-usage together with context-meter or usage-limits: it already contains both. Add the marketplace once, then install each mod with the command under its description, in any shell or in Claude Code with `/plugin` in place of `claude plugin`. New sessions load them.
+Install only the mods you want, but not context-usage together with context-meter or usage-limits: it already contains both. Add the marketplace once, then install each mod with the first command under its description. To update later, run the second line of each block: first the marketplace, then the mods. Run them in any shell or in Claude Code with `/plugin` in place of `claude plugin`. New sessions load them.
 
 ```
 claude plugin marketplace add T-AI-Labs/claude-code-mods
+claude plugin marketplace update T-AI-Labs
 ```
 
 <table>
@@ -33,6 +34,7 @@ claude plugin marketplace add T-AI-Labs/claude-code-mods
 
 ```
 claude plugin install context-usage@T-AI-Labs
+claude plugin update context-usage@T-AI-Labs
 ```
 
 </td><td><img src=".docs/context-usage.svg" alt="The context-usage rows" width="320"></td></tr>
@@ -42,6 +44,7 @@ The context row of context-usage on its own.
 
 ```
 claude plugin install context-meter@T-AI-Labs
+claude plugin update context-meter@T-AI-Labs
 ```
 
 </td><td><img src=".docs/context-meter.svg" alt="The context-meter row" width="320"></td></tr>
@@ -51,6 +54,7 @@ The usage row of context-usage on its own.
 
 ```
 claude plugin install usage-limits@T-AI-Labs
+claude plugin update usage-limits@T-AI-Labs
 ```
 
 </td><td><img src=".docs/usage-limits.svg" alt="The usage-limits row" width="320"></td></tr>
@@ -60,6 +64,7 @@ How much of each turn the prompt cache served and how long it stays warm, with a
 
 ```
 claude plugin install cache-meter@T-AI-Labs
+claude plugin update cache-meter@T-AI-Labs
 ```
 
 </td><td><img src=".docs/cache-meter.svg" alt="The cache-meter row" width="320"></td></tr>
@@ -69,6 +74,7 @@ A pane listing every skill, command, agent, mod, plugin, settings hook, MCP serv
 
 ```
 claude plugin install catalog-pane@T-AI-Labs
+claude plugin update catalog-pane@T-AI-Labs
 ```
 
 </td><td><img src=".docs/catalog-pane.svg" alt="The catalog pane" width="320"></td></tr>
@@ -201,15 +207,13 @@ Pressing an entry opens its detail: usage over 7 and 30 days, token cost, versio
 
 Everything else comes from Claude Code and the configuration files, and is kept in the mod's own store.
 
-## Update and uninstall
+## Uninstall
 
 ```
-claude plugin marketplace update T-AI-Labs
-claude plugin update context-usage@T-AI-Labs
 claude plugin uninstall context-usage@T-AI-Labs
 ```
 
-Run `update` or `uninstall` once per mod you have installed. A new session picks up the change.
+Run it once per mod you have installed. A new session picks up the change.
 
 Since 0.4.0 cache-meter shows the cache alone. The context fill, threshold, Compact and Clear moved to context-meter, which an update does not install: run `claude plugin install context-meter@T-AI-Labs` and pick the threshold again.
 
