@@ -16,7 +16,6 @@
   <a href="#mods"><strong>Mods</strong></a> ·
   <a href="#configure">Configure</a> ·
   <a href="#update-and-uninstall">Update</a> ·
-  <a href="#credits">Credits</a>
 </p>
 
 ## Mods
@@ -240,10 +239,6 @@ claude plugin uninstall catalog-pane@T-AI-Labs
 ```
 
 A new session picks up the change.
-
-## Credits
-
-The idea for these mods comes from [Julian Ivanov](https://www.youtube.com/@Julian-Ivanov) and his video [Diese 10 Claude Code Mods solltest du unbedingt kennen](https://www.youtube.com/watch?v=ji4ANdb_M6Y). The code in this repository was written independently.
 
 ## License
 
