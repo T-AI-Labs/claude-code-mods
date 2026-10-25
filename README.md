@@ -90,7 +90,7 @@ In cmd, use `echo {"display":"text","details":"false"} | …` instead. Options y
 
 ## context-usage
 
-<p align="center"><img src=".docs/context-usage.svg" alt="The context-usage rows: context fill with the Auto threshold, Compact and Clear, and the 5-hour and weekly limits" width="427"></p>
+<p align="center"><img src=".docs/context-usage.svg" alt="The context-usage rows: context fill with the Auto threshold, Compact and Clear, and the 5-hour and weekly limits" width="640"></p>
 
 context-meter and usage-limits in one mod: the context row and the usage row beneath it. Both work as described under [context-meter](#context-meter) and [usage-limits](#usage-limits).
 
@@ -104,7 +104,7 @@ To switch from the two separate mods, install context-usage and uninstall contex
 
 ## context-meter
 
-<p align="center"><img src=".docs/context-meter.svg" alt="The context-meter row: context fill with the Auto threshold, Compact and Clear" width="427"></p>
+<p align="center"><img src=".docs/context-meter.svg" alt="The context-meter row: context fill with the Auto threshold, Compact and Clear" width="640"></p>
 
 | Element | What it shows |
 | --- | --- |
@@ -122,7 +122,7 @@ Until the first response of a session, and again after a clear, the fill reads `
 
 The row needs about 62 columns with the defaults; on a narrower window the buttons wrap to a second line. `details` off saves about 11 columns, `display` set to `text` about 6:
 
-<p align="center"><img src=".docs/context-narrow.svg" alt="The context row without the token counts" width="427"></p>
+<p align="center"><img src=".docs/context-narrow.svg" alt="The context row without the token counts" width="640"></p>
 
 ### How auto-compact works
 
@@ -132,7 +132,7 @@ Every compaction costs tokens, whether you press Compact or the threshold trigge
 
 ## usage-limits
 
-<p align="center"><img src=".docs/usage-limits.svg" alt="The usage-limits row: the 5-hour and weekly limits with their resets" width="427"></p>
+<p align="center"><img src=".docs/usage-limits.svg" alt="The usage-limits row: the 5-hour and weekly limits with their resets" width="640"></p>
 
 A gauge for each rate-limit window, with the percentage used and the time until it resets: `5h` for the 5-hour limit, `Week` for the weekly one. Yellow from 75 %, red from 90 %.
 
@@ -147,7 +147,7 @@ Sessions running side by side share their readings through a file on your machin
 
 ## cache-meter
 
-<p align="center"><img src=".docs/cache-meter.svg" alt="The cache-meter row: hit rate, warm time and Keep warm" width="427"></p>
+<p align="center"><img src=".docs/cache-meter.svg" alt="The cache-meter row: hit rate, warm time and Keep warm" width="640"></p>
 
 | Element | What it shows |
 | --- | --- |
@@ -171,7 +171,7 @@ Each refresh reads the cached context once at the cache price, plus a one-word r
 
 ## catalog-pane
 
-<p align="center"><img src=".docs/catalog-pane.svg" alt="The catalog pane listing skills" width="588"></p>
+<p align="center"><img src=".docs/catalog-pane.svg" alt="The catalog pane listing skills" width="882"></p>
 
 A pane with one tab per category: **Skills**, **Commands**, **Agents**, **Mods**, **Plugins**, **Hooks** (from the settings files), **MCP** servers and built-in **Tools**. `/catalog` opens it, in the desktop app and in the terminal; `/catalog mods` opens a category, `/catalog <text>` a search.
 
@@ -184,7 +184,7 @@ Each row shows the entry's origin, how often it was used in total and in the las
 | GitHub stars, Trending, GitHub forks, Latest GitHub push | By the plugin's repository; Trending is stars gained per month. |
 | Installs, Newest installed | By the official directory's install count, or by install date. |
 
-<p align="center"><img src=".docs/catalog-pane-detail.svg" alt="The catalog pane showing one mod" width="588"></p>
+<p align="center"><img src=".docs/catalog-pane-detail.svg" alt="The catalog pane showing one mod" width="882"></p>
 
 Pressing an entry opens its detail: usage over 7 and 30 days, token cost, version and install dates, what a mod hooks and calls, the repository and the full description. **Explain with Haiku** sums up in three sentences what the entry is for. The buttons depend on the kind: insert or run a skill or command, insert an agent, MCP server or tool into the prompt, update, disable or uninstall a plugin or mod, remove a local MCP server. Uninstalling and removing ask first.
 
