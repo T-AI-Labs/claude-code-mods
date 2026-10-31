@@ -8,8 +8,6 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/T-AI-Labs/claude-code-mods?style=flat-square" alt="License"></a>
 </p>
 
-<p align="center"><img src=".docs/context-usage.svg" alt="The context-usage rows: context fill with the Auto threshold, Compact and Clear, and the 5-hour and weekly limits" width="640"></p>
-
 ## Why
 
 Claude Code shows little of what costs you: how full the context is, whether the prompt cache is still warm, and how much of your usage limits is left. These mods put those figures in a band right above the prompt, at no token cost.
