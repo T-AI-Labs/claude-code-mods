@@ -5,7 +5,7 @@
     "email": "CleanMyPost@gmx.de"
   },
   "metadata": {
-    "description": "Mods for Claude Code: a context and usage-limits band with compaction controls, a prompt-cache row that keeps the cache warm, the context and usage-limits rows on their own, and a catalog pane of everything the setup provides."
+    "description": "Mods for Claude Code: a context and usage-limits band with compaction controls, a prompt-cache row that keeps the cache warm, the context and usage-limits rows on their own, a catalog pane of everything the setup provides, and a usage pane that adds up tokens, cache hits and API price."
   },
   "plugins": [
     {
@@ -32,6 +32,11 @@
       "name": "catalog-pane",
       "source": "./catalog-pane",
       "description": "A pane that lists every skill, command, agent, mod, plugin, settings hook, MCP server and tool by category, with usage, token cost, updates and GitHub stats, and buttons to insert, run, update, disable or uninstall."
+    },
+    {
+      "name": "usage-pane",
+      "source": "./usage-pane",
+      "description": "A pane, opened with /tokens, that adds up tokens, cache hit rate, turns, tool calls and API price for the last turn, the session, today, 7 and 30 days, by model and by project, with the history of the 5-hour and weekly limits."
     }
   ]
 }
