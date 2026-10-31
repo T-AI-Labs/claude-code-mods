@@ -318,7 +318,7 @@ const row = ({ Box, Text }: Tags, key: string, label: string, value: string, det
       </Text>
     </Box>
     <Box minWidth={VALUE_WIDTH} marginRight={1} flexShrink={0} justifyContent="flex-end">
-      <Text tabular>{value}</Text>
+      <Text>{value}</Text>
     </Box>
     <Text dimColor wrap="truncate-end">
       {detail}
