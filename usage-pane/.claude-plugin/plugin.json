@@ -6,6 +6,6 @@
     "email": "noreply@anthropic.com"
   },
   "license": "MIT",
-  "description": "A pane, opened with /tokens, that adds up tokens, cache hit rate, turns, tool calls and API price for the last turn, the session, today, 7 and 30 days, by model and by project, with the history of the 5-hour and weekly limits.",
+  "description": "A pane, opened with /tokens, that adds up tokens, cache hit rate, turns, tool calls and API price for the last turn, the session, today, 7 and 30 days, by model and by project, with the history of the 5-hour and weekly limits, and lists each session's prompts by cost with what made them expensive.",
   "types": "./types/index.d.ts"
 }
