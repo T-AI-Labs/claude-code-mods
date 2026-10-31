@@ -23,7 +23,7 @@ Claude Code shows little of what costs you: how full the context is, whether the
 - **Auto-compaction at the worst moment?** [context-meter](#context-meter) shows the fill against the threshold and compacts at the point you pick.
 - **Back from a break to a cold cache?** Writing 200k tokens of context again costs about $1.00 on Claude Opus 5.5. [cache-meter](#cache-meter) shows when the cache goes cold and can keep it warm at about $0.04 a refresh.
 - **Lost track of what your setup loads?** [catalog-pane](#catalog-pane) lists every skill, plugin, hook and MCP server with its usage and the tokens it adds to every session.
-- **Where did this week's tokens go?** [usage-pane](#usage-pane) adds up tokens, cache hit rate and API price by day, model and project, and keeps the peak of each limit window.
+- **Where did this week's tokens go?** [usage-pane](#usage-pane) adds up tokens, cache hit rate and API price by day, model and project, and shows which prompts cost the most and why.
 
 ## Requirements
 
@@ -76,7 +76,7 @@ claude plugin update catalog-pane@T-AI-Labs
 </td><td><img src=".docs/catalog-pane.svg" alt="The catalog pane" width="320"></td></tr>
 <tr><td><a href="#usage-pane">usage&#8209;pane</a></td><td>
 
-A pane that adds up tokens, cache hit rate, turns, tool calls and API price for the last turn, the session, today, 7 and 30 days, by model and by project, with the history of the 5-hour and weekly limits.
+A pane that adds up tokens, cache hit rate, turns, tool calls and API price for the last turn, the session, today, 7 and 30 days, by model and by project, with the history of the 5-hour and weekly limits, and each session's prompts by cost with what made them expensive.
 
 ```
 claude plugin install usage-pane@T-AI-Labs
@@ -279,11 +279,11 @@ Everything else comes from Claude Code and the configuration files, and is kept 
 
 <p align="center"><img src=".docs/usage-pane.svg" alt="The usage pane showing the last 7 days" width="882"></p>
 
-A pane with one tab per period: **Last turn**, **Session**, **Today**, **7 days** and **30 days**.
+A pane with one tab per period: **Last turn**, **Session**, **Today**, **7 days** and **30 days**, and two that show where the cost came from: **Sessions** and **Prompts**.
 
 ### Usage
 
-`/tokens` opens the pane, in the desktop app and in the terminal; `/tokens today` or `/tokens month` opens a period. It costs no tokens and makes no model requests.
+`/tokens` opens the pane, in the desktop app and in the terminal; `/tokens today`, `/tokens month` or `/tokens prompts` opens that tab. It costs no tokens and makes no model requests.
 
 | Row | What it shows |
 | --- | --- |
@@ -295,7 +295,22 @@ A pane with one tab per period: **Last turn**, **Session**, **Today**, **7 days*
 | **By model**, **By project** | Tokens, price and cache hit rate of each model and each project. By project is left out for the last turn and the session. |
 | **Limits** | The current 5-hour and weekly windows with when each resets, and the peak each earlier window reached in the last 8 days. |
 
-Usage is counted from the install of the mod on, in every session that runs it, and kept for 31 days. The limits fill in once Claude Code reports them, on a subscription plan with each response.
+### Sessions and prompts
+
+**Sessions** lists the sessions of the last 30 days, newest first, with their price, project, number of prompts and first prompt. Pressing one opens its prompts.
+
+**Prompts** lists the prompts of a session, most expensive first; pressing one shows it in full:
+
+| Part | What it shows |
+| --- | --- |
+| **API price**, **Tokens** | What the prompt cost, subagents included. |
+| **Model calls** | How many requests the prompt took, the largest context one of them sent, and how long it ran. |
+| **Subagent runs** | How many subagent turns the prompt started, and their tokens. |
+| **Tool output** | The tools whose results were largest, with their calls and about how many tokens they returned. |
+| **Where the cost went** | The price split into re-reading the context, writing the cache, output and subagents, weighted by Claude's API price ratios. |
+| **Next time** | Up to three hints when the prompt crossed a mark: a context over 100k tokens, 25 or more model calls, a cold cache that wrote 50k tokens or more, a tool that returned 50k characters or more, subagents or output over 40% of the cost, or an interrupted turn. |
+
+Usage is counted from the install of the mod on, in every session that runs it, and kept for 31 days; the details of each prompt are kept for 7 days. The limits fill in once Claude Code reports them, on a subscription plan with each response.
 
 ## License
 

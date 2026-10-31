@@ -6,10 +6,13 @@ import type {
   LimitWindow,
   Limits,
   Period,
+  PromptRecord,
   Report,
   SessionRecord,
+  SessionSummary,
   Slice,
   Tokens,
+  View,
 } from '../types'
 
 const PANE = 'usage'
@@ -24,8 +27,22 @@ const KEEP_DAYS = 31
 const KEEP_WINDOWS = 8
 const UNKNOWN = 'unknown'
 
+// The store holds 4 MiB in all, so prompt details are kept for the last week only.
+const KEEP_PROMPTS = 30
+const KEEP_PROMPT_DAYS = 7
+const TEXT_LENGTH = 120
+const LIST_SESSIONS = 25
+const LIST_PROMPTS = 15
+const LIST_TOOLS = 4
+const MAX_TIPS = 3
+
 // A window's reset time drifts by seconds between readings; the next window resets at least an hour later.
 const SAME_WINDOW = HOUR
+
+// Claude's API prices keep these ratios to the input price on every model.
+const WEIGHTS: Tokens = { input: 1, output: 5, cacheRead: 0.1, cacheWrite: 1.25 }
+
+const CHARS_PER_TOKEN = 4
 
 const LABEL_WIDTH = 20
 const VALUE_WIDTH = 9
@@ -36,6 +53,12 @@ const PERIODS: { period: Period; label: string }[] = [
   { period: 'today', label: 'Today' },
   { period: 'week', label: '7 days' },
   { period: 'month', label: '30 days' },
+]
+
+const VIEWS: { period: View; label: string }[] = [
+  ...PERIODS,
+  { period: 'sessions', label: 'Sessions' },
+  { period: 'prompts', label: 'Prompts' },
 ]
 
 const LIMIT_LABELS: Record<string, string> = {
@@ -50,9 +73,11 @@ const FIELDS = ['input', 'output', 'cacheRead', 'cacheWrite', 'turns', 'tools', 
 
 type Tags = Pick<Elements['terminal'], 'Box' | 'Text'>
 
-const report = atom({ plugin: 'usage-pane', key: 'report' } as const, null, { shape: 'report-1' })
+const report = atom({ plugin: 'usage-pane', key: 'report' } as const, null, { shape: 'report-2' })
 const period = atom({ plugin: 'usage-pane', key: 'period' } as const, 'week')
 const isLoading = atom({ plugin: 'usage-pane', key: 'isLoading' } as const, false)
+const sessionId = atom({ plugin: 'usage-pane', key: 'sessionId' } as const, null)
+const promptAt = atom({ plugin: 'usage-pane', key: 'promptAt' } as const, null)
 
 const empty = (): Bucket => ({
   input: 0,
@@ -64,6 +89,8 @@ const empty = (): Bucket => ({
   ms: 0,
   usd: 0,
 })
+
+const noTokens = (): Tokens => ({ input: 0, output: 0, cacheRead: 0, cacheWrite: 0 })
 
 const add = (into: Bucket, part: Partial<Bucket>): Bucket => {
   const sum = empty()
@@ -82,7 +109,20 @@ const tokensOf = (usage: ModelUsage): Tokens => ({
   cacheWrite: usage.cache_creation_input_tokens,
 })
 
+const addTokens = (a: Tokens, b: Tokens): Tokens => ({
+  input: a.input + b.input,
+  output: a.output + b.output,
+  cacheRead: a.cacheRead + b.cacheRead,
+  cacheWrite: a.cacheWrite + b.cacheWrite,
+})
+
 const totalOf = (one: Tokens) => one.input + one.output + one.cacheRead + one.cacheWrite
+
+const weightOf = (one: Tokens) =>
+  one.input * WEIGHTS.input +
+  one.output * WEIGHTS.output +
+  one.cacheRead * WEIGHTS.cacheRead +
+  one.cacheWrite * WEIGHTS.cacheWrite
 
 const hitRateOf = (one: Tokens) => {
   const prompt = one.input + one.cacheRead + one.cacheWrite
@@ -107,6 +147,12 @@ const daysBack = (at: number, count: number) => {
 }
 
 const projectOf = (root: string) => root.split(/[\\/]/).filter(Boolean).at(-1) ?? root
+
+const oneLine = (text: string) => {
+  const flat = text.replace(/\s+/g, ' ').trim()
+
+  return flat.length > TEXT_LENGTH ? `${flat.slice(0, TEXT_LENGTH - 1)}…` : flat
+}
 
 const bump = (held: SessionRecord, day: string, model: string, part: Partial<Bucket>): SessionRecord => {
   const models = held.days[day] ?? {}
@@ -141,6 +187,34 @@ const edit = ($: EngineInterface, change: (held: SessionRecord, at: number) => S
 
     await $.store.set(key, change({ ...base, lastAt: at }, at))
   })
+
+type Running = PromptRecord & { usdAtStart: number }
+
+// The prompt the main loop is working on; a reload mid-turn loses it and that prompt goes unrecorded.
+let running: Running | null = null
+
+const noteStep = (agentId: string | undefined, usage: ModelUsage | null) => {
+  if (running === null || usage === null || agentId !== undefined) {
+    return
+  }
+
+  const step = tokensOf(usage)
+  running.steps += 1
+  running.peakContext = Math.max(running.peakContext, step.input + step.cacheRead + step.cacheWrite)
+
+  if (running.steps === 1) {
+    running.firstWrite = step.cacheWrite
+  }
+}
+
+const noteTool = (tool: string, chars: number) => {
+  if (running === null) {
+    return
+  }
+
+  const held = running.tools[tool] ?? { calls: 0, chars: 0 }
+  running.tools[tool] = { calls: held.calls + 1, chars: held.chars + chars }
+}
 
 const sameWindow = (one: LimitWindow, resetsAt: string) =>
   Math.abs(Date.parse(one.resetsAt) - Date.parse(resetsAt)) <= SAME_WINDOW
@@ -192,6 +266,9 @@ const prune = async ($: EngineInterface) => {
 
     if (held === undefined || held.lastAt < at - KEEP_DAYS * DAY) {
       await $.store.delete(key)
+    } else if (held.prompts !== undefined && held.lastAt < at - KEEP_PROMPT_DAYS * DAY) {
+      const { prompts: _, ...rest } = held
+      await $.store.set(key, rest)
     }
   }
 }
@@ -208,7 +285,8 @@ const build = async ($: EngineInterface): Promise<Report> => {
   await pending
 
   const at = await $.clock.now()
-  const own = SESSION_PREFIX + (await $.session.id())
+  const ownId = await $.session.id()
+  const own = SESSION_PREFIX + ownId
   const today = dayOf(at)
   const week = new Set(daysBack(at, 7))
   const month = new Set(daysBack(at, 30))
@@ -219,6 +297,7 @@ const build = async ($: EngineInterface): Promise<Report> => {
     week: blank(),
     month: blank(),
   }
+  const sessions: SessionSummary[] = []
   let hasCost = false
 
   for (const key of await $.store.keys()) {
@@ -233,6 +312,7 @@ const build = async ($: EngineInterface): Promise<Report> => {
     }
 
     hasCost ||= held.usdSeen > 0
+    let spent = empty()
 
     for (const [day, models] of Object.entries(held.days)) {
       const targets: Period[] = [
@@ -243,6 +323,8 @@ const build = async ($: EngineInterface): Promise<Report> => {
       ]
 
       for (const [model, bucket] of Object.entries(models)) {
+        spent = add(spent, bucket)
+
         for (const target of targets) {
           fold(periods[target], model, held.project, bucket)
         }
@@ -252,6 +334,20 @@ const build = async ($: EngineInterface): Promise<Report> => {
     if (key === own && held.lastTurn !== undefined) {
       const { model, at: _, ...turn } = held.lastTurn
       fold(periods.turn, model, held.project, { ...turn, turns: 1 })
+    }
+
+    const prompts = held.prompts ?? []
+
+    if (totalOf(spent) > 0 || prompts.length > 0) {
+      sessions.push({
+        id: key.slice(SESSION_PREFIX.length),
+        project: held.project,
+        title: held.title ?? prompts.find(one => one.text !== '')?.text ?? held.project,
+        lastAt: held.lastAt,
+        usd: spent.usd,
+        tokens: totalOf(spent),
+        prompts,
+      })
     }
   }
 
@@ -263,7 +359,9 @@ const build = async ($: EngineInterface): Promise<Report> => {
     ]),
   )
 
-  return { builtAt: at, periods, limits, hasCost }
+  sessions.sort((a, b) => b.lastAt - a.lastAt)
+
+  return { builtAt: at, periods, limits, hasCost, ownId, sessions: sessions.slice(0, LIST_SESSIONS) }
 }
 
 const refresh = async ($: EngineInterface) => {
@@ -284,7 +382,7 @@ const tokens = (count: number) =>
       ? `${(count / 1e6).toFixed(1)}M`
       : count >= 1e3
         ? `${Math.round(count / 1e3)}k`
-        : String(count)
+        : String(Math.round(count))
 
 const dollars = (usd: number) => (usd >= 100 ? `$${Math.round(usd)}` : `$${usd.toFixed(2)}`)
 
@@ -304,7 +402,7 @@ const duration = (ms: number) => {
   return minutes >= 60 ? `${Math.floor(minutes / 60)}h ${minutes % 60}m` : `${minutes}m`
 }
 
-const stamp = (value: string) => {
+const stamp = (value: string | number) => {
   const date = new Date(value)
 
   return `${MONTHS[date.getMonth()]} ${date.getDate()} ${pad(date.getHours())}:${pad(date.getMinutes())}`
@@ -389,14 +487,129 @@ const limitLines = (tags: Tags, limits: Limits, at: number) => {
   )
 }
 
-const isPeriod = (value: string): value is Period => PERIODS.some(one => one.period === value)
+const shares = (prompt: PromptRecord) => {
+  const parts = [
+    { label: 'Re-reading context', weight: prompt.cacheRead * WEIGHTS.cacheRead + prompt.input * WEIGHTS.input },
+    { label: 'Writing the cache', weight: prompt.cacheWrite * WEIGHTS.cacheWrite },
+    { label: 'Output', weight: prompt.output * WEIGHTS.output },
+    { label: 'Subagents', weight: weightOf(prompt.agents) },
+  ]
+  const sum = parts.reduce((all, part) => all + part.weight, 0)
+
+  return sum === 0 ? [] : parts.map(part => ({ ...part, share: part.weight / sum })).filter(part => part.share >= 0.01)
+}
+
+const tipsFor = (prompt: PromptRecord) => {
+  const share = (label: string) => shares(prompt).find(part => part.label === label)?.share ?? 0
+  const [tool, use] = Object.entries(prompt.tools).sort(([, a], [, b]) => b.chars - a.chars)[0] ?? []
+  const tips: string[] = []
+
+  if (prompt.peakContext >= 100_000) {
+    tips.push(
+      `The context reached ${tokens(prompt.peakContext)} tokens and each of the ${prompt.steps} model calls read it again. Start an unrelated task with /clear, or /compact first.`,
+    )
+  }
+
+  if (prompt.steps >= 25) {
+    tips.push(
+      `${prompt.steps} model calls for one prompt. Naming the files, the expected result and when to stop saves rounds.`,
+    )
+  }
+
+  if (prompt.firstWrite >= 50_000) {
+    tips.push(
+      `The prompt cache was cold: ${tokens(prompt.firstWrite)} tokens of context were written again. After a long break, /clear with a short summary costs less than picking up the old context.`,
+    )
+  }
+
+  if (tool !== undefined && use !== undefined && use.chars >= 50_000) {
+    tips.push(
+      `${tool} returned about ${tokens(use.chars / CHARS_PER_TOKEN)} tokens over ${use.calls} calls, and every later call read them again. Point to the exact files or lines, or ask for filtered output.`,
+    )
+  }
+
+  if (share('Subagents') >= 0.4) {
+    tips.push(
+      `Subagents took ${percent(share('Subagents'))} of the cost in ${prompt.agents.runs} runs. Check that each run was needed.`,
+    )
+  }
+
+  if (share('Output') >= 0.4 && prompt.output >= 10_000) {
+    tips.push(
+      `${tokens(prompt.output)} output tokens, at five times the input price. Ask for the change alone, without long summaries or whole-file rewrites.`,
+    )
+  }
+
+  if (prompt.isAborted) {
+    tips.push('The prompt was interrupted, and what it had used is spent. A precise first prompt avoids a restart.')
+  }
+
+  return tips.slice(0, MAX_TIPS)
+}
+
+const promptPrice = (prompt: PromptRecord, hasCost: boolean) =>
+  hasCost ? dollars(prompt.usd) : tokens(totalOf(prompt) + totalOf(prompt.agents))
+
+const promptDetail = (tags: Tags, prompt: PromptRecord, hasCost: boolean) => {
+  const { Box, Text } = tags
+  const all = addTokens(prompt, prompt.agents)
+  const tools = Object.entries(prompt.tools)
+    .sort(([, a], [, b]) => b.chars - a.chars)
+    .slice(0, LIST_TOOLS)
+    .map(([name, use]) => `${name} ${use.calls}× ${tokens(use.chars / CHARS_PER_TOKEN)}`)
+  const tips = tipsFor(prompt)
+
+  return (
+    <Box flexDirection="column" gap={1}>
+      <Box flexDirection="column">
+        <Text bold>{prompt.text === '' ? '(continued without a prompt)' : prompt.text}</Text>
+        {row(tags, 'detail-price', 'API price', hasCost ? dollars(prompt.usd) : '–', `${stamp(prompt.at)} · ${prompt.model}`)}
+        {row(
+          tags,
+          'detail-tokens',
+          'Tokens',
+          tokens(totalOf(all)),
+          `input ${tokens(all.input)} · output ${tokens(all.output)} · cache read ${tokens(all.cacheRead)} · cache write ${tokens(all.cacheWrite)}`,
+        )}
+        {row(
+          tags,
+          'detail-steps',
+          'Model calls',
+          String(prompt.steps),
+          `peak context ${tokens(prompt.peakContext)} · ${duration(prompt.ms)}`,
+        )}
+        {prompt.agents.runs > 0 &&
+          row(tags, 'detail-agents', 'Subagent runs', String(prompt.agents.runs), `${tokens(totalOf(prompt.agents))} tokens`)}
+        {tools.length > 0 && row(tags, 'detail-tools', 'Tool output', '', tools.join(' · '))}
+      </Box>
+      <Box flexDirection="column">
+        <Text bold>Where the cost went</Text>
+        {shares(prompt).map(part => row(tags, `share-${part.label}`, part.label, percent(part.share)))}
+      </Box>
+      <Box flexDirection="column">
+        <Text bold>Next time</Text>
+        {tips.length === 0 ? (
+          <Text dimColor>Nothing stood out.</Text>
+        ) : (
+          tips.map((tip, index) => (
+            <Text key={`tip-${index}`} wrap="wrap">
+              {`• ${tip}`}
+            </Text>
+          ))
+        )}
+      </Box>
+    </Box>
+  )
+}
+
+const isView = (value: string): value is View => VIEWS.some(one => one.period === value)
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: COMMAND,
       description: 'Show token usage, cache hit rate, API price and limit history in a pane',
-      argumentHint: '[turn|session|today|week|month]',
+      argumentHint: '[turn|session|today|week|month|sessions|prompts]',
     })
     void prune($).catch(() => undefined)
 
@@ -406,7 +619,7 @@ export const register: Register = on => {
   on('command.run', { command: COMMAND }, async ($, e) => {
     const word = (e.args ?? '').trim().toLowerCase()
 
-    if (isPeriod(word)) {
+    if (isView(word)) {
       await update($, period, () => word)
     }
 
@@ -416,23 +629,88 @@ export const register: Register = on => {
     return { text: 'Opened the usage pane.' }
   })
 
+  on('turn.start', async ($, e, next) => {
+    if (e.agentId === undefined) {
+      const usage = await $.session.usage()
+      running = {
+        ...noTokens(),
+        at: await $.clock.now(),
+        text: oneLine(e.text),
+        model: UNKNOWN,
+        ms: 0,
+        usd: 0,
+        steps: 0,
+        peakContext: 0,
+        firstWrite: 0,
+        isAborted: false,
+        agents: { ...noTokens(), runs: 0 },
+        tools: {},
+        usdAtStart: usage.cost?.usd ?? 0,
+      }
+    }
+
+    return next(e)
+  }).catch(($, e, next) => next(e))
+
+  on('turn.step', async function* ($, e, next) {
+    const response = yield* next(e)
+    noteStep(e.agentId, response.usage)
+
+    return response
+  })
+
   on('turn.complete', async ($, e, next) => {
     const done = await next(e)
     const usage = await $.session.usage()
     const counted = e.usage === undefined ? {} : tokensOf(e.usage)
     const isMain = e.agentId === undefined
+    const total = usage.cost?.usd
+
+    if (!isMain && running !== null && e.usage !== undefined) {
+      running.agents = { ...addTokens(running.agents, tokensOf(e.usage)), runs: running.agents.runs + 1 }
+    }
+
+    const started = isMain ? running : null
+
+    if (isMain) {
+      running = null
+    }
 
     await edit($, (held, at) => {
       const model = e.usage?.model ?? held.model
-      const total = usage.cost?.usd
       // The ledger starts over on /clear, so a total below the last one is all new.
       const usd = total === undefined ? 0 : total < held.usdSeen ? total : total - held.usdSeen
       const part = { ...counted, turns: isMain ? 1 : 0, ms: isMain ? e.durationMs : 0, usd }
       const updated = bump({ ...held, model, usdSeen: total ?? held.usdSeen }, dayOf(at), model, part)
+      const withTurn =
+        isMain && e.usage !== undefined
+          ? { ...updated, lastTurn: { ...tokensOf(e.usage), model, ms: e.durationMs, usd, at } }
+          : updated
 
-      return isMain && e.usage !== undefined
-        ? { ...updated, lastTurn: { ...tokensOf(e.usage), model, ms: e.durationMs, usd, at } }
-        : updated
+      if (started === null) {
+        return withTurn
+      }
+
+      const { usdAtStart, ...base } = started
+      const spent = total === undefined ? 0 : total < usdAtStart ? total : total - usdAtStart
+      const prompt: PromptRecord = {
+        ...base,
+        ...(e.usage === undefined ? {} : tokensOf(e.usage)),
+        model,
+        ms: e.durationMs,
+        usd: spent,
+        isAborted: e.isAborted,
+      }
+
+      if (totalOf(prompt) + totalOf(prompt.agents) === 0 && spent === 0) {
+        return withTurn
+      }
+
+      return {
+        ...withTurn,
+        title: withTurn.title ?? (prompt.text === '' ? undefined : prompt.text),
+        prompts: [...(withTurn.prompts ?? []), prompt].slice(-KEEP_PROMPTS),
+      }
     })
 
     if ((await read($, report)) !== null) {
@@ -442,10 +720,12 @@ export const register: Register = on => {
     return done
   }).catch(($, e, next) => next(e))
 
-  on('tool.call', ($, e, next) => {
+  on('tool.call', async ($, e, next) => {
     void edit($, (held, at) => bump(held, dayOf(at), held.model, { tools: 1 }))
+    const result = await next(e)
+    noteTool(e.tool, result.text?.length ?? 0)
 
-    return next(e)
+    return result
   }).catch(($, e, next) => next(e))
 
   on('session.measure', ($, e, next) => {
@@ -465,7 +745,7 @@ export const register: Register = on => {
 
     const tabs = (
       <Box flexDirection="row" flexWrap="wrap" gap={1}>
-        {PERIODS.map(({ period: one, label }) => (
+        {VIEWS.map(({ period: one, label }) => (
           <Button
             key={`period-${one}`}
             label={label}
@@ -482,6 +762,78 @@ export const register: Register = on => {
         <Box flexDirection="column" gap={1}>
           {tabs}
           <Text dimColor>{loading ? 'Adding up…' : 'Nothing counted yet. Press Refresh.'}</Text>
+        </Box>
+      )
+    }
+
+    if (chosen === 'sessions') {
+      return (
+        <Box flexDirection="column" gap={1}>
+          {tabs}
+          <Box flexDirection="column">
+            <Text bold>Sessions</Text>
+            <Text dimColor>Newest first. Press one to see its prompts by cost.</Text>
+          </Box>
+          <Box flexDirection="column">
+            {held.sessions.map(one => (
+              <Button
+                key={`session-${one.id}`}
+                plain
+                dimColor={one.id !== held.ownId}
+                onPress={async () => {
+                  await update($, sessionId, () => one.id)
+                  await update($, promptAt, () => null)
+                  await update($, period, () => 'prompts')
+                }}
+              >
+                {`${held.hasCost ? dollars(one.usd) : tokens(one.tokens)}  ${stamp(one.lastAt)} · ${one.project} · ${one.prompts.length} prompts · ${one.title}`}
+              </Button>
+            ))}
+          </Box>
+        </Box>
+      )
+    }
+
+    if (chosen === 'prompts') {
+      const wanted = (await read($, sessionId)) ?? held.ownId
+      const session = held.sessions.find(one => one.id === wanted)
+      const prompts = [...(session?.prompts ?? [])].sort((a, b) => b.usd - a.usd || weightOf(b) - weightOf(a))
+
+      if (session === undefined || prompts.length === 0) {
+        return (
+          <Box flexDirection="column" gap={1}>
+            {tabs}
+            <Text dimColor>
+              No prompt recorded for this session yet. Prompts are recorded from the install of the mod on, and
+              their details are kept for {KEEP_PROMPT_DAYS} days.
+            </Text>
+          </Box>
+        )
+      }
+
+      const pickedAt = await read($, promptAt)
+      const picked = prompts.find(one => one.at === pickedAt) ?? prompts[0]
+
+      return (
+        <Box flexDirection="column" gap={1}>
+          {tabs}
+          <Box flexDirection="column">
+            <Text bold>{session.id === held.ownId ? 'This session' : session.title}</Text>
+            <Text dimColor>{`${session.project} · ${prompts.length} prompts, most expensive first`}</Text>
+          </Box>
+          <Box flexDirection="column">
+            {prompts.slice(0, LIST_PROMPTS).map(one => (
+              <Button
+                key={`prompt-${one.at}`}
+                plain
+                dimColor={one !== picked}
+                onPress={() => update($, promptAt, () => one.at)}
+              >
+                {`${one === picked ? '▸' : ' '} ${promptPrice(one, held.hasCost)}  ${stamp(one.at)} · ${one.text === '' ? '(continued)' : one.text}`}
+              </Button>
+            ))}
+          </Box>
+          {picked !== undefined && promptDetail(tags, picked, held.hasCost)}
         </Box>
       )
     }
