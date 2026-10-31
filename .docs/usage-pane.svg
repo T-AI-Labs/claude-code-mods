@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 882 576" width="882" height="576" role="img" aria-labelledby="t d">
+  <title id="t">The usage pane</title>
+  <desc id="d">Illustration. Tabs for Last turn, Session, Today, 7 days and 30 days, with 7 days selected. The totals: 48.2M tokens split into input, output, cache read and cache write, a 94 percent cache hit rate, an API price of 61.40 dollars, 412 turns and 3180 tool calls. Below them the tokens and price by model and by project, and the 5-hour and weekly limits with the current window and the peak of the last one.</desc>
+  <rect width="882" height="576" rx="12" fill="#1a1a1a"/>
+  <g font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13">
+    <text x="28" y="38" fill="#e8e8e8" font-weight="600" font-size="15">Usage</text><line x1="0" y1="56.5" x2="882" y2="56.5" stroke="#333333"/>
+    <rect x="28.5" y="74.5" width="84" height="25" rx="6" fill="none" stroke="#4a4a4a"/><text x="70.5" y="91.5" fill="#e8e8e8" text-anchor="middle">Last turn</text><rect x="121.5" y="74.5" width="76" height="25" rx="6" fill="none" stroke="#4a4a4a"/><text x="159.5" y="91.5" fill="#e8e8e8" text-anchor="middle">Session</text><rect x="206.5" y="74.5" width="64" height="25" rx="6" fill="none" stroke="#4a4a4a"/><text x="238.5" y="91.5" fill="#e8e8e8" text-anchor="middle">Today</text><rect x="279" y="74" width="70" height="26" rx="6" fill="#e8e8e8"/><text x="314" y="91.5" fill="#1a1a1a" text-anchor="middle">7 days</text><rect x="357.5" y="74.5" width="76" height="25" rx="6" fill="none" stroke="#4a4a4a"/><text x="395.5" y="91.5" fill="#e8e8e8" text-anchor="middle">30 days</text><text x="448" y="91.5" fill="#8c8c8c">Refresh</text>
+    <text x="28" y="136" fill="#8c8c8c">Tokens</text><text x="262" y="136" fill="#e8e8e8" text-anchor="end">48.2M</text><text x="274" y="136" fill="#8c8c8c">input 310k · output 1.9M · cache read 44.1M · cache write 1.9M</text>
+    <text x="28" y="158" fill="#8c8c8c">Cache hit rate</text><text x="262" y="158" fill="#e8e8e8" text-anchor="end">94%</text><text x="274" y="158" fill="#8c8c8c">of the prompt read from the cache</text>
+    <text x="28" y="180" fill="#8c8c8c">API price</text><text x="262" y="180" fill="#e8e8e8" text-anchor="end">$61.40</text><text x="274" y="180" fill="#8c8c8c">what these requests cost at API prices</text>
+    <text x="28" y="202" fill="#8c8c8c">Turns</text><text x="262" y="202" fill="#e8e8e8" text-anchor="end">412</text><text x="274" y="202" fill="#8c8c8c">7h 48m in all</text>
+    <text x="28" y="224" fill="#8c8c8c">Tool calls</text><text x="262" y="224" fill="#e8e8e8" text-anchor="end">3180</text>
+    <text x="28" y="262" fill="#e8e8e8" font-weight="600">By model</text>
+    <text x="28" y="284" fill="#8c8c8c">claude-opus-5-5</text><text x="262" y="284" fill="#e8e8e8" text-anchor="end">41.0M</text><text x="274" y="284" fill="#8c8c8c">$57.10 · 95% cached</text>
+    <text x="28" y="306" fill="#8c8c8c">claude-sonnet-5-5</text><text x="262" y="306" fill="#e8e8e8" text-anchor="end">6.9M</text><text x="274" y="306" fill="#8c8c8c">$4.10 · 90% cached</text>
+    <text x="28" y="328" fill="#8c8c8c">claude-haiku-5-5</text><text x="262" y="328" fill="#e8e8e8" text-anchor="end">300k</text><text x="274" y="328" fill="#8c8c8c">$0.20 · 71% cached</text>
+    <text x="28" y="366" fill="#e8e8e8" font-weight="600">By project</text>
+    <text x="28" y="388" fill="#8c8c8c">claude-code-mods</text><text x="262" y="388" fill="#e8e8e8" text-anchor="end">30.2M</text><text x="274" y="388" fill="#8c8c8c">$38.90 · 95% cached</text>
+    <text x="28" y="410" fill="#8c8c8c">open-event-viewer</text><text x="262" y="410" fill="#e8e8e8" text-anchor="end">14.8M</text><text x="274" y="410" fill="#8c8c8c">$18.60 · 93% cached</text>
+    <text x="28" y="432" fill="#8c8c8c">dotfiles</text><text x="262" y="432" fill="#e8e8e8" text-anchor="end">3.2M</text><text x="274" y="432" fill="#8c8c8c">$3.90 · 88% cached</text>
+    <text x="28" y="470" fill="#e8e8e8" font-weight="600">Limits</text>
+    <text x="28" y="492" fill="#8c8c8c">5-hour</text><text x="262" y="492" fill="#e8e8e8" text-anchor="end">23%</text><text x="274" y="492" fill="#8c8c8c">now, resets Oct 31 14:00 (in 2h 13m)</text>
+    <text x="262" y="514" fill="#e8e8e8" text-anchor="end">81%</text><text x="274" y="514" fill="#8c8c8c">peak, reset Oct 31 09:00</text>
+    <text x="28" y="536" fill="#8c8c8c">Weekly</text><text x="262" y="536" fill="#e8e8e8" text-anchor="end">64%</text><text x="274" y="536" fill="#8c8c8c">now, resets Nov 3 08:00 (in 2d 20h)</text>
+    <text x="262" y="558" fill="#e8e8e8" text-anchor="end">58%</text><text x="274" y="558" fill="#8c8c8c">peak, reset Oct 27 08:00</text>
+  </g>
+</svg>

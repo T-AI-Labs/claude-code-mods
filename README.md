@@ -1,6 +1,6 @@
 <h1 align="center">Claude Code Mods</h1>
 
-<p align="center"><em>Context, prompt-cache and usage-limit meters right above the Claude Code prompt, and a pane that lists everything your setup provides.</em></p>
+<p align="center"><em>Context, prompt-cache and usage-limit meters right above the Claude Code prompt, a pane that lists everything your setup provides, and one that adds up your token usage.</em></p>
 
 <p align="center">
   <a href="https://github.com/T-AI-Labs/claude-code-mods/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/T-AI-Labs/claude-code-mods/ci.yml?branch=main&style=flat-square&label=ci" alt="CI"></a>
@@ -8,6 +8,7 @@
   <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcache-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=cache-meter&style=flat-square" alt="cache-meter version"></a>
   <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcatalog-pane%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=catalog-pane&style=flat-square" alt="catalog-pane version"></a>
   <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcontext-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=context-meter&style=flat-square" alt="context-meter version"></a>
+  <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fusage-pane%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=usage-pane&style=flat-square" alt="usage-pane version"></a>
   <a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fusage-limits%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=usage-limits&style=flat-square" alt="usage-limits version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/T-AI-Labs/claude-code-mods?style=flat-square" alt="License"></a>
 </p>
@@ -22,6 +23,7 @@ Claude Code shows little of what costs you: how full the context is, whether the
 - **Auto-compaction at the worst moment?** [context-meter](#context-meter) shows the fill against the threshold and compacts at the point you pick.
 - **Back from a break to a cold cache?** Writing 200k tokens of context again costs about $1.00 on Claude Opus 5.5. [cache-meter](#cache-meter) shows when the cache goes cold and can keep it warm at about $0.04 a refresh.
 - **Lost track of what your setup loads?** [catalog-pane](#catalog-pane) lists every skill, plugin, hook and MCP server with its usage and the tokens it adds to every session.
+- **Where did this week's tokens go?** [usage-pane](#usage-pane) adds up tokens, cache hit rate and API price by day, model and project, and keeps the peak of each limit window.
 
 ## Requirements
 
@@ -72,6 +74,16 @@ claude plugin update catalog-pane@T-AI-Labs
 ```
 
 </td><td><img src=".docs/catalog-pane.svg" alt="The catalog pane" width="320"></td></tr>
+<tr><td><a href="#usage-pane">usage&#8209;pane</a></td><td>
+
+A pane that adds up tokens, cache hit rate, turns, tool calls and API price for the last turn, the session, today, 7 and 30 days, by model and by project, with the history of the 5-hour and weekly limits.
+
+```
+claude plugin install usage-pane@T-AI-Labs
+claude plugin update usage-pane@T-AI-Labs
+```
+
+</td><td><img src=".docs/usage-pane.svg" alt="The usage pane" width="320"></td></tr>
 <tr><td><a href="#context-meter">context&#8209;meter</a></td><td>
 
 The context row of context-usage on its own.
@@ -262,6 +274,28 @@ Set them as for [context-usage](#options).
 - **Claude Code CLI:** `claude plugin details` once per plugin version for its token cost, `claude plugin validate` once per mod version, and `update`, `disable`, `enable` or `uninstall` when you press those buttons.
 
 Everything else comes from Claude Code and the configuration files, and is kept in the mod's own store.
+
+## usage-pane
+
+<p align="center"><img src=".docs/usage-pane.svg" alt="The usage pane showing the last 7 days" width="882"></p>
+
+A pane with one tab per period: **Last turn**, **Session**, **Today**, **7 days** and **30 days**.
+
+### Usage
+
+`/tokens` opens the pane, in the desktop app and in the terminal; `/tokens today` or `/tokens month` opens a period. It costs no tokens and makes no model requests.
+
+| Row | What it shows |
+| --- | --- |
+| **Tokens** | All tokens of the period, split into uncached input, output, cache reads and cache writes. |
+| **Cache hit rate** | Share of the prompt read from the prompt cache. |
+| **API price** | What the requests cost at API prices, as `/cost` totals them. On a subscription that is what the same usage would cost on the API. |
+| **Turns** | Your prompts that ran a turn, with the time they took. Subagents' tokens count, their turns do not. |
+| **Tool calls** | Every tool call, subagents' included. |
+| **By model**, **By project** | Tokens, price and cache hit rate of each model and each project. By project is left out for the last turn and the session. |
+| **Limits** | The current 5-hour and weekly windows with when each resets, and the peak each earlier window reached in the last 8 days. |
+
+Usage is counted from the install of the mod on, in every session that runs it, and kept for 31 days. The limits fill in once Claude Code reports them, on a subscription plan with each response.
 
 ## License
 
