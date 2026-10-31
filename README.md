@@ -12,6 +12,21 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/T-AI-Labs/claude-code-mods?style=flat-square" alt="License"></a>
 </p>
 
+<p align="center"><img src=".docs/context-usage.svg" alt="The context-usage rows: context fill with the Auto threshold, Compact and Clear, and the 5-hour and weekly limits" width="640"></p>
+
+## Why
+
+Claude Code shows little of what costs you: how full the context is, whether the prompt cache is still warm, and how much of your usage limits is left. These mods put those figures in a band right above the prompt, at no token cost.
+
+- **Hit the 5-hour limit mid-task?** [usage-limits](#usage-limits) shows the 5-hour and weekly windows and when each resets, shared across all open sessions.
+- **Auto-compaction at the worst moment?** [context-meter](#context-meter) shows the fill against the threshold and compacts at the point you pick.
+- **Back from a break to a cold cache?** Writing 200k tokens of context again costs about $1.00 on Claude Opus 5.5. [cache-meter](#cache-meter) shows when the cache goes cold and can keep it warm at about $0.04 a refresh.
+- **Lost track of what your setup loads?** [catalog-pane](#catalog-pane) lists every skill, plugin, hook and MCP server with its usage and the tokens it adds to every session.
+
+## Requirements
+
+The mods use Claude Code's function-hook plugin API, which is in early access and may change between releases. They are built and tested against Claude Code 2.1.295, the engine in the Claude desktop app 2.31226.1.
+
 ## Installation
 
 Add the marketplace once, then install the mods you want with the first command in their row of the [Mods](#mods) table. To update, run the second lines: the marketplace first, then each mod. The commands work in any shell, or inside Claude Code with `/plugin` in place of `claude plugin`. New sessions load the changes.
@@ -21,11 +36,9 @@ claude plugin marketplace add T-AI-Labs/claude-code-mods
 claude plugin marketplace update T-AI-Labs
 ```
 
-The mods use Claude Code's function-hook plugin API, which is in early access and may change between releases. They are built and tested against Claude Code 2.1.295, the engine in the Claude desktop app 2.31226.1.
-
 ## Mods
 
-context-usage already contains context-meter and usage-limits: install either it or those two, not both.
+context-meter and usage-limits are the two rows of context-usage as separate mods: install either context-usage or those two, not both.
 
 <table>
 <tr><th>Mod</th><th>Description</th><th width="35%">Preview</th></tr>
@@ -39,26 +52,6 @@ claude plugin update context-usage@T-AI-Labs
 ```
 
 </td><td><img src=".docs/context-usage.svg" alt="The context-usage rows" width="320"></td></tr>
-<tr><td><a href="#context-meter">context&#8209;meter</a></td><td>
-
-The context row of context-usage on its own.
-
-```
-claude plugin install context-meter@T-AI-Labs
-claude plugin update context-meter@T-AI-Labs
-```
-
-</td><td><img src=".docs/context-meter.svg" alt="The context-meter row" width="320"></td></tr>
-<tr><td><a href="#usage-limits">usage&#8209;limits</a></td><td>
-
-The usage row of context-usage on its own.
-
-```
-claude plugin install usage-limits@T-AI-Labs
-claude plugin update usage-limits@T-AI-Labs
-```
-
-</td><td><img src=".docs/usage-limits.svg" alt="The usage-limits row" width="320"></td></tr>
 <tr><td><a href="#cache-meter">cache&#8209;meter</a></td><td>
 
 How much of each turn the prompt cache served and how long it stays warm, with a switch that keeps it warm while you are away.
@@ -79,6 +72,26 @@ claude plugin update catalog-pane@T-AI-Labs
 ```
 
 </td><td><img src=".docs/catalog-pane.svg" alt="The catalog pane" width="320"></td></tr>
+<tr><td><a href="#context-meter">context&#8209;meter</a></td><td>
+
+The context row of context-usage on its own.
+
+```
+claude plugin install context-meter@T-AI-Labs
+claude plugin update context-meter@T-AI-Labs
+```
+
+</td><td><img src=".docs/context-meter.svg" alt="The context-meter row" width="320"></td></tr>
+<tr><td><a href="#usage-limits">usage&#8209;limits</a></td><td>
+
+The usage row of context-usage on its own.
+
+```
+claude plugin install usage-limits@T-AI-Labs
+claude plugin update usage-limits@T-AI-Labs
+```
+
+</td><td><img src=".docs/usage-limits.svg" alt="The usage-limits row" width="320"></td></tr>
 </table>
 
 ## context-usage
