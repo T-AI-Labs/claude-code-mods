@@ -8,8 +8,6 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/T-AI-Labs/claude-code-mods?style=flat-square" alt="License"></a>
 </p>
 
-<p align="center"><img src=".docs/context-usage.svg" alt="The context-usage rows: context fill with the Auto threshold, Compact and Clear, and the 5-hour and weekly limits" width="640"></p>
-
 ## Why
 
 Claude Code shows little of what costs you: how full the context is, whether the prompt cache is still warm, and how much of your usage limits is left. These mods put those figures in a band right above the prompt, at no token cost.
@@ -19,10 +17,6 @@ Claude Code shows little of what costs you: how full the context is, whether the
 - **Back from a break to a cold cache?** Writing 200k tokens of context again costs about $1.00 on Claude Opus 5.5. [cache-meter](#cache-meter) shows when the cache goes cold and can keep it warm at about $0.04 a refresh.
 - **Lost track of what your setup loads?** [catalog-pane](#catalog-pane) lists every skill, plugin, hook and MCP server with its usage and the tokens it adds to every session.
 - **Where did this week's tokens go?** [usage-pane](#usage-pane) adds up tokens, cache hit rate and API price by day, model and project, and shows which prompts cost the most and why.
-
-## Requirements
-
-The mods use Claude Code's function-hook plugin API, which is in early access and may change between releases. They are built and tested against Claude Code 2.1.295, the engine in the Claude desktop app 2.31226.1.
 
 ## Installation
 
