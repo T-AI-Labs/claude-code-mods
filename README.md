@@ -38,10 +38,10 @@ claude plugin marketplace update T-AI-Labs
 context-meter and usage-limits are the two rows of context-usage as separate mods: install either context-usage or those two, not both.
 
 <table>
-<tr><th>Mod</th><th>Description</th><th width="35%">Preview</th></tr>
-<tr><td><a href="#context-usage">context&#8209;usage</a><br><a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcontext-usage%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=&style=flat-square" alt="context-usage version"></a></td><td>
+<tr><th>Mod</th><th>Version</th><th>Description</th><th width="35%">Preview</th></tr>
+<tr><td><a href="#context-usage">context&#8209;usage</a></td><td><a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcontext-usage%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=&style=flat-square" alt="context-usage version"></a></td><td>
 
-**Start here.** The context fill with the auto-compact threshold, Compact and Clear, and the 5-hour and weekly limits beneath it.
+**Start here.** Context fill and usage limits.
 
 ```
 claude plugin install context-usage@T-AI-Labs
@@ -49,9 +49,9 @@ claude plugin update context-usage@T-AI-Labs
 ```
 
 </td><td><img src=".docs/context-usage.svg" alt="The context-usage rows" width="320"></td></tr>
-<tr><td><a href="#cache-meter">cache&#8209;meter</a><br><a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcache-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=&style=flat-square" alt="cache-meter version"></a></td><td>
+<tr><td><a href="#cache-meter">cache&#8209;meter</a></td><td><a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcache-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=&style=flat-square" alt="cache-meter version"></a></td><td>
 
-How much of each turn the prompt cache served and how long it stays warm, with a switch that keeps it warm while you are away.
+Prompt-cache hits and when the cache goes cold.
 
 ```
 claude plugin install cache-meter@T-AI-Labs
@@ -59,9 +59,9 @@ claude plugin update cache-meter@T-AI-Labs
 ```
 
 </td><td><img src=".docs/cache-meter.svg" alt="The cache-meter row" width="320"></td></tr>
-<tr><td><a href="#catalog-pane">catalog&#8209;pane</a><br><a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcatalog-pane%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=&style=flat-square" alt="catalog-pane version"></a></td><td>
+<tr><td><a href="#catalog-pane">catalog&#8209;pane</a></td><td><a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcatalog-pane%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=&style=flat-square" alt="catalog-pane version"></a></td><td>
 
-A pane listing every skill, command, agent, mod, plugin, settings hook, MCP server and tool, with usage, token cost and buttons to use or manage each one.
+Every skill, plugin, hook and MCP server you have.
 
 ```
 claude plugin install catalog-pane@T-AI-Labs
@@ -69,9 +69,9 @@ claude plugin update catalog-pane@T-AI-Labs
 ```
 
 </td><td><img src=".docs/catalog-pane.svg" alt="The catalog pane" width="320"></td></tr>
-<tr><td><a href="#usage-pane">usage&#8209;pane</a><br><a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fusage-pane%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=&style=flat-square" alt="usage-pane version"></a></td><td>
+<tr><td><a href="#usage-pane">usage&#8209;pane</a></td><td><a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fusage-pane%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=&style=flat-square" alt="usage-pane version"></a></td><td>
 
-A pane that adds up tokens, cache hit rate, turns, tool calls and API price for the last turn, the session, today, 7 and 30 days, by model and by project, with the history of the 5-hour and weekly limits, and each session's prompts by cost with what made them expensive.
+Tokens and API price by day, session and prompt.
 
 ```
 claude plugin install usage-pane@T-AI-Labs
@@ -79,7 +79,7 @@ claude plugin update usage-pane@T-AI-Labs
 ```
 
 </td><td><img src=".docs/usage-pane.svg" alt="The usage pane" width="320"></td></tr>
-<tr><td><a href="#context-meter">context&#8209;meter</a><br><a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcontext-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=&style=flat-square" alt="context-meter version"></a></td><td>
+<tr><td><a href="#context-meter">context&#8209;meter</a></td><td><a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcontext-meter%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=&style=flat-square" alt="context-meter version"></a></td><td>
 
 The context row of context-usage on its own.
 
@@ -89,7 +89,7 @@ claude plugin update context-meter@T-AI-Labs
 ```
 
 </td><td><img src=".docs/context-meter.svg" alt="The context-meter row" width="320"></td></tr>
-<tr><td><a href="#usage-limits">usage&#8209;limits</a><br><a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fusage-limits%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=&style=flat-square" alt="usage-limits version"></a></td><td>
+<tr><td><a href="#usage-limits">usage&#8209;limits</a></td><td><a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fusage-limits%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=&style=flat-square" alt="usage-limits version"></a></td><td>
 
 The usage row of context-usage on its own.
 
