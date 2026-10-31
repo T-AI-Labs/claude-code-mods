@@ -18,10 +18,6 @@ Claude Code shows little of what costs you: how full the context is, whether the
 - **Lost track of what your setup loads?** [catalog-pane](#catalog-pane) lists every skill, plugin, hook and MCP server with its usage and the tokens it adds to every session.
 - **Where did this week's tokens go?** [usage-pane](#usage-pane) adds up tokens, cache hit rate and API price by day, model and project, and shows which prompts cost the most and why.
 
-## Requirements
-
-The mods use Claude Code's function-hook plugin API, which is in early access and may change between releases. They are built and tested against Claude Code 2.1.295, the engine in the Claude desktop app 2.31226.1.
-
 ## Installation
 
 Add the marketplace once, then install the mods you want with the first command in their row of the [Mods](#mods) table. To update, run the second lines: the marketplace first, then each mod. The commands work in any shell, or inside Claude Code with `/plugin` in place of `claude plugin`. New sessions load the changes.
