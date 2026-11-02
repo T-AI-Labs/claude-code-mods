@@ -11,6 +11,7 @@ import type {
   SessionRecord,
   SessionSummary,
   Slice,
+  Timing,
   Tokens,
   View,
 } from '../types'
@@ -26,6 +27,7 @@ const DAY = 24 * HOUR
 const KEEP_DAYS = 31
 const KEEP_WINDOWS = 8
 const UNKNOWN = 'unknown'
+const MAIN_LOOP = 'main'
 
 // The store holds 4 MiB in all, so prompt details are kept for the last week only.
 const KEEP_PROMPTS = 30
@@ -69,11 +71,11 @@ const LIMIT_LABELS: Record<string, string> = {
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-const FIELDS = ['input', 'output', 'cacheRead', 'cacheWrite', 'turns', 'tools', 'ms', 'usd'] as const
+const FIELDS = ['input', 'output', 'cacheRead', 'cacheWrite', 'turns', 'tools', 'ms', 'usd', 'modelMs', 'modelOutput'] as const
 
 type Tags = Pick<Elements['terminal'], 'Box' | 'Text'>
 
-const report = atom({ plugin: 'usage-pane', key: 'report' } as const, null, { shape: 'report-2' })
+const report = atom({ plugin: 'usage-pane', key: 'report' } as const, null, { shape: 'report-3' })
 const period = atom({ plugin: 'usage-pane', key: 'period' } as const, 'week')
 const isLoading = atom({ plugin: 'usage-pane', key: 'isLoading' } as const, false)
 const sessionId = atom({ plugin: 'usage-pane', key: 'sessionId' } as const, null)
@@ -88,6 +90,8 @@ const empty = (): Bucket => ({
   tools: 0,
   ms: 0,
   usd: 0,
+  modelMs: 0,
+  modelOutput: 0,
 })
 
 const noTokens = (): Tokens => ({ input: 0, output: 0, cacheRead: 0, cacheWrite: 0 })
@@ -96,7 +100,8 @@ const add = (into: Bucket, part: Partial<Bucket>): Bucket => {
   const sum = empty()
 
   for (const field of FIELDS) {
-    sum[field] = into[field] + (part[field] ?? 0)
+    // Buckets stored by 0.2.0 have no model time yet.
+    sum[field] = (into[field] ?? 0) + (part[field] ?? 0)
   }
 
   return sum
@@ -205,6 +210,30 @@ const noteStep = (agentId: string | undefined, usage: ModelUsage | null) => {
   if (running.steps === 1) {
     running.firstWrite = step.cacheWrite
   }
+}
+
+// One per loop until its turn completes, since subagents step alongside the main loop.
+const timings = new Map<string, Timing>()
+
+const noteTiming = (agentId: string | undefined, ms: number, usage: ModelUsage | null) => {
+  if (usage === null) {
+    return
+  }
+
+  const loop = agentId ?? MAIN_LOOP
+  const held = timings.get(loop)
+  timings.set(loop, {
+    modelMs: (held?.modelMs ?? 0) + ms,
+    modelOutput: (held?.modelOutput ?? 0) + usage.output_tokens,
+  })
+}
+
+const takeTiming = (agentId: string | undefined): Timing => {
+  const loop = agentId ?? MAIN_LOOP
+  const held = timings.get(loop)
+  timings.delete(loop)
+
+  return held ?? { modelMs: 0, modelOutput: 0 }
 }
 
 const noteTool = (tool: string, chars: number) => {
@@ -425,6 +454,9 @@ const row = ({ Box, Text }: Tags, key: string, label: string, value: string, det
 )
 
 const costText = (bucket: Bucket, hasCost: boolean) => (hasCost ? dollars(bucket.usd) : '–')
+
+const speedText = (bucket: Bucket) =>
+  bucket.modelMs === 0 ? '–' : `${Math.round(bucket.modelOutput / (bucket.modelMs / 1000))} tok/s`
 
 const breakdown = (tags: Tags, title: string, prefix: string, list: Record<string, Bucket>, hasCost: boolean) => {
   const { Box, Text } = tags
@@ -653,8 +685,10 @@ export const register: Register = on => {
   }).catch(($, e, next) => next(e))
 
   on('turn.step', async function* ($, e, next) {
+    const startedAt = await $.clock.now()
     const response = yield* next(e)
     noteStep(e.agentId, response.usage)
+    noteTiming(e.agentId, (await $.clock.now()) - startedAt, response.usage)
 
     return response
   })
@@ -665,6 +699,7 @@ export const register: Register = on => {
     const counted = e.usage === undefined ? {} : tokensOf(e.usage)
     const isMain = e.agentId === undefined
     const total = usage.cost?.usd
+    const timing = takeTiming(e.agentId)
 
     if (!isMain && running !== null && e.usage !== undefined) {
       running.agents = { ...addTokens(running.agents, tokensOf(e.usage)), runs: running.agents.runs + 1 }
@@ -680,11 +715,11 @@ export const register: Register = on => {
       const model = e.usage?.model ?? held.model
       // The ledger starts over on /clear, so a total below the last one is all new.
       const usd = total === undefined ? 0 : total < held.usdSeen ? total : total - held.usdSeen
-      const part = { ...counted, turns: isMain ? 1 : 0, ms: isMain ? e.durationMs : 0, usd }
+      const part = { ...counted, ...timing, turns: isMain ? 1 : 0, ms: isMain ? e.durationMs : 0, usd }
       const updated = bump({ ...held, model, usdSeen: total ?? held.usdSeen }, dayOf(at), model, part)
       const withTurn =
         isMain && e.usage !== undefined
-          ? { ...updated, lastTurn: { ...tokensOf(e.usage), model, ms: e.durationMs, usd, at } }
+          ? { ...updated, lastTurn: { ...tokensOf(e.usage), ...timing, model, ms: e.durationMs, usd, at } }
           : updated
 
       if (started === null) {
@@ -875,6 +910,14 @@ export const register: Register = on => {
           )}
           {row(tags, 'turns', 'Turns', String(total.turns), `${duration(total.ms)} in all`)}
           {chosen !== 'turn' && row(tags, 'tools', 'Tool calls', String(total.tools))}
+          {row(
+            tags,
+            'model-time',
+            'Model time',
+            total.modelMs === 0 ? '–' : duration(total.modelMs),
+            total.modelMs === 0 ? 'no timed model call in this period' : 'waiting on model responses',
+          )}
+          {row(tags, 'speed', 'Output speed', speedText(total), 'output tokens per second of model time')}
         </Box>
         {breakdown(tags, 'By model', 'model', slice.models, held.hasCost)}
         {chosen !== 'turn' && chosen !== 'session' && breakdown(tags, 'By project', 'project', slice.projects, held.hasCost)}

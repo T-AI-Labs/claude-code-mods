@@ -34,11 +34,11 @@ const USAGE = {
 
 type Usage = typeof USAGE
 
-type World = { id: string; root: string; usd: number; steps: Usage[] }
+type World = { id: string; root: string; usd: number; steps: Usage[]; stepMs: number }
 
 const world = (on: On, stored: Map<string, unknown> = new Map()) => {
   const clock = mock.clock(on, { now: NOW })
-  const session: World = { id: 's1', root: '/work/demo', usd: 0, steps: [] }
+  const session: World = { id: 's1', root: '/work/demo', usd: 0, steps: [], stepMs: 0 }
 
   // A Map stands for the store file every session shares.
   on('store.get', ($, e) => ({ value: stored.get(e.key) }))
@@ -70,6 +70,10 @@ const world = (on: On, stored: Map<string, unknown> = new Map()) => {
   on('turn.complete', () => ({ text: '' }))
   on('turn.start', ($, e) => ({ turnId: e.turnId }))
   on('turn.step', async function* ($, e) {
+    if (session.stepMs > 0) {
+      await clock.advance(session.stepMs)
+    }
+
     return {
       turnId: e.turnId,
       index: e.index,
@@ -188,6 +192,85 @@ test('shows the last turn alone', async ($, on) => {
   expect(await ui.find({ type: 'Text', text: '$0.25' })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: 'Tool calls' })).toBeUndefined()
   await ui.unmount()
+})
+
+test('times the model requests and works out the output speed', async ($, on) => {
+  const { session, clock } = world(on)
+  await $.session.start({ cwd: '/work/demo', surface: 'desktop', isInteractive: true })
+  session.stepMs = 10_000
+  await ask($, session, 'Fix it', 0.1, [step(20_000, 1_000), step(21_000, 1_000)])
+  await open($, 'turn')
+  await clock.settle()
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...PANE, surface })
+
+    expect(await ui.find({ type: 'Text', text: '20s' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '100 tok/s' })).toBeDefined()
+    await ui.unmount()
+  }
+
+  session.stepMs = 5_000
+  session.steps = [step(10_000, 300)]
+  const stream = $.turn.step({ turnId: 't-agent', index: 0, model: 'claude-opus-5-5', messageCount: 1, agentId: 'agent-1' })
+
+  for await (const _ of stream) {
+  }
+
+  await turn($, session, 0.2, 'agent-1')
+  await clock.settle()
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  expect(await ui.find({ type: 'Text', text: '20s' })).toBeDefined()
+  await ui.press({ key: 'period-session' })
+  expect(await ui.find({ type: 'Text', text: '25s' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: '92 tok/s' })).toBeDefined()
+  await ui.unmount()
+})
+
+test('keeps usage from before the timing out of the output speed', async ($, on) => {
+  const stored = new Map<string, unknown>([
+    [
+      'session:s1',
+      {
+        project: 'demo',
+        lastAt: NOW,
+        usdSeen: 0,
+        model: 'claude-opus-5-5',
+        days: {
+          '2026-10-12': {
+            'claude-opus-5-5': {
+              input: 0,
+              output: 90_000,
+              cacheRead: 0,
+              cacheWrite: 0,
+              turns: 1,
+              tools: 0,
+              ms: 60_000,
+              usd: 1,
+            },
+          },
+        },
+      },
+    ],
+  ])
+  const { session, clock } = world(on, stored)
+  await $.session.start({ cwd: '/work/demo', surface: 'desktop', isInteractive: true })
+  await open($)
+  await clock.settle()
+
+  const before = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  expect(await before.find({ type: 'Text', text: 'no timed model call in this period' })).toBeDefined()
+  await before.unmount()
+
+  session.stepMs = 10_000
+  await ask($, session, 'Fix it', 1.1, [step(20_000, 500)])
+  await clock.settle()
+
+  const after = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  expect(await after.find({ type: 'Text', text: '10s' })).toBeDefined()
+  expect(await after.find({ type: 'Text', text: '50 tok/s' })).toBeDefined()
+  await after.unmount()
 })
 
 test('counts other sessions in the week but not in this session', async ($, on) => {
