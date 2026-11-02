@@ -281,6 +281,8 @@ A pane with one tab per period: **Last turn**, **Session**, **Today**, **7 days*
 | **API price** | What the requests cost at API prices, as `/cost` totals them. On a subscription that is what the same usage would cost on the API. |
 | **Turns** | Your prompts that ran a turn, with the time they took. Subagents' tokens count, their turns do not. |
 | **Tool calls** | Every tool call, subagents' included. |
+| **Model time** | How long model requests took, from sending to the last piece of the response. Subagents' requests count, so parallel ones can add up to more than the turns took. |
+| **Output speed** | Output tokens per second of model time, the wait for the first token included. |
 | **By model**, **By project** | Tokens, price and cache hit rate of each model and each project. By project is left out for the last turn and the session. |
 | **Limits** | The current 5-hour and weekly windows with when each resets, and the peak each earlier window reached in the last 8 days. |
 
@@ -299,7 +301,7 @@ A pane with one tab per period: **Last turn**, **Session**, **Today**, **7 days*
 | **Where the cost went** | The price split into re-reading the context, writing the cache, output and subagents, weighted by Claude's API price ratios. |
 | **Next time** | Up to three hints when the prompt crossed a mark: a context over 100k tokens, 25 or more model calls, a cold cache that wrote 50k tokens or more, a tool that returned 50k characters or more, subagents or output over 40% of the cost, or an interrupted turn. |
 
-Usage is counted from the install of the mod on, in every session that runs it, and kept for 31 days; the details of each prompt are kept for 7 days. The limits fill in once Claude Code reports them, on a subscription plan with each response.
+Usage is counted from the install of the mod on, in every session that runs it, and kept for 31 days; the details of each prompt are kept for 7 days. Model time and output speed are counted from version 0.3.0 on. The limits fill in once Claude Code reports them, on a subscription plan with each response.
 
 ## License
 

@@ -5,14 +5,18 @@ export type Tokens = {
   cacheWrite: number
 }
 
-export type Bucket = Tokens & {
-  turns: number
-  tools: number
-  ms: number
-  usd: number
-}
+// modelOutput is the output of the timed requests alone, so usage from before the timing does not inflate the speed.
+export type Timing = { modelMs: number; modelOutput: number }
 
-export type LastTurn = Tokens & { model: string; ms: number; usd: number; at: number }
+export type Bucket = Tokens &
+  Timing & {
+    turns: number
+    tools: number
+    ms: number
+    usd: number
+  }
+
+export type LastTurn = Tokens & Partial<Timing> & { model: string; ms: number; usd: number; at: number }
 
 export type ToolUse = { calls: number; chars: number }
 
