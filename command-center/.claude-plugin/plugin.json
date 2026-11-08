@@ -1,0 +1,11 @@
+{
+  "name": "command-center",
+  "version": "0.1.0",
+  "author": {
+    "name": "Claude",
+    "email": "noreply@anthropic.com"
+  },
+  "license": "MIT",
+  "description": "One row above the prompt with a source filter, an agent, a skill and a command dropdown side by side, and Insert and Run buttons that put the pick into the prompt or start it.",
+  "types": "./types/index.d.ts"
+}
