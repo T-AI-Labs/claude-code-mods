@@ -5,7 +5,7 @@
     "email": "CleanMyPost@gmx.de"
   },
   "metadata": {
-    "description": "Mods for Claude Code: a context and usage-limits band with compaction controls, a prompt-cache row that keeps the cache warm, the context and usage-limits rows on their own, a catalog pane of everything the setup provides, and a usage pane that adds up tokens, cache hits and API price."
+    "description": "Mods for Claude Code: a context and usage-limits band with compaction controls, a prompt-cache row that keeps the cache warm, the context and usage-limits rows on their own, a row of dropdowns that inserts or runs an agent, skill or command, a catalog pane of everything the setup provides, and a usage pane that adds up tokens, cache hits and API price."
   },
   "plugins": [
     {
@@ -27,6 +27,11 @@
       "name": "usage-limits",
       "source": "./usage-limits",
       "description": "One row above the prompt: how much of the 5-hour and weekly usage limits is used, in percent, with the time until each resets."
+    },
+    {
+      "name": "command-center",
+      "source": "./command-center",
+      "description": "One row above the prompt with a source filter, an agent, a skill and a command dropdown side by side, and Insert and Run buttons that put the pick into the prompt or start it."
     },
     {
       "name": "catalog-pane",

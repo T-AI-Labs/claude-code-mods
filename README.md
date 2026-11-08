@@ -1,6 +1,6 @@
 <h1 align="center">Claude Code Mods</h1>
 
-<p align="center"><em>Context, prompt-cache and usage-limit meters right above the Claude Code prompt, a pane that lists everything your setup provides, and one that adds up your token usage.</em></p>
+<p align="center"><em>Context, prompt-cache and usage-limit meters right above the Claude Code prompt, a row of dropdowns for agents, skills and commands, a pane that lists everything your setup provides, and one that adds up your token usage.</em></p>
 
 <p align="center">
   <a href="https://github.com/T-AI-Labs/claude-code-mods/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/T-AI-Labs/claude-code-mods/ci.yml?branch=main&style=flat-square&label=ci" alt="CI"></a>
@@ -15,6 +15,7 @@ Claude Code shows little of what costs you: how full the context is, whether the
 - **Hit the 5-hour limit mid-task?** [usage-limits](#usage-limits) shows the 5-hour and weekly windows and when each resets, shared across all open sessions.
 - **Auto-compaction at the worst moment?** [context-meter](#context-meter) shows the fill against the threshold and compacts at the point you pick.
 - **Back from a break to a cold cache?** Writing 200k tokens of context again costs about $1.00 on Claude Opus 5.5. [cache-meter](#cache-meter) shows when the cache goes cold and can keep it warm at about $0.04 a refresh.
+- **Can't remember the name of that agent or skill?** [command-center](#command-center) lists your agents, skills and commands in dropdowns above the prompt, filtered by where they come from, and inserts or runs the pick.
 - **Lost track of what your setup loads?** [catalog-pane](#catalog-pane) lists every skill, plugin, hook and MCP server with its usage and the tokens it adds to every session.
 - **Where did this week's tokens go?** [usage-pane](#usage-pane) adds up tokens, cache hit rate and API price by day, model and project, and shows which prompts cost the most and why.
 
@@ -73,6 +74,16 @@ claude plugin update usage-pane@T-AI-Labs
 ```
 
 </td><td><img src=".docs/usage-pane.svg" alt="The usage pane" width="320"></td></tr>
+<tr><td><a href="#command-center">command&#8209;center</a></td><td>
+
+Agents, skills and commands in dropdowns.
+
+```
+claude plugin install command-center@T-AI-Labs
+claude plugin update command-center@T-AI-Labs
+```
+
+</td><td><img src=".docs/command-center.svg" alt="The command-center row" width="320"></td></tr>
 <tr><td><a href="#context-meter">context&#8209;meter</a></td><td>
 
 The context row of context-usage on its own.
@@ -302,6 +313,25 @@ A pane with one tab per period: **Last turn**, **Session**, **Today**, **7 days*
 | **Next time** | Up to three hints when the prompt crossed a mark: a context over 100k tokens, 25 or more model calls, a cold cache that wrote 50k tokens or more, a tool that returned 50k characters or more, subagents or output over 40% of the cost, or an interrupted turn. |
 
 Usage is counted from the install of the mod on, in every session that runs it, and kept for 31 days; the details of each prompt are kept for 7 days. Model time and output speed are counted from version 0.3.0 on. The limits fill in once Claude Code reports them, on a subscription plan with each response.
+
+## command-center&nbsp;<a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcommand-center%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=&style=flat-square" alt="command-center version"></a>
+
+<p align="center"><img src=".docs/command-center.svg" alt="The command-center row: the Source, Agent, Skill and Command dropdowns with Insert and Run" width="774"></p>
+
+| Element | What it shows |
+| --- | --- |
+| **Source** | Where an entry comes from: Built-in, User, Project, MCP or a plugin's name. Narrows the three dropdowns after it; a pick that does not come from the new source is dropped. |
+| **Agent** | The agent types Claude Code offers, the recently used first. |
+| **Skill** | Your skills, the project's and those of installed plugins. |
+| **Command** | The other slash commands. |
+| **Insert** | With a command picked, puts `/command` into the prompt. Otherwise puts `/skill` and `@agent-name` before what you typed. |
+| **Run** | Runs the picked command. A skill alone runs with what you typed as its arguments. An agent starts in the background on what you typed, told to use the skill if one is picked. |
+
+### Usage
+
+The row sits in the band above the prompt, in the terminal and the desktop app, and costs no tokens; only what Run starts does. In the desktop app it is two lines high so the app's taller controls fit. The mobile app has no dropdowns, so the row stays out of it there. In the terminal, `ctrl+x tab` moves into the band: Tab walks the controls, Enter presses a button, the arrow keys pick an entry.
+
+The agent list fills from the agent types Claude Code offers the model, so in the first session after the install it is empty until the first prompt; the mod keeps them for the sessions after. Skills are told from commands by their folders, so skills that ship with Claude Code itself are listed under Command. A dropdown holds at most 63 entries: the recently used come first, and Source brings back the ones cut off.
 
 ## License
 
