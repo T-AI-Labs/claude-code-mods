@@ -61,6 +61,7 @@ const world = (on: On, options: World = {}) => {
   mock.env(on, { USERPROFILE: '/home' })
   on('session.start', ($, e) => ({ cwd: e.cwd }))
   on('session.root', () => ({ value: '/work' }))
+  on('classic.SessionStart', () => ({}))
   on('turn.complete', () => ({}))
   on('command.list', () => ({ value: [...COMMANDS, ...(options.commands ?? [])] }))
   on('fs.list', ($, e) => {
@@ -341,6 +342,16 @@ test('Run with an agent and no draft starts nothing', async ($, on) => {
   await ui.press({ key: 'run' })
 
   expect(spawned).toEqual([])
+  await ui.unmount()
+})
+
+test('fills both dropdowns again after a /clear', async ($, on) => {
+  world(on)
+  await $.classic.SessionStart({ source: 'clear' })
+  const { ui, shown } = await mounted($)
+
+  expect((await shown('agent')).options).toEqual(['-', 'Explore', 'Plan'])
+  expect((await shown('slash')).options).toContain('find-skills')
   await ui.unmount()
 })
 
