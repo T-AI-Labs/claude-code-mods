@@ -320,7 +320,7 @@ Usage is counted from the install of the mod on, in every session that runs it, 
 
 | Element | What it shows |
 | --- | --- |
-| **Source** | Where an entry comes from: Built-in, User, Project, MCP or a plugin's name. Narrows the three dropdowns after it; a pick that does not come from the new source is dropped. |
+| **Source** | Where an entry comes from: Built-in, User, Project, MCP or a plugin's name. Project holds the agents, skills and commands of the repository's `.claude` folder. Narrows the three dropdowns after it; a pick that does not come from the new source is dropped. |
 | **Agent** | The agent types Claude Code offers, the recently used first. |
 | **Skill** | Your skills, the project's and those of installed plugins. |
 | **Command** | The other slash commands. |
