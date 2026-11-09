@@ -1,20 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 681 82" width="681" height="82" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 825 82" width="825" height="82" role="img" aria-labelledby="t d">
   <title id="t">The command-center row</title>
-  <desc id="d">Illustration. The dropdowns Source All, a slash dropdown with the skill find-skills and an agent dropdown with Explore, and the buttons Insert and Run.</desc>
-  <rect width="681" height="82" rx="12" fill="#1a1a1a"/>
+  <desc id="d">Illustration. The dropdowns Source All, Agent Explore and Skill/Command with the skill find-skills, and the buttons Insert and Run.</desc>
+  <rect width="825" height="82" rx="12" fill="#1a1a1a"/>
   <g font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas, 'DejaVu Sans Mono', monospace" font-size="15">
     <rect x="28" y="31.5" width="126" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
     <text x="85" y="50" fill="#e8e8e8" text-anchor="middle"><tspan fill="#8c8c8c">Source</tspan> All</text>
     <path d="M136.5 42 l4 5 l4 -5 z" fill="#e8e8e8"/>
-    <rect x="166" y="31.5" width="225" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
-    <text x="272.5" y="50" fill="#e8e8e8" text-anchor="middle"><tspan fill="#8c8c8c">/</tspan> find-skills <tspan fill="#8c8c8c">· skill</tspan></text>
-    <path d="M373.5 42 l4 5 l4 -5 z" fill="#e8e8e8"/>
-    <rect x="403" y="31.5" width="117" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
-    <text x="455.5" y="50" fill="#e8e8e8" text-anchor="middle"><tspan fill="#8c8c8c">@</tspan> Explore</text>
-    <path d="M502.5 42 l4 5 l4 -5 z" fill="#e8e8e8"/>
-    <rect x="532" y="31.5" width="70" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
-    <text x="567" y="50" fill="#e8e8e8" text-anchor="middle">Insert</text>
-    <rect x="610" y="31.5" width="43" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
-    <text x="631.5" y="50" fill="#e8e8e8" text-anchor="middle">Run</text>
+    <rect x="166" y="31.5" width="153" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+    <text x="236.5" y="50" fill="#e8e8e8" text-anchor="middle"><tspan fill="#8c8c8c">Agent</tspan> Explore</text>
+    <path d="M301.5 42 l4 5 l4 -5 z" fill="#e8e8e8"/>
+    <rect x="331" y="31.5" width="333" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+    <text x="491.5" y="50" fill="#e8e8e8" text-anchor="middle"><tspan fill="#8c8c8c">Skill/Command</tspan> find-skills <tspan fill="#8c8c8c">· skill</tspan></text>
+    <path d="M646.5 42 l4 5 l4 -5 z" fill="#e8e8e8"/>
+    <rect x="676" y="31.5" width="70" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+    <text x="711" y="50" fill="#e8e8e8" text-anchor="middle">Insert</text>
+    <rect x="754" y="31.5" width="43" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+    <text x="775.5" y="50" fill="#e8e8e8" text-anchor="middle">Run</text>
   </g>
 </svg>
