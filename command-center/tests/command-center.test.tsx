@@ -28,6 +28,9 @@ const slash = (path: string) => path.replaceAll('\\', '/').replace(/^[A-Za-z]:/,
 const DIRS: Record<string, string[]> = {
   '/home/.claude/skills': ['find-skills'],
   '/plugins/auto/skills': ['fix'],
+  '/work/.claude/skills': ['release'],
+  '/work/.claude/commands': ['deploy.md', 'db', 'notes.txt'],
+  '/work/.claude/commands/db': ['migrate.md'],
 }
 
 const FILES: Record<string, unknown> = {
@@ -54,6 +57,7 @@ const world = (on: On, options: World = {}) => {
   mock.store(on, options.stored ?? AGENTS)
   mock.env(on, { USERPROFILE: '/home' })
   on('session.start', ($, e) => ({ cwd: e.cwd }))
+  on('session.root', () => ({ value: '/work' }))
   on('turn.complete', () => ({}))
   on('command.list', () => ({ value: [...COMMANDS, ...(options.commands ?? [])] }))
   on('fs.list', ($, e) => {
@@ -61,7 +65,15 @@ const world = (on: On, options: World = {}) => {
 
     return names === undefined
       ? { deny: 'ENOENT' }
-      : { value: names.map(name => ({ name, kind: 'dir', size: 0, mtimeMs: 0, isLink: false })) }
+      : {
+          value: names.map(name => ({
+            name,
+            kind: name.includes('.') ? 'file' : 'dir',
+            size: 0,
+            mtimeMs: 0,
+            isLink: false,
+          })),
+        }
   })
   on('fs.read', ($, e) => {
     const file = FILES[slash(e.path)]
@@ -175,6 +187,26 @@ test('gives the row two text rows of height on the desktop for its taller contro
   const terminal = await $.ui.mount({ ...BAND, surface: 'terminal' })
   expect((await terminal.findAll({ type: 'Box' })).some(one => one.props.minHeight !== undefined)).toBe(false)
   await terminal.unmount()
+})
+
+test("files the repository's own skills and commands under Project", async ($, on) => {
+  world(on, {
+    commands: [
+      { name: 'release', description: 'Cut a release', source: 'user' },
+      { name: 'deploy', description: 'Deploy the app', source: 'user' },
+      { name: 'migrate', description: 'Run migrations', source: 'user' },
+    ],
+  })
+  await start($)
+  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  await ui.select({ key: 'source', value: 'Project' })
+
+  expect(values((await ui.find({ type: 'Select', key: 'skill' }))!.props)).toEqual(['-', 'release'])
+  expect(values((await ui.find({ type: 'Select', key: 'command' }))!.props)).toEqual(['-', 'deploy', 'migrate'])
+
+  await ui.select({ key: 'source', value: 'User' })
+  expect(values((await ui.find({ type: 'Select', key: 'skill' }))!.props)).toEqual(['-', 'find-skills'])
+  await ui.unmount()
 })
 
 test('keeps each dropdown within 64 options, the recently used first', async ($, on) => {

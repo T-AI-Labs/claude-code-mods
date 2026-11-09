@@ -45,10 +45,10 @@ async function foldersIn($: EngineInterface, dir: string) {
 
 // command.list mixes skills with commands; only the skill folders tell them apart.
 async function skillNames($: EngineInterface) {
-  const config = await configDir($)
+  const [config, root] = await Promise.all([configDir($), $.session.root()])
   const names = new Set([
     ...(await foldersIn($, `${config}/skills`)),
-    ...(await foldersIn($, '.claude/skills')),
+    ...(await foldersIn($, `${root}/.claude/skills`)),
   ])
   const installed = await $.fs
     .read(`${config}/plugins/installed_plugins.json`)
@@ -69,7 +69,38 @@ async function skillNames($: EngineInterface) {
   return names
 }
 
-const sourceOf = (one: CommandInfo) => {
+async function commandFilesIn($: EngineInterface, dir: string) {
+  const entries = await $.fs.list(dir).catch(() => [] as FsEntry[])
+  const names: string[] = []
+
+  for (const entry of entries) {
+    if (entry.kind === 'file' && entry.name.endsWith('.md')) {
+      names.push(entry.name.slice(0, -'.md'.length))
+    } else if (entry.kind === 'dir' || entry.isLink) {
+      for (const name of await commandFilesIn($, `${dir}/${entry.name}`)) {
+        names.push(name, `${entry.name}:${name}`)
+      }
+    }
+  }
+
+  return names
+}
+
+// command.list reports the repository's skills and commands as user ones; only their folders tell them apart.
+async function projectNames($: EngineInterface) {
+  const root = await $.session.root()
+
+  return new Set([
+    ...(await foldersIn($, `${root}/.claude/skills`)),
+    ...(await commandFilesIn($, `${root}/.claude/commands`)),
+  ])
+}
+
+const sourceOf = (one: CommandInfo, project: Set<string>) => {
+  if (one.source === 'user' && project.has(one.name)) {
+    return 'Project'
+  }
+
   if (one.source === 'builtin') {
     return 'Built-in'
   }
@@ -101,10 +132,10 @@ const agentSourceOf = (offer: AgentOfferInput) => {
   return offer.source === 'projectSettings' || offer.source === 'localSettings' ? 'Project' : offer.source
 }
 
-const choiceOf = (one: CommandInfo): Choice => ({
+const choiceOf = (one: CommandInfo, project: Set<string>): Choice => ({
   name: one.name,
   description: one.description,
-  source: sourceOf(one),
+  source: sourceOf(one, project),
 })
 
 const usedOf = async ($: EngineInterface) =>
@@ -115,8 +146,13 @@ const ranked = (list: readonly Choice[], used: Record<string, number>) =>
   [...list].sort((a, b) => (used[b.name] ?? 0) - (used[a.name] ?? 0) || byName(a, b))
 
 async function loadCommands($: EngineInterface) {
-  const [list, names, used] = await Promise.all([$.command.list(), skillNames($), usedOf($)])
-  const choices = list.map(choiceOf)
+  const [list, names, project, used] = await Promise.all([
+    $.command.list(),
+    skillNames($),
+    projectNames($),
+    usedOf($),
+  ])
+  const choices = list.map(one => choiceOf(one, project))
 
   await update($, skills, () => ranked(choices.filter(one => names.has(one.name)), used))
   await update($, commands, () => ranked(choices.filter(one => !names.has(one.name)), used))
