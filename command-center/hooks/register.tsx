@@ -384,18 +384,18 @@ export const register: Register = on => {
             onSelect={value => void pickSource($, value)}
           />
           <Select
-            key="slash"
-            label="/"
-            options={optionsOf(slashesShown)}
-            value={pickIn(slashesShown, slashValue)}
-            onSelect={value => void pickSlash($, value)}
-          />
-          <Select
             key="agent"
-            label="@"
+            label="Agent"
             options={optionsOf(agentsShown)}
             value={pickIn(agentsShown, agentValue)}
             onSelect={value => void pickAgent($, value)}
+          />
+          <Select
+            key="slash"
+            label="Skill/Command"
+            options={optionsOf(slashesShown)}
+            value={pickIn(slashesShown, slashValue)}
+            onSelect={value => void pickSlash($, value)}
           />
           <Box flexDirection="row" columnGap={1}>
             <Button key="insert" label="Insert" onPress={() => void insert($)} />

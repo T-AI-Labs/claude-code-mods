@@ -132,7 +132,7 @@ const mounted = async ($: Parameters<Parameters<typeof test>[1]>[0]) => {
   return { ui, shown }
 }
 
-test('puts Source, the slash and the agent dropdown and both buttons in one row under the rows beneath', async ($, on) => {
+test('puts Source, Agent, Skill/Command and both buttons in one row under the rows beneath', async ($, on) => {
   world(on)
   await start($)
 
@@ -140,7 +140,9 @@ test('puts Source, the slash and the agent dropdown and both buttons in one row 
     const ui = await $.ui.mount({ ...BAND, surface })
 
     expect(await ui.find({ type: 'Text', text: 'below' })).toBeDefined()
-    expect((await ui.findAll({ type: 'Select' })).map(one => one.key)).toEqual(['source', 'slash', 'agent'])
+    const selects = await ui.findAll({ type: 'Select' })
+    expect(selects.map(one => one.key)).toEqual(['source', 'agent', 'slash'])
+    expect(selects.map(one => one.props.label)).toEqual(['Source', 'Agent', 'Skill/Command'])
     expect((await ui.findAll({ type: 'Button' })).map(one => one.key)).toEqual(['insert', 'run'])
     await ui.unmount()
   }
