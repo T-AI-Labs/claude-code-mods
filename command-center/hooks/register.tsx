@@ -198,16 +198,12 @@ const picked = (value: string) => (value === NONE ? undefined : value)
 
 async function insert($: EngineInterface) {
   const chosen = picked(await read($, command))
-
-  if (chosen !== undefined) {
-    await $.prompt.fill({ text: `/${chosen} ` })
-
-    return
-  }
-
-  const prefix = [picked(await read($, skill)), picked(await read($, agent))]
-    .map((one, index) => (one === undefined ? '' : index === 0 ? `/${one} ` : `@agent-${one} `))
-    .join('')
+  const prefix =
+    chosen !== undefined
+      ? `/${chosen} `
+      : [picked(await read($, skill)), picked(await read($, agent))]
+          .map((one, index) => (one === undefined ? '' : index === 0 ? `/${one} ` : `@agent-${one} `))
+          .join('')
 
   if (prefix === '') {
     $.ui.toast('Pick an agent, a skill or a command first.')
@@ -279,6 +275,32 @@ async function pickSource($: EngineInterface, value: string) {
   await update($, agent, current => pickIn(inSource(agentList, value), current))
   await update($, skill, current => pickIn(inSource(skillList, value), current))
   await update($, command, current => pickIn(inSource(commandList, value), current))
+}
+
+// The prompt takes one slash command, so a command and a skill or agent pick never stand together.
+async function pickCommand($: EngineInterface, value: string) {
+  await update($, command, () => value)
+
+  if (value !== NONE) {
+    await update($, agent, () => NONE)
+    await update($, skill, () => NONE)
+  }
+}
+
+async function pickAgent($: EngineInterface, value: string) {
+  await update($, agent, () => value)
+
+  if (value !== NONE) {
+    await update($, command, () => NONE)
+  }
+}
+
+async function pickSkill($: EngineInterface, value: string) {
+  await update($, skill, () => value)
+
+  if (value !== NONE) {
+    await update($, command, () => NONE)
+  }
 }
 
 const optionsOf = (list: readonly Choice[]) => [
@@ -368,21 +390,21 @@ export const register: Register = on => {
             label="Agent"
             options={optionsOf(agentsShown)}
             value={pickIn(agentsShown, agentValue)}
-            onSelect={value => void update($, agent, () => value)}
+            onSelect={value => void pickAgent($, value)}
           />
           <Select
             key="skill"
             label="Skill"
             options={optionsOf(skillsShown)}
             value={pickIn(skillsShown, skillValue)}
-            onSelect={value => void update($, skill, () => value)}
+            onSelect={value => void pickSkill($, value)}
           />
           <Select
             key="command"
             label="Command"
             options={optionsOf(commandsShown)}
             value={pickIn(commandsShown, commandValue)}
-            onSelect={value => void update($, command, () => value)}
+            onSelect={value => void pickCommand($, value)}
           />
           <Box flexDirection="row" columnGap={1}>
             <Button key="insert" label="Insert" onPress={() => void insert($)} />

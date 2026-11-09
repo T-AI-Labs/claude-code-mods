@@ -323,8 +323,8 @@ Usage is counted from the install of the mod on, in every session that runs it, 
 | **Source** | Where an entry comes from: Built-in, User, Project, MCP or a plugin's name. Project holds the agents, skills and commands of the repository's `.claude` folder. Narrows the three dropdowns after it; a pick that does not come from the new source is dropped. |
 | **Agent** | The agent types Claude Code offers, the recently used first. |
 | **Skill** | Your skills, the project's and those of installed plugins. |
-| **Command** | The other slash commands. |
-| **Insert** | With a command picked, puts `/command` into the prompt. Otherwise puts `/skill` and `@agent-name` before what you typed. |
+| **Command** | The other slash commands. Picking one clears Agent and Skill, and picking either of those clears Command, since the prompt takes one slash command. |
+| **Insert** | Puts `/command`, or `/skill` and `@agent-name`, before what you typed. |
 | **Run** | Runs the picked command. A skill alone runs with what you typed as its arguments. An agent starts in the background on what you typed, told to use the skill if one is picked. |
 
 ### Usage

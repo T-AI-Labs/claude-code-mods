@@ -163,13 +163,13 @@ test('narrows every dropdown to the source picked, and drops only the picks from
   expect((await shown('source')).options).toEqual(['*', 'auto', 'Built-in', 'gh-tools', 'User'])
   await ui.select({ key: 'agent', value: 'Explore' })
   await ui.select({ key: 'skill', value: 'auto:fix' })
-  await ui.select({ key: 'command', value: 'compact' })
   await ui.select({ key: 'source', value: 'Built-in' })
 
   expect(await shown('agent')).toEqual({ options: ['-', 'Explore', 'Plan'], value: 'Explore' })
   expect(await shown('skill')).toEqual({ options: ['-'], value: '-' })
-  expect(await shown('command')).toEqual({ options: ['-', 'compact', 'simplify'], value: 'compact' })
+  expect(await shown('command')).toEqual({ options: ['-', 'compact', 'simplify'], value: '-' })
 
+  await ui.select({ key: 'command', value: 'compact' })
   await ui.select({ key: 'source', value: 'gh-tools' })
   expect(await shown('agent')).toEqual({ options: ['-'], value: '-' })
   expect(await shown('command')).toEqual({ options: ['-', 'review-pr'], value: '-' })
@@ -253,14 +253,52 @@ test('Insert puts the skill and the agent before the draft', async ($, on) => {
   await ui.unmount()
 })
 
-test('Insert with a command puts the command alone into the prompt', async ($, on) => {
-  const { filled } = world(on, { draft: 'anything' })
+test('Insert with a command puts the command before the draft and keeps it', async ($, on) => {
+  const { filled } = world(on, { draft: 'focus on the API' })
   await start($)
   const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
   await ui.select({ key: 'command', value: 'compact' })
   await ui.press({ key: 'insert' })
 
-  expect(filled).toEqual(['/compact '])
+  expect(filled).toEqual(['/compact focus on the API'])
+  await ui.unmount()
+})
+
+test('a command pick clears the agent and skill, and an agent or skill pick clears the command', async ($, on) => {
+  world(on)
+  await start($)
+  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  const picks = async () =>
+    Promise.all(
+      ['agent', 'skill', 'command'].map(async key => (await ui.find({ type: 'Select', key }))!.props.value),
+    )
+
+  await ui.select({ key: 'agent', value: 'Explore' })
+  await ui.select({ key: 'skill', value: 'auto:fix' })
+  expect(await picks()).toEqual(['Explore', 'auto:fix', '-'])
+
+  await ui.select({ key: 'command', value: 'compact' })
+  expect(await picks()).toEqual(['-', '-', 'compact'])
+
+  await ui.select({ key: 'skill', value: 'find-skills' })
+  expect(await picks()).toEqual(['-', 'find-skills', '-'])
+
+  await ui.select({ key: 'command', value: 'simplify' })
+  await ui.select({ key: 'agent', value: 'Plan' })
+  expect(await picks()).toEqual(['Plan', '-', '-'])
+  await ui.unmount()
+})
+
+test('Run after switching from an agent to a command runs only the command', async ($, on) => {
+  const { ran, spawned } = world(on, { draft: 'check the auth module' })
+  await start($)
+  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  await ui.select({ key: 'agent', value: 'Explore' })
+  await ui.select({ key: 'command', value: 'compact' })
+  await ui.press({ key: 'run' })
+
+  expect(ran).toEqual([{ command: 'compact', args: '' }])
+  expect(spawned).toEqual([])
   await ui.unmount()
 })
 
