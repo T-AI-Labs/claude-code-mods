@@ -12,15 +12,14 @@ const DESCRIPTION_LENGTH = 40
 const MAX_CHOICES = 63
 // The desktop's native Select and Button are taller than one text row and spill onto the row above.
 const DESKTOP_ROWS = 2
+const MANUAL_ONLY = /^disable-model-invocation:\s*true\s*$/m
 
 type Installed = { plugins?: Record<string, { installPath: string }[]> }
 
 const agents = atom({ plugin: 'command-center', key: 'agents' } as const, [])
-const skills = atom({ plugin: 'command-center', key: 'skills' } as const, [])
-const commands = atom({ plugin: 'command-center', key: 'commands' } as const, [])
+const slashes = atom({ plugin: 'command-center', key: 'slashes' } as const, [])
 const agent = atom({ plugin: 'command-center', key: 'agent' } as const, NONE)
-const skill = atom({ plugin: 'command-center', key: 'skill' } as const, NONE)
-const command = atom({ plugin: 'command-center', key: 'command' } as const, NONE)
+const slash = atom({ plugin: 'command-center', key: 'slash' } as const, NONE)
 const source = atom({ plugin: 'command-center', key: 'source' } as const, ALL)
 
 const byName = (a: Choice, b: Choice) => a.name.localeCompare(b.name)
@@ -44,12 +43,16 @@ async function foldersIn($: EngineInterface, dir: string) {
 }
 
 // command.list mixes skills with commands; only the skill folders tell them apart.
-async function skillNames($: EngineInterface) {
+async function skillFolders($: EngineInterface) {
   const [config, root] = await Promise.all([configDir($), $.session.root()])
-  const names = new Set([
-    ...(await foldersIn($, `${config}/skills`)),
-    ...(await foldersIn($, `${root}/.claude/skills`)),
-  ])
+  const folders = new Map<string, string>()
+
+  for (const dir of [`${config}/skills`, `${root}/.claude/skills`]) {
+    for (const name of await foldersIn($, dir)) {
+      folders.set(name, `${dir}/${name}`)
+    }
+  }
+
   const installed = await $.fs
     .read(`${config}/plugins/installed_plugins.json`)
     .then(text => JSON.parse(text) as Installed)
@@ -57,16 +60,24 @@ async function skillNames($: EngineInterface) {
 
   for (const [key, installs] of Object.entries(installed.plugins ?? {})) {
     const plugin = key.split('@')[0] ?? key
-    const root = installs[0]?.installPath
+    const pluginRoot = installs[0]?.installPath
 
-    if (root !== undefined) {
-      for (const name of await foldersIn($, `${root}/skills`)) {
-        names.add(`${plugin}:${name}`)
+    if (pluginRoot !== undefined) {
+      for (const name of await foldersIn($, `${pluginRoot}/skills`)) {
+        folders.set(`${plugin}:${name}`, `${pluginRoot}/skills/${name}`)
       }
     }
   }
 
-  return names
+  return folders
+}
+
+// A skill with disable-model-invocation can only be started by the person, so no agent can be told to use it.
+async function isManualOnly($: EngineInterface, folder: string) {
+  const text = await $.fs.read(`${folder}/SKILL.md`).catch(() => '')
+  const end = text.indexOf('\n---', 3)
+
+  return text.startsWith('---') && end > 0 && MANUAL_ONLY.test(text.slice(3, end))
 }
 
 async function commandFilesIn($: EngineInterface, dir: string) {
@@ -132,12 +143,6 @@ const agentSourceOf = (offer: AgentOfferInput) => {
   return offer.source === 'projectSettings' || offer.source === 'localSettings' ? 'Project' : offer.source
 }
 
-const choiceOf = (one: CommandInfo, project: Set<string>): Choice => ({
-  name: one.name,
-  description: one.description,
-  source: sourceOf(one, project),
-})
-
 const usedOf = async ($: EngineInterface) =>
   ((await $.store.get(USED_KEY)) ?? {}) as Record<string, number>
 
@@ -145,29 +150,37 @@ const usedOf = async ($: EngineInterface) =>
 const ranked = (list: readonly Choice[], used: Record<string, number>) =>
   [...list].sort((a, b) => (used[b.name] ?? 0) - (used[a.name] ?? 0) || byName(a, b))
 
-async function loadCommands($: EngineInterface) {
-  const [list, names, project, used] = await Promise.all([
+async function loadSlashes($: EngineInterface) {
+  const [list, folders, project, used] = await Promise.all([
     $.command.list(),
-    skillNames($),
+    skillFolders($),
     projectNames($),
     usedOf($),
   ])
-  const choices = list.map(one => choiceOf(one, project))
+  const choices = await Promise.all(
+    list.map(async (one): Promise<Choice> => {
+      const folder = folders.get(one.name)
+      const base = { name: one.name, description: one.description, source: sourceOf(one, project) }
 
-  await update($, skills, () => ranked(choices.filter(one => names.has(one.name)), used))
-  await update($, commands, () => ranked(choices.filter(one => !names.has(one.name)), used))
+      return folder === undefined
+        ? { ...base, kind: 'command' }
+        : { ...base, kind: 'skill', isManualOnly: await isManualOnly($, folder) }
+    }),
+  )
+
+  await update($, slashes, () => ranked(choices, used))
 }
 
-// A list stored by 0.1.0 has no source until the next turn loads the commands again.
 const sourcesOf = (...lists: (readonly Choice[])[]) =>
-  [...new Set(lists.flat().flatMap(one => (typeof one.source === 'string' ? [one.source] : [])))]
-    .sort((a, b) => a.localeCompare(b))
-    .slice(0, MAX_CHOICES)
+  [...new Set(lists.flat().map(one => one.source))].sort((a, b) => a.localeCompare(b)).slice(0, MAX_CHOICES)
 
 const inSource = (list: readonly Choice[], from: string) =>
   list.filter(one => from === ALL || one.source === from).slice(0, MAX_CHOICES)
 
 const pickIn = (list: readonly Choice[], value: string) => (list.some(one => one.name === value) ? value : NONE)
+
+// Built-in and other commands steer the session, and a manual-only skill is the person's to start: neither takes an agent.
+const takesAgent = (one: Choice | undefined) => one === undefined || (one.kind === 'skill' && !one.isManualOnly)
 
 async function loadAgents($: EngineInterface) {
   const [stored, used] = await Promise.all([
@@ -197,16 +210,11 @@ async function remember($: EngineInterface, offer: AgentOfferInput) {
 const picked = (value: string) => (value === NONE ? undefined : value)
 
 async function insert($: EngineInterface) {
-  const chosen = picked(await read($, command))
-  const prefix =
-    chosen !== undefined
-      ? `/${chosen} `
-      : [picked(await read($, skill)), picked(await read($, agent))]
-          .map((one, index) => (one === undefined ? '' : index === 0 ? `/${one} ` : `@agent-${one} `))
-          .join('')
+  const [slashPick, agentPick] = [picked(await read($, slash)), picked(await read($, agent))]
+  const prefix = (slashPick === undefined ? '' : `/${slashPick} `) + (agentPick === undefined ? '' : `@agent-${agentPick} `)
 
   if (prefix === '') {
-    $.ui.toast('Pick an agent, a skill or a command first.')
+    $.ui.toast('Pick a skill, a command or an agent first.')
 
     return
   }
@@ -216,29 +224,28 @@ async function insert($: EngineInterface) {
 }
 
 async function run($: EngineInterface) {
-  const chosen = picked(await read($, command))
+  const slashPick = picked(await read($, slash))
+  const type = picked(await read($, agent))
+  const chosen = (await read($, slashes)).find(one => one.name === slashPick)
 
-  if (chosen !== undefined) {
-    await update($, command, () => NONE)
-    await $.command.run({ command: chosen })
+  if (slashPick === undefined && type === undefined) {
+    $.ui.toast('Pick a skill, a command or an agent first.')
 
     return
   }
 
-  const type = picked(await read($, agent))
-  const withSkill = picked(await read($, skill))
-
-  if (type === undefined && withSkill === undefined) {
-    $.ui.toast('Pick an agent, a skill or a command first.')
+  if (slashPick !== undefined && chosen?.kind !== 'skill') {
+    await update($, slash, () => NONE)
+    await $.command.run({ command: slashPick })
 
     return
   }
 
   const task = (await $.prompt.read()).text.trim()
 
-  if (type === undefined && withSkill !== undefined) {
+  if (type === undefined && slashPick !== undefined) {
     await $.prompt.fill({ text: '' })
-    await $.command.run({ command: withSkill, args: task })
+    await $.command.run({ command: slashPick, args: task })
 
     return
   }
@@ -250,7 +257,7 @@ async function run($: EngineInterface) {
   }
 
   const spawned = await $.agent.spawn({
-    prompt: withSkill === undefined ? task : `Use the ${withSkill} skill. ${task}`,
+    prompt: slashPick === undefined ? task : `Use the ${slashPick} skill. ${task}`,
     subagentType: type,
     description: task.slice(0, DESCRIPTION_LENGTH),
   })
@@ -266,52 +273,39 @@ async function run($: EngineInterface) {
 }
 
 async function pickSource($: EngineInterface, value: string) {
-  const [agentList, skillList, commandList] = await Promise.all([
-    read($, agents),
-    read($, skills),
-    read($, commands),
-  ])
+  const [agentList, slashList] = await Promise.all([read($, agents), read($, slashes)])
   await update($, source, () => value)
   await update($, agent, current => pickIn(inSource(agentList, value), current))
-  await update($, skill, current => pickIn(inSource(skillList, value), current))
-  await update($, command, current => pickIn(inSource(commandList, value), current))
+  await update($, slash, current => pickIn(inSource(slashList, value), current))
 }
 
-// The prompt takes one slash command, so a command and a skill or agent pick never stand together.
-async function pickCommand($: EngineInterface, value: string) {
-  await update($, command, () => value)
+async function pickSlash($: EngineInterface, value: string) {
+  const slashList = await read($, slashes)
+  await update($, slash, () => value)
 
-  if (value !== NONE) {
+  if (!takesAgent(slashList.find(one => one.name === value))) {
     await update($, agent, () => NONE)
-    await update($, skill, () => NONE)
   }
 }
 
 async function pickAgent($: EngineInterface, value: string) {
+  const [slashList, slashPick] = await Promise.all([read($, slashes), read($, slash)])
   await update($, agent, () => value)
 
-  if (value !== NONE) {
-    await update($, command, () => NONE)
-  }
-}
-
-async function pickSkill($: EngineInterface, value: string) {
-  await update($, skill, () => value)
-
-  if (value !== NONE) {
-    await update($, command, () => NONE)
+  if (value !== NONE && !takesAgent(slashList.find(one => one.name === slashPick))) {
+    await update($, slash, () => NONE)
   }
 }
 
 const optionsOf = (list: readonly Choice[]) => [
   { value: NONE, label: '–' },
-  ...list.map(one => ({ value: one.name })),
+  ...list.map(one => ({ value: one.name, label: one.kind === undefined ? one.name : `${one.name} · ${one.kind}` })),
 ]
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     const result = await next(e)
-    await Promise.all([loadAgents($), loadCommands($)])
+    await Promise.all([loadAgents($), loadSlashes($)])
 
     return result
   })
@@ -319,7 +313,7 @@ export const register: Register = on => {
   // Plugins and skills can change between turns, so the lists follow without a restart.
   on('turn.complete', async ($, e, next) => {
     const result = await next(e)
-    await loadCommands($)
+    await loadSlashes($)
 
     return result
   })
@@ -351,22 +345,17 @@ export const register: Register = on => {
     }
 
     const { Box, Button, Select } = $.ui.resolve(e)
-    const [agentList, skillList, commandList] = await Promise.all([
+    const [agentList, slashList, agentValue, slashValue, sourceValue] = await Promise.all([
       read($, agents),
-      read($, skills),
-      read($, commands),
-    ])
-    const [agentValue, skillValue, commandValue, sourceValue] = await Promise.all([
+      read($, slashes),
       read($, agent),
-      read($, skill),
-      read($, command),
+      read($, slash),
       read($, source),
     ])
-    const sources = sourcesOf(agentList, skillList, commandList)
+    const sources = sourcesOf(agentList, slashList)
     const from = sources.includes(sourceValue) ? sourceValue : ALL
     const agentsShown = inSource(agentList, from)
-    const skillsShown = inSource(skillList, from)
-    const commandsShown = inSource(commandList, from)
+    const slashesShown = inSource(slashList, from)
 
     return (
       <Box flexDirection="column">
@@ -386,25 +375,18 @@ export const register: Register = on => {
             onSelect={value => void pickSource($, value)}
           />
           <Select
+            key="slash"
+            label="/"
+            options={optionsOf(slashesShown)}
+            value={pickIn(slashesShown, slashValue)}
+            onSelect={value => void pickSlash($, value)}
+          />
+          <Select
             key="agent"
-            label="Agent"
+            label="@"
             options={optionsOf(agentsShown)}
             value={pickIn(agentsShown, agentValue)}
             onSelect={value => void pickAgent($, value)}
-          />
-          <Select
-            key="skill"
-            label="Skill"
-            options={optionsOf(skillsShown)}
-            value={pickIn(skillsShown, skillValue)}
-            onSelect={value => void pickSkill($, value)}
-          />
-          <Select
-            key="command"
-            label="Command"
-            options={optionsOf(commandsShown)}
-            value={pickIn(commandsShown, commandValue)}
-            onSelect={value => void pickCommand($, value)}
           />
           <Box flexDirection="row" columnGap={1}>
             <Button key="insert" label="Insert" onPress={() => void insert($)} />

@@ -1,14 +1,18 @@
-export type Choice = { name: string; description: string; source: string }
+export type Choice = {
+  name: string
+  description: string
+  source: string
+  kind?: 'skill' | 'command'
+  isManualOnly?: boolean
+}
 
 declare module 'claude-code' {
   interface PluginState {
     'command-center': {
       agents: Choice[]
-      skills: Choice[]
-      commands: Choice[]
+      slashes: Choice[]
       agent: string
-      skill: string
-      command: string
+      slash: string
       source: string
     }
   }

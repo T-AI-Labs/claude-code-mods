@@ -23,20 +23,22 @@ const AGENTS = {
 }
 
 // The fixtures are POSIX paths; on Windows the engine resolves them onto the current drive.
-const slash = (path: string) => path.replaceAll('\\', '/').replace(/^[A-Za-z]:/, '')
+const posix = (path: string) => path.replaceAll('\\', '/').replace(/^[A-Za-z]:/, '')
 
 const DIRS: Record<string, string[]> = {
   '/home/.claude/skills': ['find-skills'],
-  '/plugins/auto/skills': ['fix'],
+  '/plugins/auto/skills': ['fix', 'setup'],
   '/work/.claude/skills': ['release'],
   '/work/.claude/commands': ['deploy.md', 'db', 'notes.txt'],
   '/work/.claude/commands/db': ['migrate.md'],
 }
 
-const FILES: Record<string, unknown> = {
-  '/home/.claude/plugins/installed_plugins.json': {
+const FILES: Record<string, string> = {
+  '/home/.claude/plugins/installed_plugins.json': JSON.stringify({
     plugins: { 'auto@thor-skills': [{ installPath: '/plugins/auto' }] },
-  },
+  }),
+  '/home/.claude/skills/find-skills/SKILL.md': '---\nname: find-skills\ndescription: Discover skills\n---\n# Find',
+  '/plugins/auto/skills/setup/SKILL.md': '---\r\nname: setup\r\ndisable-model-invocation: true\r\n---\r\n# Setup',
 }
 
 const COMMANDS = [
@@ -44,6 +46,7 @@ const COMMANDS = [
   { name: 'compact', description: 'Compact the conversation', source: 'builtin' },
   { name: 'find-skills', description: 'Discover agent skills', source: 'user' },
   { name: 'auto:fix', description: 'Fix a bug', source: 'plugin', plugin: 'auto' },
+  { name: 'auto:setup', description: 'Set up auto', source: 'plugin', plugin: 'auto' },
   { name: 'review-pr', description: 'Review a pull request', source: 'plugin', plugin: 'gh-tools' },
 ] as const
 
@@ -61,7 +64,7 @@ const world = (on: On, options: World = {}) => {
   on('turn.complete', () => ({}))
   on('command.list', () => ({ value: [...COMMANDS, ...(options.commands ?? [])] }))
   on('fs.list', ($, e) => {
-    const names = DIRS[slash(e.path)]
+    const names = DIRS[posix(e.path)]
 
     return names === undefined
       ? { deny: 'ENOENT' }
@@ -76,9 +79,9 @@ const world = (on: On, options: World = {}) => {
         }
   })
   on('fs.read', ($, e) => {
-    const file = FILES[slash(e.path)]
+    const file = FILES[posix(e.path)]
 
-    return file === undefined ? { deny: 'ENOENT' } : { value: JSON.stringify(file) }
+    return file === undefined ? { deny: 'ENOENT' } : { value: file }
   })
   on('prompt.read', () => ({ value: { text: options.draft ?? '', cursor: 0 } }))
   on('prompt.fill', ($, e) => {
@@ -112,10 +115,23 @@ const world = (on: On, options: World = {}) => {
 const start = ($: Parameters<Parameters<typeof test>[1]>[0]) =>
   $.session.start({ cwd: '/work', surface: 'desktop', isInteractive: true })
 
-const values = (props: Record<string, unknown>) =>
-  (props.options as { value: string }[]).map(one => one.value)
+type Option = { value: string; label?: string }
 
-test('puts the dropdowns and both buttons in one row under the rows beneath', async ($, on) => {
+const options = (props: Record<string, unknown>) => props.options as Option[]
+const values = (props: Record<string, unknown>) => options(props).map(one => one.value)
+
+const mounted = async ($: Parameters<Parameters<typeof test>[1]>[0]) => {
+  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  const shown = async (key: string) => {
+    const picker = await ui.find({ type: 'Select', key })
+
+    return { options: values(picker!.props), value: picker!.props.value as string }
+  }
+
+  return { ui, shown }
+}
+
+test('puts Source, the slash and the agent dropdown and both buttons in one row under the rows beneath', async ($, on) => {
   world(on)
   await start($)
 
@@ -123,56 +139,49 @@ test('puts the dropdowns and both buttons in one row under the rows beneath', as
     const ui = await $.ui.mount({ ...BAND, surface })
 
     expect(await ui.find({ type: 'Text', text: 'below' })).toBeDefined()
-    expect((await ui.findAll({ type: 'Select' })).map(one => one.key)).toEqual([
-      'source',
-      'agent',
-      'skill',
-      'command',
-    ])
+    expect((await ui.findAll({ type: 'Select' })).map(one => one.key)).toEqual(['source', 'slash', 'agent'])
     expect((await ui.findAll({ type: 'Button' })).map(one => one.key)).toEqual(['insert', 'run'])
     await ui.unmount()
   }
 })
 
-test('tells skills from commands by their folders and lists the agents seen before', async ($, on) => {
+test('lists skills and commands in one slash dropdown, each labelled with its kind', async ($, on) => {
   world(on)
   await start($)
-  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  const { ui, shown } = await mounted($)
+  const slash = options((await ui.find({ type: 'Select', key: 'slash' }))!.props)
 
-  expect(values((await ui.find({ type: 'Select', key: 'agent' }))!.props)).toEqual(['-', 'Explore', 'Plan'])
-  expect(values((await ui.find({ type: 'Select', key: 'skill' }))!.props)).toEqual(['-', 'auto:fix', 'find-skills'])
-  expect(values((await ui.find({ type: 'Select', key: 'command' }))!.props)).toEqual([
+  expect(slash.map(one => one.value)).toEqual([
     '-',
+    'auto:fix',
+    'auto:setup',
     'compact',
+    'find-skills',
     'review-pr',
     'simplify',
   ])
+  expect(slash.find(one => one.value === 'auto:fix')?.label).toBe('auto:fix · skill')
+  expect(slash.find(one => one.value === 'compact')?.label).toBe('compact · command')
+  expect((await shown('agent')).options).toEqual(['-', 'Explore', 'Plan'])
   await ui.unmount()
 })
 
-test('narrows every dropdown to the source picked, and drops only the picks from another', async ($, on) => {
+test('narrows both dropdowns to the source picked, and drops only the picks from another', async ($, on) => {
   world(on)
   await start($)
-  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
-  const shown = async (key: string) => {
-    const picker = await ui.find({ type: 'Select', key })
-
-    return { options: values(picker!.props), value: picker!.props.value }
-  }
+  const { ui, shown } = await mounted($)
 
   expect((await shown('source')).options).toEqual(['*', 'auto', 'Built-in', 'gh-tools', 'User'])
   await ui.select({ key: 'agent', value: 'Explore' })
-  await ui.select({ key: 'skill', value: 'auto:fix' })
+  await ui.select({ key: 'slash', value: 'auto:fix' })
   await ui.select({ key: 'source', value: 'Built-in' })
 
   expect(await shown('agent')).toEqual({ options: ['-', 'Explore', 'Plan'], value: 'Explore' })
-  expect(await shown('skill')).toEqual({ options: ['-'], value: '-' })
-  expect(await shown('command')).toEqual({ options: ['-', 'compact', 'simplify'], value: '-' })
+  expect(await shown('slash')).toEqual({ options: ['-', 'compact', 'simplify'], value: '-' })
 
-  await ui.select({ key: 'command', value: 'compact' })
   await ui.select({ key: 'source', value: 'gh-tools' })
   expect(await shown('agent')).toEqual({ options: ['-'], value: '-' })
-  expect(await shown('command')).toEqual({ options: ['-', 'review-pr'], value: '-' })
+  expect(await shown('slash')).toEqual({ options: ['-', 'review-pr'], value: '-' })
   await ui.unmount()
 })
 
@@ -198,30 +207,29 @@ test("files the repository's own skills and commands under Project", async ($, o
     ],
   })
   await start($)
-  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  const { ui, shown } = await mounted($)
   await ui.select({ key: 'source', value: 'Project' })
 
-  expect(values((await ui.find({ type: 'Select', key: 'skill' }))!.props)).toEqual(['-', 'release'])
-  expect(values((await ui.find({ type: 'Select', key: 'command' }))!.props)).toEqual(['-', 'deploy', 'migrate'])
+  expect((await shown('slash')).options).toEqual(['-', 'deploy', 'migrate', 'release'])
 
   await ui.select({ key: 'source', value: 'User' })
-  expect(values((await ui.find({ type: 'Select', key: 'skill' }))!.props)).toEqual(['-', 'find-skills'])
+  expect((await shown('slash')).options).toEqual(['-', 'find-skills'])
   await ui.unmount()
 })
 
-test('keeps each dropdown within 64 options, the recently used first', async ($, on) => {
+test('keeps the slash dropdown within 64 options, the recently used first', async ($, on) => {
   const many = Array.from({ length: 80 }, (_, index) => ({
     name: `cmd-${String(index).padStart(2, '0')}`,
     description: '',
     source: 'builtin',
   }))
-  world(on, { commands: many, stored: { ...AGENTS, used: { 'cmd-79': 2, simplify: 1 } } })
+  world(on, { commands: many, stored: { ...AGENTS, used: { 'cmd-79': 2, 'auto:fix': 1 } } })
   await start($)
-  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
-  const options = values((await ui.find({ type: 'Select', key: 'command' }))!.props)
+  const { ui, shown } = await mounted($)
+  const slash = (await shown('slash')).options
 
-  expect(options).toHaveLength(64)
-  expect(options.slice(0, 4)).toEqual(['-', 'cmd-79', 'simplify', 'cmd-00'])
+  expect(slash).toHaveLength(64)
+  expect(slash.slice(0, 4)).toEqual(['-', 'cmd-79', 'auto:fix', 'auto:setup'])
   await ui.unmount()
 })
 
@@ -234,19 +242,40 @@ test('adds an agent type the engine offers to the agent dropdown', async ($, on)
     source: 'userSettings',
     provider: { plugin: 'engine', tier: 'core' },
   })
-  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  const { ui, shown } = await mounted($)
 
-  expect(values((await ui.find({ type: 'Select', key: 'agent' }))!.props)).toEqual(['-', 'pr-review'])
-  expect(values((await ui.find({ type: 'Select', key: 'source' }))!.props)).toContain('User')
+  expect((await shown('agent')).options).toEqual(['-', 'pr-review'])
+  expect((await shown('source')).options).toContain('User')
+  await ui.unmount()
+})
+
+test('a skill keeps the agent, while a command or a manual-only skill clears it', async ($, on) => {
+  world(on)
+  await start($)
+  const { ui, shown } = await mounted($)
+  const picks = async () => [(await shown('slash')).value, (await shown('agent')).value]
+
+  await ui.select({ key: 'agent', value: 'Explore' })
+  await ui.select({ key: 'slash', value: 'find-skills' })
+  expect(await picks()).toEqual(['find-skills', 'Explore'])
+
+  await ui.select({ key: 'slash', value: 'compact' })
+  expect(await picks()).toEqual(['compact', '-'])
+
+  await ui.select({ key: 'agent', value: 'Plan' })
+  expect(await picks()).toEqual(['-', 'Plan'])
+
+  await ui.select({ key: 'slash', value: 'auto:setup' })
+  expect(await picks()).toEqual(['auto:setup', '-'])
   await ui.unmount()
 })
 
 test('Insert puts the skill and the agent before the draft', async ($, on) => {
   const { filled } = world(on, { draft: 'check the auth module' })
   await start($)
-  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  const { ui } = await mounted($)
   await ui.select({ key: 'agent', value: 'Explore' })
-  await ui.select({ key: 'skill', value: 'auto:fix' })
+  await ui.select({ key: 'slash', value: 'auto:fix' })
   await ui.press({ key: 'insert' })
 
   expect(filled).toEqual(['/auto:fix @agent-Explore check the auth module'])
@@ -256,70 +285,33 @@ test('Insert puts the skill and the agent before the draft', async ($, on) => {
 test('Insert with a command puts the command before the draft and keeps it', async ($, on) => {
   const { filled } = world(on, { draft: 'focus on the API' })
   await start($)
-  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
-  await ui.select({ key: 'command', value: 'compact' })
+  const { ui } = await mounted($)
+  await ui.select({ key: 'slash', value: 'compact' })
   await ui.press({ key: 'insert' })
 
   expect(filled).toEqual(['/compact focus on the API'])
   await ui.unmount()
 })
 
-test('a command pick clears the agent and skill, and an agent or skill pick clears the command', async ($, on) => {
-  world(on)
-  await start($)
-  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
-  const picks = async () =>
-    Promise.all(
-      ['agent', 'skill', 'command'].map(async key => (await ui.find({ type: 'Select', key }))!.props.value),
-    )
-
-  await ui.select({ key: 'agent', value: 'Explore' })
-  await ui.select({ key: 'skill', value: 'auto:fix' })
-  expect(await picks()).toEqual(['Explore', 'auto:fix', '-'])
-
-  await ui.select({ key: 'command', value: 'compact' })
-  expect(await picks()).toEqual(['-', '-', 'compact'])
-
-  await ui.select({ key: 'skill', value: 'find-skills' })
-  expect(await picks()).toEqual(['-', 'find-skills', '-'])
-
-  await ui.select({ key: 'command', value: 'simplify' })
-  await ui.select({ key: 'agent', value: 'Plan' })
-  expect(await picks()).toEqual(['Plan', '-', '-'])
-  await ui.unmount()
-})
-
-test('Run after switching from an agent to a command runs only the command', async ($, on) => {
+test('Run with a command runs it and clears the pick', async ($, on) => {
   const { ran, spawned } = world(on, { draft: 'check the auth module' })
   await start($)
-  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
-  await ui.select({ key: 'agent', value: 'Explore' })
-  await ui.select({ key: 'command', value: 'compact' })
+  const { ui, shown } = await mounted($)
+  await ui.select({ key: 'slash', value: 'compact' })
   await ui.press({ key: 'run' })
 
   expect(ran).toEqual([{ command: 'compact', args: '' }])
   expect(spawned).toEqual([])
-  await ui.unmount()
-})
-
-test('Run with a command runs it and clears the pick', async ($, on) => {
-  const { ran } = world(on)
-  await start($)
-  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
-  await ui.select({ key: 'command', value: 'compact' })
-  await ui.press({ key: 'run' })
-
-  expect(ran).toEqual([{ command: 'compact', args: '' }])
-  expect((await ui.find({ type: 'Select', key: 'command' }))?.props.value).toBe('-')
+  expect((await shown('slash')).value).toBe('-')
   await ui.unmount()
 })
 
 test('Run with an agent starts it on the draft, with the skill named', async ($, on) => {
   const { spawned, filled } = world(on, { draft: 'check the auth module' })
   await start($)
-  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  const { ui } = await mounted($)
   await ui.select({ key: 'agent', value: 'Explore' })
-  await ui.select({ key: 'skill', value: 'find-skills' })
+  await ui.select({ key: 'slash', value: 'find-skills' })
   await ui.press({ key: 'run' })
 
   expect(spawned).toEqual([
@@ -332,8 +324,8 @@ test('Run with an agent starts it on the draft, with the skill named', async ($,
 test('Run with a skill alone runs it with the draft as its arguments', async ($, on) => {
   const { ran, spawned } = world(on, { draft: 'issue 87' })
   await start($)
-  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
-  await ui.select({ key: 'skill', value: 'auto:fix' })
+  const { ui } = await mounted($)
+  await ui.select({ key: 'slash', value: 'auto:fix' })
   await ui.press({ key: 'run' })
 
   expect(ran).toEqual([{ command: 'auto:fix', args: 'issue 87' }])
@@ -344,25 +336,11 @@ test('Run with a skill alone runs it with the draft as its arguments', async ($,
 test('Run with an agent and no draft starts nothing', async ($, on) => {
   const { spawned } = world(on)
   await start($)
-  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  const { ui } = await mounted($)
   await ui.select({ key: 'agent', value: 'Plan' })
   await ui.press({ key: 'run' })
 
   expect(spawned).toEqual([])
-  await ui.unmount()
-})
-
-test('draws commands an earlier version stored without a source', async ($, on) => {
-  world(on)
-  on('state.get', ($, e, next) =>
-    e.key === 'commands'
-      ? { value: { value: [{ name: 'compact', description: 'Compact the conversation' }], version: 1 } }
-      : next(e),
-  )
-  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
-
-  expect(values((await ui.find({ type: 'Select', key: 'source' }))!.props)).toEqual(['*'])
-  expect(values((await ui.find({ type: 'Select', key: 'command' }))!.props)).toEqual(['-', 'compact'])
   await ui.unmount()
 })
 

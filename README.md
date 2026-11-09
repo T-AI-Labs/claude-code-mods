@@ -316,22 +316,21 @@ Usage is counted from the install of the mod on, in every session that runs it, 
 
 ## command-center&nbsp;<a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcommand-center%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=&style=flat-square" alt="command-center version"></a>
 
-<p align="center"><img src=".docs/command-center.svg" alt="The command-center row: the Source, Agent, Skill and Command dropdowns with Insert and Run" width="774"></p>
+<p align="center"><img src=".docs/command-center.svg" alt="The command-center row: the Source, slash and agent dropdowns with Insert and Run" width="681"></p>
 
 | Element | What it shows |
 | --- | --- |
-| **Source** | Where an entry comes from: Built-in, User, Project, MCP or a plugin's name. Project holds the agents, skills and commands of the repository's `.claude` folder. Narrows the three dropdowns after it; a pick that does not come from the new source is dropped. |
-| **Agent** | The agent types Claude Code offers, the recently used first. |
-| **Skill** | Your skills, the project's and those of installed plugins. |
-| **Command** | The other slash commands. Picking one clears Agent and Skill, and picking either of those clears Command, since the prompt takes one slash command. |
-| **Insert** | Puts `/command`, or `/skill` and `@agent-name`, before what you typed. |
+| **Source** | Where an entry comes from: Built-in, User, Project, MCP or a plugin's name. Project holds the agents, skills and commands of the repository's `.claude` folder. Narrows both dropdowns after it; a pick that does not come from the new source is dropped. |
+| **/** | Your skills and slash commands in one list, each marked `skill` or `command`, the recently used first. The prompt takes one slash command, so there is one place for it. |
+| **@** | The agent types Claude Code offers. A skill can go with an agent; a command, or a skill only you may start (`disable-model-invocation`), cannot, so picking one clears the other. |
+| **Insert** | Puts `/name` and `@agent-name` before what you typed. |
 | **Run** | Runs the picked command. A skill alone runs with what you typed as its arguments. An agent starts in the background on what you typed, told to use the skill if one is picked. |
 
 ### Usage
 
 The row sits in the band above the prompt, in the terminal and the desktop app, and costs no tokens; only what Run starts does. In the desktop app it is two lines high so the app's taller controls fit. The mobile app has no dropdowns, so the row stays out of it there. In the terminal, `ctrl+x tab` moves into the band: Tab walks the controls, Enter presses a button, the arrow keys pick an entry.
 
-The agent list fills from the agent types Claude Code offers the model, so in the first session after the install it is empty until the first prompt; the mod keeps them for the sessions after. Skills are told from commands by their folders, so skills that ship with Claude Code itself are listed under Command. A dropdown holds at most 63 entries: the recently used come first, and Source brings back the ones cut off.
+The agent list fills from the agent types Claude Code offers the model, so in the first session after the install it is empty until the first prompt; the mod keeps them for the sessions after. Skills are told from commands by their folders, so skills that ship with Claude Code itself are marked `command`. A dropdown holds at most 63 entries: the recently used come first, and Source brings back the ones cut off.
 
 ## License
 
