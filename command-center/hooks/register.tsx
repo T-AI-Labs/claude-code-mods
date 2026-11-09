@@ -310,6 +310,15 @@ export const register: Register = on => {
     return result
   })
 
+  // A /clear wipes every plugin's state after session.end and raises no session.start, only this.
+  on('classic.SessionStart', async ($, e, next) => {
+    if (e.source === 'clear') {
+      await Promise.all([loadAgents($), loadSlashes($)]).catch(() => undefined)
+    }
+
+    return next(e)
+  })
+
   // Plugins and skills can change between turns, so the lists follow without a restart.
   on('turn.complete', async ($, e, next) => {
     const result = await next(e)
