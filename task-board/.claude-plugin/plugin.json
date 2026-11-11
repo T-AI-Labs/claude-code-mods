@@ -1,0 +1,19 @@
+{
+  "name": "task-board",
+  "version": "0.1.0",
+  "author": {
+    "name": "Claude",
+    "email": "noreply@anthropic.com"
+  },
+  "license": "MIT",
+  "description": "A task board per project, opened with /task-board: lanes for ideas, todo, in progress and done, tasks with keys, details and priority, saved prompt snippets, and a row above the prompt that creates tasks while Claude works. A prompt that names a task key gets its details attached for Claude.",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "claudeTool": {
+      "type": "boolean",
+      "title": "Tool for Claude",
+      "description": "Gives Claude a tool to list, read, create and update the tasks, so it can pick the next one or move one to Done. Its name goes along with every request.",
+      "default": false
+    }
+  }
+}

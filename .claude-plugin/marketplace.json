@@ -5,7 +5,7 @@
     "email": "CleanMyPost@gmx.de"
   },
   "metadata": {
-    "description": "Mods for Claude Code: a context and usage-limits band with compaction controls, a prompt-cache row that keeps the cache warm, the context and usage-limits rows on their own, a row of dropdowns that inserts or runs an agent, skill or command, a catalog pane of everything the setup provides, and a usage pane that adds up tokens, cache hits and API price."
+    "description": "Mods for Claude Code: a context and usage-limits band with compaction controls, a prompt-cache row that keeps the cache warm, the context and usage-limits rows on their own, a row of dropdowns that inserts or runs an agent, skill or command, a task board fed from above the prompt, a catalog pane of everything the setup provides, and a usage pane that adds up tokens, cache hits and API price."
   },
   "plugins": [
     {
@@ -32,6 +32,11 @@
       "name": "command-center",
       "source": "./command-center",
       "description": "One row above the prompt with a source filter, an agent, a skill and a command dropdown side by side, and Insert and Run buttons that put the pick into the prompt or start it."
+    },
+    {
+      "name": "task-board",
+      "source": "./task-board",
+      "description": "A task board per project, opened with /task-board: lanes for ideas, todo, in progress and done, tasks with keys, details and priority, saved prompt snippets, and a row above the prompt that creates tasks while Claude works. A prompt that names a task key gets its details attached for Claude."
     },
     {
       "name": "catalog-pane",

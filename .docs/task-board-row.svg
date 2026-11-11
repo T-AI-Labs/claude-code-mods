@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 879 82" width="879" height="82" role="img" aria-labelledby="t d">
+  <title id="t">The task-board row</title>
+  <desc id="d">Illustration. A field holding the new idea keep-warm per project, the dropdown Task with CCM-12 picked, and the buttons Insert and Board.</desc>
+  <rect width="879" height="82" rx="12" fill="#1a1a1a"/>
+  <g font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas, 'DejaVu Sans Mono', monospace" font-size="15">
+    <rect x="28" y="31.5" width="270" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+    <text x="40" y="50" fill="#e8e8e8">idea: keep-warm per project</text>
+    <rect x="285" y="38" width="1.5" height="14" fill="#e8e8e8"/>
+    <rect x="334" y="31.5" width="342" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+    <text x="346" y="50" fill="#e8e8e8"><tspan fill="#8c8c8c">Task</tspan> CCM-12 Submit the galle…</text>
+    <path d="M658.5 42 l4 5 l4 -5 z" fill="#e8e8e8"/>
+    <rect x="684" y="31.5" width="70" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+    <text x="719" y="50" fill="#e8e8e8" text-anchor="middle">Insert</text>
+    <rect x="790" y="31.5" width="61" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+    <text x="820.5" y="50" fill="#e8e8e8" text-anchor="middle">Board</text>
+  </g>
+</svg>
