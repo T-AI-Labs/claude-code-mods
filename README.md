@@ -1,6 +1,6 @@
 <h1 align="center">Claude Code Mods</h1>
 
-<p align="center"><em>Context, prompt-cache and usage-limit meters right above the Claude Code prompt, a row of dropdowns for agents, skills and commands, a pane that lists everything your setup provides, and one that adds up your token usage.</em></p>
+<p align="center"><em>Context, prompt-cache and usage-limit meters right above the Claude Code prompt, a row of dropdowns for agents, skills and commands, a task board for the tasks and ideas that come up while Claude works, a pane that lists everything your setup provides, and one that adds up your token usage.</em></p>
 
 <p align="center">
   <a href="https://github.com/T-AI-Labs/claude-code-mods/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/T-AI-Labs/claude-code-mods/ci.yml?branch=main&style=flat-square&label=ci" alt="CI"></a>
@@ -16,6 +16,7 @@ Claude Code shows little of what costs you: how full the context is, whether the
 - **Auto-compaction at the worst moment?** [context-meter](#context-meter) shows the fill against the threshold and compacts at the point you pick.
 - **Back from a break to a cold cache?** Writing 200k tokens of context again costs about $1.00 on Claude Opus 5.5. [cache-meter](#cache-meter) shows when the cache goes cold and can keep it warm at about $0.04 a refresh.
 - **Can't remember the name of that agent or skill?** [command-center](#command-center) lists your agents, skills and commands in dropdowns above the prompt, filtered by where they come from, and inserts or runs the pick.
+- **A thought comes up while Claude is busy?** [task-board](#task-board) turns it into a task from a row above the prompt, without interrupting the turn, and keeps a board per project. Name a task's key in a prompt and Claude gets the whole task.
 - **Lost track of what your setup loads?** [catalog-pane](#catalog-pane) lists every skill, plugin, hook and MCP server with its usage and the tokens it adds to every session.
 - **Where did this week's tokens go?** [usage-pane](#usage-pane) adds up tokens, cache hit rate and API price by day, model and project, and shows which prompts cost the most and why.
 
@@ -84,6 +85,16 @@ claude plugin update command-center@T-AI-Labs
 ```
 
 </td><td><img src=".docs/command-center.svg" alt="The command-center row" width="320"></td></tr>
+<tr><td><a href="#task-board">task&#8209;board</a></td><td>
+
+A task board per project, fed from above the prompt.
+
+```
+claude plugin install task-board@T-AI-Labs
+claude plugin update task-board@T-AI-Labs
+```
+
+</td><td><img src=".docs/task-board.svg" alt="The task board" width="320"></td></tr>
 <tr><td><a href="#context-meter">context&#8209;meter</a></td><td>
 
 The context row of context-usage on its own.
@@ -331,6 +342,45 @@ Usage is counted from the install of the mod on, in every session that runs it, 
 The row sits in the band above the prompt, in the terminal and the desktop app, and costs no tokens; only what Run starts does. In the desktop app it is two lines high so the app's taller controls fit. The mobile app has no dropdowns, so the row stays out of it there. In the terminal, `ctrl+x tab` moves into the band: Tab walks the controls, Enter presses a button, the arrow keys pick an entry.
 
 The agent list fills from the agent types Claude Code offers the model, so in the first session after the install it is empty until the first prompt; the mod keeps them for the sessions after. Skills are told from commands by their folders, so skills that ship with Claude Code itself are marked `command`. A dropdown holds at most 63 entries: the recently used come first, and Source brings back the ones cut off.
+
+## task-board&nbsp;<a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Ftask-board%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=&style=flat-square" alt="task-board version"></a>
+
+<p align="center"><img src=".docs/task-board-row.svg" alt="The task-board row: a field for a new task, the Task dropdown, Insert and Board" width="882"></p>
+
+| Element | What it does |
+| --- | --- |
+| **Field** | Enter creates a task in Todo, also while a turn runs. Start with `idea:` to put it under Ideas, or `snippet:` to save a prompt you reuse. |
+| **Task** | Picks one of the open tasks or snippets: in progress first, then by priority. |
+| **Insert** | Puts the task's key, title and details into the prompt, a snippet's text as it stands. |
+| **Board** | Opens the board, or closes it when it is open. |
+
+<p align="center"><img src=".docs/task-board.svg" alt="The task board with the lanes Ideas, Todo, In progress and Done" width="882"></p>
+
+`/task-board` opens the board, in the desktop app and in the terminal. Each task has a key made of the project's initials and a number, such as `CCM-12` in claude-code-mods. The lanes **Ideas**, **Todo**, **In progress** and **Done** list them by priority, Done the five most recent. `◂` and `▸` move a card to the lane beside it, and `≡` marks a task with details. In a pane narrower than 88 columns the lanes stack. **Snippets** lists the saved prompts.
+
+<p align="center"><img src=".docs/task-board-task.svg" alt="A task open for editing" width="882"></p>
+
+Pressing a card's title opens it for editing: title, details, status and priority. Enter in a field, **Save** or **‹ Board** keeps the changes. **Insert** puts the key, the title and the details beneath them into the prompt, to edit before sending. Delete asks for a second press.
+
+Claude knows nothing of the board by itself. Besides the text, a prompt that names a task's key, also one you typed by hand, takes the task's status and priority along for Claude, and its details when the prompt does not hold them already. A toast says which tasks went along.
+
+### Usage
+
+The row sits in the band above the prompt and the mod costs no tokens of its own: Claude sees a task only when a prompt you send names its key, unless you turn on the tool below. In the desktop app the row is two lines high so the app's taller controls fit; the mobile app has no field or dropdowns there, so the row stays out of it. In the terminal, `ctrl+x tab` moves into the band: Tab walks the controls, Enter creates or presses, the arrow keys pick a task.
+
+**Scope** switches between the project's board and a global one for every project, whose keys start with `G`. A key is attached from either board, whatever the scope. The choice is kept for the next session, and the tasks are kept in the mod's store on your machine, never in the repository. Sessions side by side share the board: each change reads it again first, and the others catch up after their next turn.
+
+### Options
+
+| Option | Values | Default | Effect |
+| --- | --- | --- | --- |
+| `claudeTool` | `true`, `false` | `false` | Gives Claude the tool `mcp__task-board__tasks`: list the tasks, read one by key, create one, and change its status, priority, title or details or add a dated note. Claude can then pick the next task or move one to Done when the work is finished. |
+
+```
+'{"claudeTool":true}' | claude plugin configure task-board@T-AI-Labs --values-stdin
+```
+
+Set it as for [context-usage](#options). The tool waits behind tool search, as an MCP server's tools do: every request carries its name, and Claude loads its description only when it uses it. A toast names every task Claude creates or changes.
 
 ## License
 
