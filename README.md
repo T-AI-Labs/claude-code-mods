@@ -296,15 +296,13 @@ Everything else comes from Claude Code and the configuration files, and is kept 
 
 ## usage-pane&nbsp;<a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fusage-pane%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=&style=flat-square" alt="usage-pane version"></a>
 
-<p align="center"><img src=".docs/usage-pane.svg" alt="The usage pane showing the last 7 days" width="882"><br><em>Desktop app</em></p>
-
-<p align="center"><img src=".docs/usage-pane-terminal.svg" alt="The usage pane in a terminal, docked beside the chat, with its details cut off at the pane's edge" width="497"><br><em>Terminal, docked beside the chat</em></p>
+<p align="center"><img src=".docs/usage-pane.svg" alt="The usage pane showing the last 7 days" width="882"></p>
 
 A pane with one tab per period: **Last turn**, **Session**, **Today**, **7 days** and **30 days**, and two that show where the cost came from: **Sessions** and **Prompts**.
 
 ### Usage
 
-`/tokens` opens the pane, in the desktop app and in the terminal; `/tokens today`, `/tokens month` or `/tokens prompts` opens that tab. It costs no tokens and makes no model requests. In a terminal at least 110 columns wide, the fullscreen layout docks the pane beside the chat, at most 45 % of the width; otherwise it opens above the prompt.
+`/tokens` opens the pane, in the desktop app and in the terminal; `/tokens today`, `/tokens month` or `/tokens prompts` opens that tab. It costs no tokens and makes no model requests.
 
 | Row | What it shows |
 | --- | --- |
