@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 879 356" width="879" height="356" role="img" aria-labelledby="t d">
+  <title id="t">The band in the desktop app</title>
+  <desc id="d">Illustration with sample figures, one mod per group. context-usage: context 10 percent of a 1M window with the Auto 97 percent dropdown and the buttons Compact and Clear, and beneath it the 5-hour limit 42 percent and the weekly limit 78 percent in yellow. cache-meter: cache 92 percent, warm 3 minutes 12 seconds, and the Keep warm link. command-center: the dropdowns Source, Agent Explore and Skill/Command find-skills with the buttons Insert and Run. task-board: the field for a new task with the Task dropdown and the buttons Insert and Board. Dropdowns and buttons are drawn as framed controls.</desc>
+  <rect width="879" height="356" rx="12" fill="#1a1a1a"/>
+  <g font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas, 'DejaVu Sans Mono', monospace" font-size="15">
+    <text x="28" y="34" fill="#8c8c8c" font-size="13">context-usage</text>
+    <g transform="translate(0 14)">
+      <text x="28.0" y="50" fill="#8c8c8c" xml:space="preserve">Context</text>
+      <rect x="105.7" y="39" width="6" height="12" rx="1" fill="#e8e8e8"/>
+      <rect x="115.2" y="39.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+      <rect x="124.2" y="39.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+      <rect x="133.2" y="39.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+      <rect x="142.2" y="39.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+      <text x="195.7" y="50" fill="#e8e8e8" text-anchor="end">10%</text>
+      <text x="207.7" y="50" fill="#8c8c8c">(100k/1M)</text>
+      <rect x="319.9" y="31.5" width="108" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+      <text x="367.9" y="50" fill="#e8e8e8" text-anchor="middle">Auto 97%</text>
+      <path d="M410.4 42 l4 5 l4 -5 z" fill="#e8e8e8"/>
+      <rect x="435.9" y="31.5" width="78" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+      <text x="474.9" y="50" fill="#e8e8e8" text-anchor="middle">Compact</text>
+      <rect x="521.9" y="31.5" width="62" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+      <text x="552.9" y="50" fill="#e8e8e8" text-anchor="middle">Clear</text>
+    </g>
+    <g transform="translate(0 16)">
+      <text x="28.0" y="82" fill="#8c8c8c" xml:space="preserve"> 5h</text>
+      <rect x="105.7" y="71" width="6" height="12" rx="1" fill="#e8e8e8"/>
+      <rect x="114.7" y="71" width="6" height="12" rx="1" fill="#e8e8e8"/>
+      <rect x="124.2" y="71.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+      <rect x="133.2" y="71.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+      <rect x="142.2" y="71.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+      <text x="195.7" y="82" fill="#e8e8e8" text-anchor="end">42%</text>
+      <text x="207.7" y="82" fill="#8c8c8c">(2h 13m)</text>
+      <text x="319.4" y="82" fill="#8c8c8c" xml:space="preserve">Week</text>
+      <rect x="397.1" y="71" width="6" height="12" rx="1" fill="#e0a83c"/>
+      <rect x="406.1" y="71" width="6" height="12" rx="1" fill="#e0a83c"/>
+      <rect x="415.1" y="71" width="6" height="12" rx="1" fill="#e0a83c"/>
+      <rect x="424.1" y="71" width="6" height="12" rx="1" fill="#e0a83c"/>
+      <rect x="433.6" y="71.5" width="5" height="11" rx="1" fill="none" stroke="#5c5c5c"/>
+      <text x="487.1" y="82" fill="#e0a83c" text-anchor="end">78%</text>
+      <text x="499.1" y="82" fill="#8c8c8c">(3d 4h)</text>
+    </g>
+    <text x="28" y="142" fill="#8c8c8c" font-size="13">cache-meter</text>
+    <g transform="translate(0 120)">
+      <text x="28.0" y="50" fill="#8c8c8c" xml:space="preserve">Cache</text>
+      <rect x="105.7" y="39" width="6" height="12" rx="1" fill="#e8e8e8"/>
+      <rect x="114.7" y="39" width="6" height="12" rx="1" fill="#e8e8e8"/>
+      <rect x="123.7" y="39" width="6" height="12" rx="1" fill="#e8e8e8"/>
+      <rect x="132.7" y="39" width="6" height="12" rx="1" fill="#e8e8e8"/>
+      <rect x="141.7" y="39" width="6" height="12" rx="1" fill="#e8e8e8"/>
+      <text x="195.7" y="50" fill="#e8e8e8" text-anchor="end">92%</text>
+      <text x="207.7" y="50" fill="#8c8c8c">(92k/100k)</text>
+      <text x="319.4" y="50" fill="#8c8c8c">warm 3:12</text>
+      <text x="409.9" y="50" fill="#e8e8e8" text-decoration="underline">Keep warm</text>
+    </g>
+    <text x="28" y="214" fill="#8c8c8c" font-size="13">command-center</text>
+    <g transform="translate(0 194)">
+      <rect x="28" y="31.5" width="126" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+      <text x="85" y="50" fill="#e8e8e8" text-anchor="middle"><tspan fill="#8c8c8c">Source</tspan> All</text>
+      <path d="M136.5 42 l4 5 l4 -5 z" fill="#e8e8e8"/>
+      <rect x="166" y="31.5" width="153" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+      <text x="236.5" y="50" fill="#e8e8e8" text-anchor="middle"><tspan fill="#8c8c8c">Agent</tspan> Explore</text>
+      <path d="M301.5 42 l4 5 l4 -5 z" fill="#e8e8e8"/>
+      <rect x="331" y="31.5" width="333" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+      <text x="491.5" y="50" fill="#e8e8e8" text-anchor="middle"><tspan fill="#8c8c8c">Skill/Command</tspan> find-skills <tspan fill="#8c8c8c">· skill</tspan></text>
+      <path d="M646.5 42 l4 5 l4 -5 z" fill="#e8e8e8"/>
+      <rect x="676" y="31.5" width="70" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+      <text x="711" y="50" fill="#e8e8e8" text-anchor="middle">Insert</text>
+      <rect x="754" y="31.5" width="43" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+      <text x="775.5" y="50" fill="#e8e8e8" text-anchor="middle">Run</text>
+    </g>
+    <text x="28" y="290" fill="#8c8c8c" font-size="13">task-board</text>
+    <g transform="translate(0 270)">
+      <rect x="28" y="31.5" width="330" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+      <text x="40" y="50" fill="#8c8c8c">New task, or idea: … or snippet: …</text>
+      <rect x="370" y="31.5" width="90" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+      <text x="382" y="50" fill="#e8e8e8"><tspan fill="#8c8c8c">Task</tspan> –</text>
+      <path d="M442.5 42 l4 5 l4 -5 z" fill="#e8e8e8"/>
+      <rect x="468" y="31.5" width="70" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+      <text x="503" y="50" fill="#e8e8e8" text-anchor="middle">Insert</text>
+      <rect x="574" y="31.5" width="61" height="27" rx="6" fill="none" stroke="#5a5a5a"/>
+      <text x="604.5" y="50" fill="#e8e8e8" text-anchor="middle">Board</text>
+    </g>
+  </g>
+</svg>

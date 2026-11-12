@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 857 320" width="857" height="320" role="img" aria-labelledby="t d">
+  <title id="t">The band in the terminal</title>
+  <desc id="d">Recreated from the text Claude Code prints in a terminal, with sample figures, one mod per group. context-usage: context 10 percent of a 1M window, Auto 97 percent, Compact and Clear, and beneath it the 5-hour limit 42 percent and the weekly limit 78 percent in yellow. cache-meter: cache 92 percent, warm 3 minutes 12 seconds, and Keep warm. command-center: the dropdowns Source, Agent Explore and Skill/Command find-skills with Insert and Run. task-board: the field for a new task with the Task dropdown, Insert and Board. Dropdowns are drawn as label, value and a triangle, buttons in square brackets.</desc>
+  <rect width="857" height="320" rx="12" fill="#1a1a1a"/>
+  <g font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas, 'DejaVu Sans Mono', monospace" font-size="15" xml:space="preserve">
+    <text x="28" y="34" fill="#8c8c8c" font-size="13">context-usage</text>
+    <text x="28 37 46 55 64 73 82" y="60" fill="#8c8c8c">Context</text>
+    <text x="100" y="60" fill="#e8e8e8">▮</text>
+    <text x="109 118 127 136" y="60" fill="#8c8c8c">▯▯▯▯</text>
+    <text x="154 163 172 181" y="60" fill="#e8e8e8"> 10%</text>
+    <text x="199 208 217 226 235 244 253 262 271 280" y="60" fill="#8c8c8c">(100k/1M) </text>
+    <text x="298 307 316 325 334 343 352 361 370 379 388 397 406 415 424 433 442 451 460 469 478 487 496 505 514 523 532 541 550 559 568 577 586" y="60" fill="#e8e8e8">Auto: 97% ▾ [ Compact ] [ Clear ]</text>
+    <text x="28 37 46 55 64 73 82" y="84" fill="#8c8c8c"> 5h    </text>
+    <text x="100 109" y="84" fill="#e8e8e8">▮▮</text>
+    <text x="118 127 136" y="84" fill="#8c8c8c">▯▯▯</text>
+    <text x="154 163 172 181" y="84" fill="#e8e8e8"> 42%</text>
+    <text x="199 208 217 226 235 244 253 262 271 280" y="84" fill="#8c8c8c">(2h 13m)  </text>
+    <text x="298 307 316 325 334 343 352" y="84" fill="#8c8c8c">Week   </text>
+    <text x="370 379 388 397" y="84" fill="#e0a83c">▮▮▮▮</text>
+    <text x="406" y="84" fill="#8c8c8c">▯</text>
+    <text x="424 433 442 451" y="84" fill="#e0a83c"> 78%</text>
+    <text x="469 478 487 496 505 514 523" y="84" fill="#8c8c8c">(3d 4h)</text>
+    <text x="28" y="128" fill="#8c8c8c" font-size="13">cache-meter</text>
+    <text x="28 37 46 55 64 73 82" y="154" fill="#8c8c8c">Cache  </text>
+    <text x="100 109 118 127 136" y="154" fill="#e8e8e8">▮▮▮▮▮</text>
+    <text x="154 163 172 181" y="154" fill="#e8e8e8"> 92%</text>
+    <text x="199 208 217 226 235 244 253 262 271 280" y="154" fill="#8c8c8c">(92k/100k)</text>
+    <text x="298 307 316 325 334 343 352 361 370" y="154" fill="#8c8c8c">warm 3:12</text>
+    <text x="397 406 415 424 433 442 451 460 469 478 487 496 505" y="154" fill="#e8e8e8">[ Keep warm ]</text>
+    <text x="28" y="198" fill="#8c8c8c" font-size="13">command-center</text>
+    <text x="28 37 46 55 64 73 82 91 100 109 118 127 136 145 154 163 172 181 190 199 208 217 226 235 244 253 262 271 280 289 298 307 316 325 334 343 352 361 370 379 388 397 406 415 424 433 442 451 460 469 478 487 496 505 514 523 532 541 550 559 568 577 586 595 604 613 622 631 640 649 658 667 676 685 694 703 712 721 730 739 748 757 766 775 784 793 802 811 820" y="224" fill="#e8e8e8">Source: All ▾  Agent: Explore ▾  Skill/Command: find-skills · skill ▾  [ Insert ] [ Run ]</text>
+    <text x="28" y="268" fill="#8c8c8c" font-size="13">task-board</text>
+    <text x="28 37 46 55 64 73 82 91 100 109 118 127 136 145 154 163 172 181 190 199 208 217 226 235 244 253 262 271 280 289 298 307 316 325" y="294" fill="#8c8c8c">New task, or idea: … or snippet: …</text>
+    <text x="370 379 388 397 406 415 424 433 442 451 460 469 478 487 496 505 514 523 532 541 550 559 568 577 586 595 604 613 622 631 640 649 658" y="294" fill="#e8e8e8">Task: – ▾ [ Insert ]    [ Board ]</text>
+  </g>
+</svg>

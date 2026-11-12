@@ -31,7 +31,7 @@ claude plugin marketplace update T-AI-Labs
 
 ## Mods
 
-context-meter and usage-limits are the two rows of context-usage as separate mods: install either context-usage or those two, not both.
+context-meter and usage-limits are the two rows of context-usage as separate mods: install either context-usage or those two, not both. The previews show the desktop app; in a terminal the controls are text, see [Terminal and desktop app](#terminal-and-desktop-app).
 
 <table>
 <tr><th>Mod</th><th>Description</th><th width="35%">Preview</th></tr>
@@ -116,6 +116,14 @@ claude plugin update usage-limits@T-AI-Labs
 
 </td><td><img src=".docs/usage-limits.svg" alt="The usage-limits row" width="320"></td></tr>
 </table>
+
+## Terminal and desktop app
+
+The previews in this README are illustrations of the desktop app, with sample figures. Each mod adds only its own rows, shown here one mod at a time. The mods draw their dropdowns and buttons with Claude Code's own controls, and Claude Code draws those differently in a terminal: as text in the terminal's font and colors, a dropdown as `Agent: Explore ▾` and a button as `[ Run ]`. A mod cannot change that, and both work the same way.
+
+<p align="center"><img src=".docs/band-terminal.svg" alt="The rows of context-usage, cache-meter, command-center and task-board in a terminal, drawn as text" width="857"><br><em>Terminal</em></p>
+
+<p align="center"><img src=".docs/band-desktop.svg" alt="The same rows in the desktop app, with framed dropdowns and buttons" width="879"><br><em>Desktop app</em></p>
 
 ## context-usage&nbsp;<a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcontext-usage%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=&style=flat-square" alt="context-usage version"></a>
 
