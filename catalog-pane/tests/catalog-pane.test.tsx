@@ -644,3 +644,26 @@ test('says where a user skill lives, when it changed and which repository it nam
   expect(fetched).toContain('https://api.github.com/repos/vercel-labs/skills')
   await ui.unmount()
 })
+
+const headingSize = async ($: Engine, on: On, version: string) => {
+  const { clock } = world(on)
+  on('session.version', () => ({ value: { version, base: version } }))
+  on('session.model', () => ({ value: 'claude-opus-5-5' }))
+  on('session.surfaces', () => ({ value: ['desktop'] }))
+  on('session.root', () => ({ value: '/work' }))
+  await openCatalog($, 'commands')
+  await clock.settle()
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  const size = (await ui.find({ type: 'Text', text: /^Name/ }))?.props.size
+  const reverse = await ui.find({ key: 'direction' })
+  await ui.unmount()
+
+  return { size, reverse }
+}
+
+test('keeps headings at the normal size where Claude Code refuses a text size, and has no Reverse button', async ($, on) => {
+  const { size, reverse } = await headingSize($, on, '2.1.300')
+
+  expect(size).toBeUndefined()
+  expect(reverse).toBeUndefined()
+})

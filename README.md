@@ -283,7 +283,7 @@ A pane that explains your setup. **Claude** shows the Claude Code version, when 
 
 <p align="center"><img src=".docs/catalog-pane-gallery.svg" alt="The catalog pane showing plugins as cards" width="882"></p>
 
-The pane remembers the layout you pick. On the desktop you can filter by text, origin and status (enabled, disabled, update available, on GitHub, unused in 30 days) and sort:
+The pane remembers the layout you pick. The tabs, the toolbar and the table sit without blank rows between them, and from Claude Code 2.1.322 on the column and section headings are drawn smaller. On the desktop you can filter by text, origin and status (enabled, disabled, update available, on GitHub, unused in 30 days) and sort:
 
 | Sort | Order |
 | --- | --- |
@@ -292,7 +292,7 @@ The pane remembers the layout you pick. On the desktop you can filter by text, o
 | GitHub stars, Trending, GitHub forks, Latest GitHub push | By the plugin's repository; Trending is stars gained per month. |
 | Installs, Newest installed | By the official directory's install count, or by install date. |
 
-**Reverse** flips any sort. A plugin's skills, agents and commands share its repository and install date. A skill or agent of your own or of the project shows the folder it lives in, where a link points, when the folder last changed, and the GitHub repository its frontmatter names, if any.
+A plugin's skills, agents and commands share its repository and install date. A skill or agent of your own or of the project shows the folder it lives in, where a link points, when the folder last changed, and the GitHub repository its frontmatter names, if any.
 
 <p align="center"><img src=".docs/catalog-pane-detail.svg" alt="The catalog pane showing one mod" width="882"></p>
 

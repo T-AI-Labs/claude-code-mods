@@ -136,6 +136,7 @@ let skills = new Set<string>()
 let agents: Record<string, KnownAgent> = {}
 let showsGithub = true
 let enriching: Promise<void> = Promise.resolve()
+let canSize = false
 
 const idOf = (kind: Kind, name: string) => `${kind}:${name}`
 
@@ -303,6 +304,11 @@ const LAYOUTS: readonly { layout: Layout; label: string }[] = [
   { layout: 'gallery', label: '▦ Gallery' },
   { layout: 'list', label: '≡ List' },
 ]
+
+// Claude Code 2.1.295 refuses a whole tree with a Text `size`; 2.1.322 is the oldest seen taking it.
+const SIZED_FROM = '2.1.322'
+
+const sized = (size: 'caption' | 'footnote') => (canSize ? { size } : {})
 
 const versionParts = (version: string) => version.split(/[.-]/).slice(0, 3).map(part => Number(part) || 0)
 
@@ -1249,6 +1255,7 @@ async function refresh($: EngineInterface) {
     const [list, found] = await Promise.all([collect($), collectHarness($).catch(() => null)])
     await update($, entries, () => list)
     await update($, harness, () => found)
+    canSize = found !== null && compareVersions(found.version, SIZED_FROM) >= 0
     // One enrichment at a time, so a second refresh reads the caches the first one wrote.
     enriching = enriching.then(() => enrich($, list)).catch(() => undefined)
   } finally {
@@ -1462,7 +1469,7 @@ function pluginActions($: EngineInterface, tags: DetailTags, entry: Entry, props
   const hasUpdate = info.latest !== undefined && info.latest !== info.version
 
   return (
-    <Box flexDirection="row" flexWrap="wrap" gap={1}>
+    <Box flexDirection="row" flexWrap="wrap" columnGap={1} rowGap={0}>
       {hasUpdate && (
         <Button
           key="update"
@@ -1539,7 +1546,7 @@ function actions($: EngineInterface, tags: DetailTags, entry: Entry, props: Deta
   const prompt = prompts[entry.kind]
 
   return (
-    <Box flexDirection="column" gap={1}>
+    <Box flexDirection="column" gap={0}>
       {prompt !== undefined && (
         <Box flexDirection="row">
           <Button key="insert" label="Insert into prompt" variant="primary" onPress={() => insert($, prompt)} />
@@ -1617,7 +1624,7 @@ function detail($: EngineInterface, tags: DetailTags, props: DetailProps) {
   ].filter(line => line !== undefined)
 
   return (
-    <Box flexDirection="column" gap={1}>
+    <Box flexDirection="column" gap={0}>
       <Box flexDirection="column">
         <Text bold>
           {entry.name}
@@ -1629,7 +1636,7 @@ function detail($: EngineInterface, tags: DetailTags, props: DetailProps) {
           <Text color="warning">Update available: v{info.latest}</Text>
         )}
         {repoName !== undefined && (
-          <Box flexDirection="row" gap={1} flexWrap="wrap">
+          <Box flexDirection="row" columnGap={1} rowGap={0} flexWrap="wrap">
             <Link href={`https://github.com/${repoName}`} label={repoName} />
             {repo !== undefined && <Text dimColor>{repoLine(repo, props.now)}</Text>}
           </Box>
@@ -1638,7 +1645,7 @@ function detail($: EngineInterface, tags: DetailTags, props: DetailProps) {
       <Markdown key="about" text={entry.description || '_No description._'} />
       {entry.kind === 'mcp' && entry.detail !== undefined && <Text dimColor>Tools: {entry.detail}</Text>}
       <Box flexDirection="column">
-        <Text bold>What it is for</Text>
+        <Text bold {...sized('footnote')}>What it is for</Text>
         {props.explanation === undefined ? (
           <Box flexDirection="row">
             <Button
@@ -1654,7 +1661,7 @@ function detail($: EngineInterface, tags: DetailTags, props: DetailProps) {
       {actions($, tags, entry, props)}
       {items.length > 0 && (
         <Box flexDirection="column">
-          <Text bold>Provides</Text>
+          <Text bold {...sized('footnote')}>Provides</Text>
           {items.map(one => (
             <Button key={`item-${one.id}`} plain onPress={() => props.onOpen(one.id)}>
               {one.name} <Text dimColor>{rowText(one, statOf(props.stats, one.id))}</Text>
@@ -1755,14 +1762,14 @@ function claudeView(tags: DetailTags, props: ClaudeProps) {
   const counted = (kind: Kind, from: readonly Entry[]) => from.filter(one => one.kind === kind).length
 
   return (
-    <Box flexDirection="column" gap={1}>
+    <Box flexDirection="column" gap={0}>
       <Box flexDirection="column">
         <Text bold>Claude Code {found.version}</Text>
         {facts.map(line => (
           <Text dimColor>{line}</Text>
         ))}
         {isBehind && <Text color="warning">Update available: v{latest}</Text>}
-        <Box flexDirection="row" flexWrap="wrap" gap={1}>
+        <Box flexDirection="row" flexWrap="wrap" columnGap={1} rowGap={0}>
           <Link href={DOCS_URL} label="Docs" />
           <Link href={CHANGELOG_PAGE} label="Changelog" />
           <Link href={`https://github.com/${CLAUDE_REPO}`} label={CLAUDE_REPO} />
@@ -1770,7 +1777,7 @@ function claudeView(tags: DetailTags, props: ClaudeProps) {
         </Box>
       </Box>
       <Box flexDirection="column">
-        <Text bold>What is new in {current}</Text>
+        <Text bold {...sized('footnote')}>What is new in {current}</Text>
         {own !== undefined && <Markdown key="changes" text={changes(own, SHOWN_CHANGES)} />}
         {own === undefined && (
           <Text dimColor>
@@ -1782,7 +1789,7 @@ function claudeView(tags: DetailTags, props: ClaudeProps) {
       </Box>
       {newer.length > 0 && (
         <Box flexDirection="column">
-          <Text bold>Newer releases</Text>
+          <Text bold {...sized('footnote')}>Newer releases</Text>
           <Markdown
             key="newer"
             text={newer
@@ -1794,8 +1801,8 @@ function claudeView(tags: DetailTags, props: ClaudeProps) {
         </Box>
       )}
       <Box flexDirection="column">
-        <Text bold>Built in</Text>
-        <Box flexDirection="row" flexWrap="wrap" gap={1}>
+        <Text bold {...sized('footnote')}>Built in</Text>
+        <Box flexDirection="row" flexWrap="wrap" columnGap={1} rowGap={0}>
           {KINDS.filter(({ kind }) => counted(kind, builtIn) > 0).map(({ kind, label }) => (
             <Button
               key={`builtin-${kind}`}
@@ -1806,8 +1813,8 @@ function claudeView(tags: DetailTags, props: ClaudeProps) {
         </Box>
       </Box>
       <Box flexDirection="column">
-        <Text bold>Your setup</Text>
-        <Box flexDirection="row" flexWrap="wrap" gap={1}>
+        <Text bold {...sized('footnote')}>Your setup</Text>
+        <Box flexDirection="row" flexWrap="wrap" columnGap={1} rowGap={0}>
           {KINDS.filter(({ kind }) => counted(kind, yours) > 0).map(({ kind, label }) => (
             <Button
               key={`jump-${kind}`}
@@ -2054,7 +2061,7 @@ export const register: Register = (on, options) => {
     )
 
     const tabs = (
-      <Box flexDirection="row" flexWrap="wrap" gap={1}>
+      <Box flexDirection="row" flexWrap="wrap" columnGap={1} rowGap={0}>
         {tab('claude', '⚙ Claude')}
         {tab('all', `☰ All ${list.length}`)}
         {KINDS.map(({ kind, label, icon }) =>
@@ -2070,7 +2077,7 @@ export const register: Register = (on, options) => {
         .join(' › ')
 
       return (
-        <Box flexDirection="column" gap={1}>
+        <Box flexDirection="column" gap={0}>
           {tabs}
           <Box flexDirection="row" gap={1}>
             <Button key="back" label="‹ Back" onPress={back} />
@@ -2098,7 +2105,7 @@ export const register: Register = (on, options) => {
 
     if (state.kind === 'claude') {
       return (
-        <Box flexDirection="column" gap={1}>
+        <Box flexDirection="column" gap={0}>
           {tabs}
           {claudeView(tags, {
             harness: snap.harness,
@@ -2121,28 +2128,19 @@ export const register: Register = (on, options) => {
     const sortBy = (sort: Sort) =>
       void go(state.sort === sort ? { isReversed: !state.isReversed, page: 0 } : { sort, isReversed: false, page: 0 })
 
-    const layouts = (
-      <Box flexDirection="row" flexWrap="wrap" gap={1}>
-        {LAYOUTS.map(({ layout, label }) => (
-          <Button
-            key={`layout-${layout}`}
-            label={label}
-            variant={layout === state.layout ? 'primary' : 'secondary'}
-            onPress={() => void setLayout($, layout)}
-          />
-        ))}
-        <Button
-          key="direction"
-          label={state.isReversed ? 'Reversed ↑' : 'Reverse ↓'}
-          variant={state.isReversed ? 'primary' : 'secondary'}
-          onPress={() => void go({ isReversed: !state.isReversed, page: 0 })}
-        />
-      </Box>
-    )
+    const layouts = LAYOUTS.map(({ layout, label }) => (
+      <Button
+        key={`layout-${layout}`}
+        label={label}
+        variant={layout === state.layout ? 'primary' : 'secondary'}
+        onPress={() => void setLayout($, layout)}
+      />
+    ))
 
-    const filters =
-      'Select' in tags ? (
-        <Box flexDirection="row" flexWrap="wrap" gap={1}>
+    const toolbar = (
+      <Box flexDirection="row" flexWrap="wrap" alignItems="center" columnGap={1} rowGap={0}>
+        {layouts}
+        {'Select' in tags && (
           <tags.Input
             key="query"
             label="Filter"
@@ -2151,6 +2149,8 @@ export const register: Register = (on, options) => {
             onInput={query => void go({ query, page: 0 })}
             onSubmit={query => void go({ query, page: 0 })}
           />
+        )}
+        {'Select' in tags && (
           <tags.Select
             key="sort"
             label="Sort"
@@ -2158,6 +2158,8 @@ export const register: Register = (on, options) => {
             options={SORTS.map(({ sort, label }) => ({ value: sort, label }))}
             onSelect={sort => void go({ sort: sort as Sort, page: 0 })}
           />
+        )}
+        {'Select' in tags && (
           <tags.Select
             key="origin"
             label="From"
@@ -2168,6 +2170,8 @@ export const register: Register = (on, options) => {
             ]}
             onSelect={origin => void go({ origin, page: 0 })}
           />
+        )}
+        {'Select' in tags && (
           <tags.Select
             key="status"
             label="Status"
@@ -2175,11 +2179,12 @@ export const register: Register = (on, options) => {
             options={STATUSES.map(({ status, label }) => ({ value: status, label }))}
             onSelect={status => void go({ status: status as Status, page: 0 })}
           />
-        </Box>
-      ) : undefined
+        )}
+      </Box>
+    )
 
     const listRows = (
-      <Box flexDirection="column" gap={1}>
+      <Box flexDirection="column" gap={0}>
         {shown.map(one => (
           <Box key={`row-${one.id}`} flexDirection="column">
             <Button key={`open-${one.id}`} plain onPress={() => open(one.id)}>
@@ -2208,7 +2213,7 @@ export const register: Register = (on, options) => {
     const cardWidth = Math.floor((width - CARD_GAP * (perRow - 1)) / perRow)
 
     const gallery = (
-      <Box flexDirection="row" flexWrap="wrap" columnGap={CARD_GAP} rowGap={1}>
+      <Box flexDirection="row" flexWrap="wrap" columnGap={CARD_GAP} rowGap={0}>
         {shown.map(one => {
           const repoName = repoNameOf(one, list)
 
@@ -2248,12 +2253,12 @@ export const register: Register = (on, options) => {
     const header = (key: string, label: string, cellWidth: number, sort: Sort | undefined) => (
       <Box key={`head-${key}`} width={cellWidth} flexShrink={0}>
         {sort === undefined ? (
-          <Text bold wrap="truncate-end">
+          <Text bold dimColor {...sized('caption')} wrap="truncate-end">
             {label}
           </Text>
         ) : (
           <Button key={`sort-${key}`} plain onPress={() => sortBy(sort)}>
-            <Text bold wrap="truncate-end">
+            <Text bold dimColor {...sized('caption')} wrap="truncate-end">
               {label}
               {arrow(sort)}
             </Text>
@@ -2290,10 +2295,9 @@ export const register: Register = (on, options) => {
     const body = { list: listRows, gallery, table }[state.layout]
 
     return (
-      <Box flexDirection="column" gap={1}>
+      <Box flexDirection="column" gap={0}>
         {tabs}
-        {layouts}
-        {filters}
+        {toolbar}
         {list.length === 0 && <Text dimColor>{loading ? 'Collecting…' : 'Nothing found yet. Press Refresh.'}</Text>}
         {list.length > 0 && rows.length === 0 && <Text dimColor>Nothing matches.</Text>}
         {rows.length > 0 && body}
