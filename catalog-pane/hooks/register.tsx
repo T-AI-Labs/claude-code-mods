@@ -31,15 +31,15 @@ import type {
   View,
 } from '../types'
 
-const KINDS: readonly { kind: Kind; label: string; noun: string }[] = [
-  { kind: 'skill', label: 'Skills', noun: 'skill' },
-  { kind: 'command', label: 'Commands', noun: 'slash command' },
-  { kind: 'agent', label: 'Agents', noun: 'subagent type' },
-  { kind: 'mod', label: 'Mods', noun: 'mod (a plugin with function hooks)' },
-  { kind: 'plugin', label: 'Plugins', noun: 'plugin' },
-  { kind: 'hook', label: 'Hooks', noun: 'settings hook (a shell command run on an event)' },
-  { kind: 'mcp', label: 'MCP', noun: 'MCP server' },
-  { kind: 'tool', label: 'Tools', noun: 'built-in tool' },
+const KINDS: readonly { kind: Kind; label: string; icon: string; noun: string }[] = [
+  { kind: 'skill', label: 'Skills', icon: '✦', noun: 'skill' },
+  { kind: 'command', label: 'Commands', icon: '/', noun: 'slash command' },
+  { kind: 'agent', label: 'Agents', icon: '◉', noun: 'subagent type' },
+  { kind: 'mod', label: 'Mods', icon: '◆', noun: 'mod (a plugin with function hooks)' },
+  { kind: 'plugin', label: 'Plugins', icon: '▣', noun: 'plugin' },
+  { kind: 'hook', label: 'Hooks', icon: '↯', noun: 'settings hook (a shell command run on an event)' },
+  { kind: 'mcp', label: 'MCP', icon: '⇄', noun: 'MCP server' },
+  { kind: 'tool', label: 'Tools', icon: '⚒', noun: 'built-in tool' },
 ]
 
 const EVERYWHERE = '*'
@@ -299,9 +299,9 @@ const STATUSES: readonly { status: Status; label: string }[] = [
 ]
 
 const LAYOUTS: readonly { layout: Layout; label: string }[] = [
-  { layout: 'list', label: 'List' },
-  { layout: 'gallery', label: 'Gallery' },
-  { layout: 'table', label: 'Table' },
+  { layout: 'table', label: '▤ Table' },
+  { layout: 'gallery', label: '▦ Gallery' },
+  { layout: 'list', label: '≡ List' },
 ]
 
 const versionParts = (version: string) => version.split(/[.-]/).slice(0, 3).map(part => Number(part) || 0)
@@ -1826,10 +1826,13 @@ type Column = {
   label: string
   width: number
   sort?: Sort
+  isFlexible?: boolean
   cell: (entry: Entry, stat: Stat) => string
 }
 
 const NAME_MIN = 16
+const NAME_MAX = 30
+const ABOUT_MIN = 20
 const DASH = '–'
 
 // Listed by priority: on a narrow pane the last ones go first.
@@ -1838,10 +1841,18 @@ const columnsOf = (
   list: readonly Entry[],
   known: Record<string, RepoStats>,
   width: number,
-): Column[] => {
+) => {
   const all: (Column & { order: number })[] = [
     ...(kind === 'all' ? [{ order: 0, id: 'kind', label: 'Kind', width: 8, cell: (entry: Entry) => entry.kind }] : []),
     { order: 1, id: 'from', label: 'From', width: 14, cell: entry => entry.origin },
+    {
+      order: -1,
+      id: 'about',
+      label: 'Description',
+      width: ABOUT_MIN,
+      isFlexible: true,
+      cell: entry => firstLine(entry.description) || DASH,
+    },
     {
       order: 5,
       id: 'stars',
@@ -1888,7 +1899,8 @@ const columnsOf = (
     },
   ]
   const kept: typeof all = []
-  let room = width - NAME_MIN
+  const nameWidth = Math.min(NAME_MAX, Math.max(NAME_MIN, Math.floor(width / 4)))
+  let room = width - nameWidth
 
   for (const column of all) {
     if (room >= column.width + 1) {
@@ -1897,7 +1909,12 @@ const columnsOf = (
     }
   }
 
-  return kept.sort((a, b) => a.order - b.order)
+  const flexible = kept.find(column => column.isFlexible === true)
+  const columns = kept
+    .map(column => (column === flexible ? { ...column, width: column.width + room } : column))
+    .sort((a, b) => a.order - b.order)
+
+  return { columns, nameWidth: flexible === undefined ? nameWidth + room : nameWidth }
 }
 
 const cardFacts = (entry: Entry, list: readonly Entry[], stat: Stat, known: Record<string, RepoStats>) => {
@@ -1924,7 +1941,7 @@ const CARD_GAP = 1
 
 const START: View = {
   kind: 'skill',
-  layout: 'list',
+  layout: 'table',
   status: 'any',
   isReversed: false,
   selected: null,
@@ -2038,9 +2055,11 @@ export const register: Register = (on, options) => {
 
     const tabs = (
       <Box flexDirection="row" flexWrap="wrap" gap={1}>
-        {tab('claude', 'Claude')}
-        {tab('all', `All ${list.length}`)}
-        {KINDS.map(({ kind, label }) => tab(kind, `${label} ${list.filter(one => one.kind === kind).length}`))}
+        {tab('claude', '⚙ Claude')}
+        {tab('all', `☰ All ${list.length}`)}
+        {KINDS.map(({ kind, label, icon }) =>
+          tab(kind, `${icon} ${label} ${list.filter(one => one.kind === kind).length}`),
+        )}
         <Button key="refresh" label={loading ? 'Loading…' : 'Refresh'} plain onPress={() => refresh($)} />
       </Box>
     )
@@ -2223,8 +2242,7 @@ export const register: Register = (on, options) => {
       </Box>
     )
 
-    const columns = columnsOf(state.kind, list, repos, width)
-    const nameWidth = Math.max(NAME_MIN, width - columns.reduce((sum, column) => sum + column.width + 1, 0))
+    const { columns, nameWidth } = columnsOf(state.kind, list, repos, width)
     const arrow = (sort: Sort | undefined) =>
       sort !== undefined && sort === state.sort ? (state.isReversed ? ' ▴' : ' ▾') : ''
     const header = (key: string, label: string, cellWidth: number, sort: Sort | undefined) => (

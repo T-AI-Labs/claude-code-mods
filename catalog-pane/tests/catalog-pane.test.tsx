@@ -214,9 +214,9 @@ test('lists each category with its count and describes the entries', async ($, o
   for (const surface of SURFACES) {
     const ui = await $.ui.mount({ ...PANE, surface })
 
-    expect((await ui.find({ key: 'tab-skill' }))?.props.label).toBe('Skills 2')
-    expect((await ui.find({ key: 'tab-command' }))?.props.label).toBe('Commands 2')
-    expect((await ui.find({ key: 'tab-mcp' }))?.props.label).toBe('MCP 2')
+    expect((await ui.find({ key: 'tab-skill' }))?.props.label).toBe('✦ Skills 2')
+    expect((await ui.find({ key: 'tab-command' }))?.props.label).toBe('/ Commands 2')
+    expect((await ui.find({ key: 'tab-mcp' }))?.props.label).toBe('⇄ MCP 2')
     expect(await ui.find({ type: 'Text', text: 'Discover agent skills' })).toBeDefined()
     await ui.unmount()
   }
@@ -231,6 +231,7 @@ test('counts command runs and sorts the most used first', async ($, on) => {
 
   for (const surface of SURFACES) {
     const ui = await $.ui.mount({ ...PANE, surface })
+    await ui.press({ key: 'layout-list' })
     const rows = (await ui.findAll({ type: 'Button' })).filter(one => one.key?.startsWith('open-'))
 
     expect(rows[0]?.key).toBe('open-command:review')
@@ -309,6 +310,7 @@ test('shows a plugin with its token cost, update, installs and GitHub stats', as
   await openCatalog($, 'plugins')
   await clock.settle()
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await ui.press({ key: 'layout-list' })
 
   expect((await ui.find({ key: 'open-plugin:auto' }))?.text).toMatch(/~1.6k tok\/session · ★ 1.2k · update/)
 
@@ -419,8 +421,8 @@ test('lists mods apart from plugins with what each one hooks and calls', async (
   await clock.settle()
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
 
-  expect((await ui.find({ key: 'tab-mod' }))?.props.label).toBe('Mods 2')
-  expect((await ui.find({ key: 'tab-plugin' }))?.props.label).toBe('Plugins 2')
+  expect((await ui.find({ key: 'tab-mod' }))?.props.label).toBe('◆ Mods 2')
+  expect((await ui.find({ key: 'tab-plugin' }))?.props.label).toBe('▣ Plugins 2')
   expect(await ui.find({ key: 'open-mod:meter' })).toBeDefined()
 
   await ui.press({ key: 'open-mod:catalog-pane' })
@@ -453,6 +455,7 @@ test('sorts plugins by GitHub stars, installs and install date', async ($, on) =
   await openCatalog($, 'plugins')
   await clock.settle()
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await ui.press({ key: 'layout-list' })
   await ui.select({ key: 'sort', value: 'stars' })
 
   expect(await rowKeys(ui)).toEqual(['open-plugin:agents-kit', 'open-plugin:auto'])
@@ -475,6 +478,7 @@ test('ranks skills by the stars of the plugin they come from', async ($, on) => 
   await openCatalog($, 'skills')
   await clock.settle()
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await ui.press({ key: 'layout-list' })
   await ui.select({ key: 'sort', value: 'stars' })
 
   expect(await rowKeys(ui)).toEqual(['open-skill:auto:fix', 'open-skill:find-skills'])
@@ -496,6 +500,7 @@ test('measures trending from the stored star history, else from the repo age', a
   await openCatalog($, 'plugins')
   await clock.settle()
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await ui.press({ key: 'layout-list' })
   await ui.select({ key: 'sort', value: 'trending' })
 
   expect(await rowKeys(ui)).toEqual(['open-plugin:agents-kit', 'open-plugin:auto'])
@@ -565,7 +570,7 @@ test('sorts the table by a column header, reverses it and filters by status', as
   const { clock } = world(on)
   await openCatalog($, 'plugins')
   await clock.settle()
-  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  const ui = await $.ui.mount({ ...PANE, props: { ...PANE.props, bodyColumns: 120 }, surface: 'desktop' })
   await ui.press({ key: 'layout-table' })
   await ui.press({ key: 'sort-stars' })
 
@@ -583,14 +588,28 @@ test('sorts the table by a column header, reverses it and filters by status', as
   await ui.unmount()
 })
 
+test('opens in the table, the first of the layouts, with a description column', async ($, on) => {
+  const { clock } = world(on)
+  await openCatalog($, 'commands')
+  await clock.settle()
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  const layouts = (await ui.findAll({ type: 'Button' })).filter(one => one.key?.startsWith('layout-'))
+
+  expect(layouts.map(one => one.props.label)).toEqual(['▤ Table', '▦ Gallery', '≡ List'])
+  expect(layouts[0]?.props.variant).toBe('primary')
+  expect(await ui.find({ key: 'head-about' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'Review a pull request' })).toBeDefined()
+  await ui.unmount()
+})
+
 test('remembers the chosen layout across sessions', async ($, on) => {
-  const { clock } = world(on, { layout: 'table' })
+  const { clock } = world(on, { layout: 'gallery' })
   await openCatalog($, 'commands')
   await clock.settle()
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
 
-  expect((await ui.find({ key: 'layout-table' }))?.props.variant).toBe('primary')
-  expect(await ui.find({ key: 'sort-name' })).toBeDefined()
+  expect((await ui.find({ key: 'layout-gallery' }))?.props.variant).toBe('primary')
+  expect(await ui.find({ key: 'card-command:review' })).toBeDefined()
   await ui.unmount()
 })
 

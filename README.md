@@ -265,21 +265,25 @@ Each refresh reads the cached context once at the cache price, plus a one-word r
 
 ## catalog-pane&nbsp;<a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcatalog-pane%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=&style=flat-square" alt="catalog-pane version"></a>
 
-<p align="center"><img src=".docs/catalog-pane.svg" alt="The catalog pane listing skills" width="882"></p>
+<p align="center"><img src=".docs/catalog-pane.svg" alt="The catalog pane listing skills in a table" width="882"></p>
 
-A pane that explains your setup. **Claude** shows the Claude Code version, when it was built and whether a newer one is out, what the changelog says about your version and the newer ones, where it runs (terminal, desktop app, VS Code, Agent SDK), the model, the default permission mode and output style, and how many tools, commands and agents are built in against what you added. **All** lists everything at once, and one tab per category follows: **Skills**, **Commands**, **Agents**, **Mods**, **Plugins**, **Hooks** (from the settings files), **MCP** servers and built-in **Tools**.
+A pane that explains your setup. **Claude** shows the Claude Code version, when it was built and whether a newer one is out, what the changelog says about your version and the newer ones, where it runs (terminal, desktop app, VS Code, Agent SDK), the model, the default permission mode and output style, and how many tools, commands and agents are built in against what you added. **☰ All** lists everything at once, and one tab per category follows: **✦ Skills**, **/ Commands**, **◉ Agents**, **◆ Mods**, **▣ Plugins**, **↯ Hooks** (from the settings files), **⇄ MCP** servers and built-in **⚒ Tools**.
+
+<p align="center"><img src=".docs/catalog-pane-claude.svg" alt="The Claude tab with the version, the changelog and the built-in and own entries" width="882"></p>
 
 ### Usage
 
-`/catalog` opens the pane, in the desktop app and in the terminal; `/catalog claude` opens the Claude tab, `/catalog mods` a category, `/catalog gallery` or `/catalog table` a layout, `/catalog <text>` a search. Usage is counted from the install of the mod on.
+`/catalog` opens the pane, in the desktop app and in the terminal; `/catalog claude` opens the **⚙ Claude** tab, `/catalog mods` a category, `/catalog table`, `/catalog gallery` or `/catalog list` a layout, `/catalog <text>` a search. Usage is counted from the install of the mod on.
 
 | Layout | Shows |
 | --- | --- |
-| List | One row per entry: origin, uses in total and in the last 30 days, the tokens a plugin part adds to every session, stars and updates. |
-| Gallery | A card per entry with its kind, origin, description, version, stars, usage, token cost, install date and a link to its GitHub repository. |
-| Table | Columns for kind, origin, version, uses, tokens, stars and the install date. Pressing a column header sorts by it, pressing it again reverses the order. Columns drop away on a narrow pane. |
+| ▤ Table | The default. Columns for the name, description, kind, origin, version, uses, tokens, stars and the install date. Pressing a column header sorts by it, pressing it again reverses the order. On a narrow pane the description narrows and the last columns drop away. |
+| ▦ Gallery | A card per entry with its kind, origin, description, version, stars, usage, token cost, install date and a link to its GitHub repository. |
+| ≡ List | One row per entry: origin, uses in total and in the last 30 days, the tokens a plugin part adds to every session, stars and updates. |
 
-The pane remembers the layout. On the desktop you can filter by text, origin and status (enabled, disabled, update available, on GitHub, unused in 30 days) and sort:
+<p align="center"><img src=".docs/catalog-pane-gallery.svg" alt="The catalog pane showing plugins as cards" width="882"></p>
+
+The pane remembers the layout you pick. On the desktop you can filter by text, origin and status (enabled, disabled, update available, on GitHub, unused in 30 days) and sort:
 
 | Sort | Order |
 | --- | --- |
