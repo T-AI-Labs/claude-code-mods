@@ -283,7 +283,7 @@ A pane that explains your setup. **Claude** shows the Claude Code version, when 
 
 <p align="center"><img src=".docs/catalog-pane-gallery.svg" alt="The catalog pane showing plugins as cards" width="882"></p>
 
-The pane remembers the layout you pick. The tabs, the toolbar and the table sit without blank rows between them, and from Claude Code 2.1.322 on the column and section headings are drawn smaller. On the desktop you can filter by text, origin and status (enabled, disabled, update available, on GitHub, unused in 30 days) and sort:
+The pane remembers the layout you pick. The tabs, the toolbar and the table are a row apart, the rows inside each without blank rows between them, and from Claude Code 2.1.322 on the column and section headings are drawn smaller. On the desktop you can filter by text, origin and status (enabled, disabled, update available, on GitHub, unused in 30 days) and sort:
 
 | Sort | Order |
 | --- | --- |

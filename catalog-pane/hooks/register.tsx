@@ -2077,7 +2077,7 @@ export const register: Register = (on, options) => {
         .join(' › ')
 
       return (
-        <Box flexDirection="column" gap={0}>
+        <Box flexDirection="column" gap={1}>
           {tabs}
           <Box flexDirection="row" gap={1}>
             <Button key="back" label="‹ Back" onPress={back} />
@@ -2105,7 +2105,7 @@ export const register: Register = (on, options) => {
 
     if (state.kind === 'claude') {
       return (
-        <Box flexDirection="column" gap={0}>
+        <Box flexDirection="column" gap={1}>
           {tabs}
           {claudeView(tags, {
             harness: snap.harness,
@@ -2295,7 +2295,7 @@ export const register: Register = (on, options) => {
     const body = { list: listRows, gallery, table }[state.layout]
 
     return (
-      <Box flexDirection="column" gap={0}>
+      <Box flexDirection="column" gap={1}>
         {tabs}
         {toolbar}
         {list.length === 0 && <Text dimColor>{loading ? 'Collecting…' : 'Nothing found yet. Press Refresh.'}</Text>}
