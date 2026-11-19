@@ -1,6 +1,6 @@
 <h1 align="center">Claude Code Mods</h1>
 
-<p align="center"><em>Context, prompt-cache and usage-limit meters right above the Claude Code prompt, a row of dropdowns for agents, skills and commands, a task board for the tasks and ideas that come up while Claude works, a pane that lists everything your setup provides, and one that adds up your token usage.</em></p>
+<p align="center"><em>Context, prompt-cache and usage-limit meters right above the Claude Code prompt, a row of dropdowns for agents, skills and commands, a task board for the tasks and ideas that come up while Claude works, a pane that explains everything your setup provides, one that adds up your token usage, and a test explorer.</em></p>
 
 <p align="center">
   <a href="https://github.com/T-AI-Labs/claude-code-mods/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/T-AI-Labs/claude-code-mods/ci.yml?branch=main&style=flat-square&label=ci" alt="CI"></a>
@@ -17,8 +17,9 @@ Claude Code shows little of what costs you: how full the context is, whether the
 - **Back from a break to a cold cache?** Writing 200k tokens of context again costs about $1.00 on Claude Opus 5.5. [cache-meter](#cache-meter) shows when the cache goes cold and can keep it warm at about $0.04 a refresh.
 - **Can't remember the name of that agent or skill?** [command-center](#command-center) lists your agents, skills and commands in dropdowns above the prompt, filtered by where they come from, and inserts or runs the pick.
 - **A thought comes up while Claude is busy?** [task-board](#task-board) turns it into a task from a row above the prompt, without interrupting the turn, and keeps a board per project. Name a task's key in a prompt and Claude gets the whole task.
-- **Lost track of what your setup loads?** [catalog-pane](#catalog-pane) lists every skill, plugin, hook and MCP server with its usage and the tokens it adds to every session.
+- **Lost track of what your setup loads?** [catalog-pane](#catalog-pane) explains your Claude Code version and lists every skill, plugin, hook and MCP server with where it comes from, its usage and the tokens it adds to every session.
 - **Where did this week's tokens go?** [usage-pane](#usage-pane) adds up tokens, cache hit rate and API price by day, model and project, and shows which prompts cost the most and why.
+- **Which tests broke?** [test-explorer](#test-explorer) finds the project's .NET, pytest, Vitest and mod tests, runs them, shows each one's status, and hands a failing test to Claude.
 
 ## Installation
 
@@ -57,7 +58,7 @@ claude plugin update cache-meter@T-AI-Labs
 </td><td><img src=".docs/cache-meter.svg" alt="The cache-meter row" width="320"></td></tr>
 <tr><td><a href="#catalog-pane">catalog&#8209;pane</a></td><td>
 
-Every skill, plugin, hook and MCP server you have.
+Your Claude Code version and every skill, plugin, hook and MCP server you have.
 
 ```
 claude plugin install catalog-pane@T-AI-Labs
@@ -95,6 +96,16 @@ claude plugin update task-board@T-AI-Labs
 ```
 
 </td><td><img src=".docs/task-board.svg" alt="The task board" width="320"></td></tr>
+<tr><td><a href="#test-explorer">test&#8209;explorer</a></td><td>
+
+Your project's tests by status, run with a press.
+
+```
+claude plugin install test-explorer@T-AI-Labs
+claude plugin update test-explorer@T-AI-Labs
+```
+
+</td><td><img src=".docs/test-explorer.svg" alt="The test explorer" width="320"></td></tr>
 <tr><td><a href="#context-meter">context&#8209;meter</a></td><td>
 
 The context row of context-usage on its own.
@@ -254,20 +265,34 @@ Each refresh reads the cached context once at the cache price, plus a one-word r
 
 ## catalog-pane&nbsp;<a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Fcatalog-pane%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=&style=flat-square" alt="catalog-pane version"></a>
 
-<p align="center"><img src=".docs/catalog-pane.svg" alt="The catalog pane listing skills" width="882"></p>
+<p align="center"><img src=".docs/catalog-pane.svg" alt="The catalog pane listing skills in a table" width="882"></p>
 
-A pane with one tab per category: **Skills**, **Commands**, **Agents**, **Mods**, **Plugins**, **Hooks** (from the settings files), **MCP** servers and built-in **Tools**.
+A pane that explains your setup. **Claude** shows the Claude Code version, when it was built and whether a newer one is out, what the changelog says about your version and the newer ones, where it runs (terminal, desktop app, VS Code, Agent SDK), the model, the default permission mode and output style, and how many tools, commands and agents are built in against what you added. **☰ All** lists everything at once, and one tab per category follows: **✦ Skills**, **/ Commands**, **◉ Agents**, **◆ Mods**, **▣ Plugins**, **↯ Hooks** (from the settings files), **⇄ MCP** servers and built-in **⚒ Tools**.
+
+<p align="center"><img src=".docs/catalog-pane-claude.svg" alt="The Claude tab with the version, the changelog and the built-in and own entries" width="882"></p>
 
 ### Usage
 
-`/catalog` opens the pane, in the desktop app and in the terminal; `/catalog mods` opens a category, `/catalog <text>` a search. Each row shows the entry's origin, how often it was used in total and in the last 30 days, and for plugin parts the tokens it adds to every session. Usage is counted from the install of the mod on. On the desktop you can filter by text and origin and sort:
+`/catalog` opens the pane, in the desktop app and in the terminal; `/catalog claude` opens the **⚙ Claude** tab, `/catalog mods` a category, `/catalog table`, `/catalog gallery` or `/catalog list` a layout, `/catalog <text>` a search. Usage is counted from the install of the mod on.
+
+| Layout | Shows |
+| --- | --- |
+| ▤ Table | The default. Columns for the name, description, kind, origin, version, uses, tokens, stars and the install date. Pressing a column header sorts by it, pressing it again reverses the order. On a narrow pane the description narrows and the last columns drop away. |
+| ▦ Gallery | A card per entry with its kind, origin, description, version, stars, usage, token cost, install date and a link to its GitHub repository. |
+| ≡ List | One row per entry: origin, uses in total and in the last 30 days, the tokens a plugin part adds to every session, stars and updates. |
+
+<p align="center"><img src=".docs/catalog-pane-gallery.svg" alt="The catalog pane showing plugins as cards" width="882"></p>
+
+The pane remembers the layout you pick. The tabs, the toolbar and the table are a row apart, the rows inside each without blank rows between them, and from Claude Code 2.1.322 on the column and section headings are drawn smaller. On the desktop you can filter by text, origin and status (enabled, disabled, update available, on GitHub, unused in 30 days) and sort:
 
 | Sort | Order |
 | --- | --- |
 | Most used, Recently used, Name | By usage, or alphabetically. |
-| Clean-up | Costly and unused entries first. |
+| Clean-up, Token cost | Costly and unused entries first, or by the tokens added to every session. |
 | GitHub stars, Trending, GitHub forks, Latest GitHub push | By the plugin's repository; Trending is stars gained per month. |
 | Installs, Newest installed | By the official directory's install count, or by install date. |
+
+A plugin's skills, agents and commands share its repository and install date. A skill or agent of your own or of the project shows the folder it lives in, where a link points, when the folder last changed, and the GitHub repository its frontmatter names, if any.
 
 <p align="center"><img src=".docs/catalog-pane-detail.svg" alt="The catalog pane showing one mod" width="882"></p>
 
@@ -278,7 +303,7 @@ Pressing an entry opens its detail: usage over 7 and 30 days, token cost, versio
 | Option | Values | Default | Effect |
 | --- | --- | --- | --- |
 | `language` | any language name | `English` | The language **Explain with Haiku** answers in. |
-| `githubStats` | `true`, `false` | `true` | Fetches the GitHub stats of each plugin's repository once a day. |
+| `githubStats` | `true`, `false` | `true` | Fetches the GitHub stats of each repository, the Claude Code changelog and the latest version once a day. |
 
 ```
 '{"language":"German"}' | claude plugin configure catalog-pane@T-AI-Labs --values-stdin
@@ -288,7 +313,8 @@ Set them as for [context-usage](#options).
 
 ### Network and model requests
 
-- **GitHub:** once a day, the public API for each plugin repository's stars, forks, open issues and last push. Off with `githubStats`.
+- **GitHub:** once a day, the public API for the stars, forks, open issues and last push of each plugin's repository, each repository a skill or agent names, and `anthropics/claude-code`, and the Claude Code changelog from `raw.githubusercontent.com`. Off with `githubStats`.
+- **npm:** once a day, the latest Claude Code version from `registry.npmjs.org`. Off with `githubStats`.
 - **Haiku:** one request of at most 400 output tokens per **Explain with Haiku**. The answer is kept, so each entry is explained once.
 - **Claude Code CLI:** `claude plugin details` once per plugin version for its token cost, `claude plugin validate` once per mod version, and `update`, `disable`, `enable` or `uninstall` when you press those buttons.
 
@@ -389,6 +415,35 @@ The row sits in the band above the prompt and the mod costs no tokens of its own
 ```
 
 Set it as for [context-usage](#options). The tool waits behind tool search, as an MCP server's tools do: every request carries its name, and Claude loads its description only when it uses it. A toast names every task Claude creates or changes.
+
+## test-explorer&nbsp;<a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Ftest-explorer%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=&style=flat-square" alt="test-explorer version"></a>
+
+<p align="center"><img src=".docs/test-explorer.svg" alt="The test explorer with one failing .NET test" width="882"></p>
+
+A pane that lists the tests of the session's folder as a tree, one level per tool, project, file or class and test, with columns for the status, the name, the duration and an action:
+
+| Status | Means |
+| --- | --- |
+| ✓ | Passed; a group whose tests all passed. |
+| ✗ | Failed; a group with at least one failed test. |
+| – | Skipped. |
+| · | Not run yet. |
+| ◌ | Being listed or run now. |
+
+| Tool | Found by | Runs |
+| --- | --- | --- |
+| .NET | a `.csproj` that references a test SDK or test framework | `dotnet test` |
+| pytest | `pytest.ini`, or a pytest section in `pyproject.toml`, `setup.cfg` or `tox.ini` | the project's `.venv` Python, `uv run` with a `uv.lock`, else `python` |
+| Vitest | a `package.json` that names `vitest` | the installed `node_modules/vitest` |
+| Claude Code mods | a folder with `.claude-plugin` and `tests` | `claude plugin test` |
+
+### Usage
+
+`/test-explorer` or the **Tests** button above the prompt opens the pane, in the desktop app and in the terminal. The first time it looks through the folder, at most six levels deep, skipping `node_modules`, `bin`, `obj` and other build folders, and lists each project's tests: for .NET that builds the project. **▶ Run all** runs every project one after the other, **▶ Run** one project. A project opens by itself when a test in it fails, and its error message shows under the test. **Fix** sends Claude a prompt with the test, its project and the message, asking it to find the cause, fix it and run the test again.
+
+Above the table the totals count passed, failed, skipped and not run tests, with a bar of the passed share. **✗ Failed only** and the filter narrow the table to failed tests or to names that contain the text. **⟳ Refresh** looks through the folder again and lists the tests anew, without results. The **Tests** button hides while the pane is open.
+
+The mod makes no network or model requests and costs no tokens of its own: only **Fix** sends a prompt.
 
 ## License
 

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 882 600" width="882" height="600" role="img" aria-labelledby="t d">
+  <title id="t">The test explorer</title>
+  <desc id="d">Illustration. The buttons Run all, Refresh and Failed only, a field to filter tests by name, and the totals: 44 passed, 1 failed, 2 skipped, none not run in 4 projects, with a bar of 44 of 47. Below them a table with the columns Test and Duration: .NET with the project EventViewer.Tests open, its classes LogReaderTests and FreezeDetectorTests, one failing test with a Fix button and its error message; then pytest and Claude Code mods with their projects closed, each with its test count, duration and a Run button.</desc>
+  <rect width="882" height="600" rx="12" fill="#1a1a1a"/>
+  <g font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13">
+    <text x="28" y="38" fill="#e8e8e8" font-weight="600" font-size="15">Tests</text><line x1="0" y1="56.5" x2="882" y2="56.5" stroke="#333333"/>
+    <rect x="28" y="74" width="82" height="26" rx="6" fill="#e8e8e8"/><text x="69" y="91.5" fill="#1a1a1a" text-anchor="middle">▶ Run all</text>
+    <rect x="118.5" y="74.5" width="86" height="25" rx="6" fill="none" stroke="#4a4a4a"/><text x="161.5" y="91.5" fill="#e8e8e8" text-anchor="middle">⟳ Refresh</text>
+    <rect x="212.5" y="74.5" width="100" height="25" rx="6" fill="none" stroke="#4a4a4a"/><text x="262.5" y="91.5" fill="#e8e8e8" text-anchor="middle">✗ Failed only</text>
+    <rect x="28.5" y="112.5" width="825" height="27" rx="6" fill="none" stroke="#4a4a4a"/><text x="40" y="130.5" fill="#8c8c8c">Filter tests by name</text>
+    <text x="28" y="168" fill="#4ec27a">44 passed</text><text x="110" y="168" fill="#e5534b">1 failed</text><text x="184" y="168" fill="#8c8c8c">2 skipped · 0 not run · 4 projects</text>
+    <rect x="28" y="178" width="760" height="6" rx="3" fill="#333333"/><rect x="28" y="178" width="711" height="6" rx="3" fill="#e5534b"/><text x="854" y="185" fill="#8c8c8c" text-anchor="end">44 of 47</text>
+    <text x="52" y="218" fill="#8c8c8c" font-weight="600">Test</text><text x="760" y="218" fill="#8c8c8c" text-anchor="end">Duration</text>
+    <text x="28" y="246" fill="#e5534b">✗</text><text x="52" y="246" fill="#e8e8e8" font-weight="600">.NET</text><text x="760" y="246" fill="#8c8c8c" text-anchor="end">1.9 s</text>
+    <text x="28" y="270" fill="#e5534b">✗</text><text x="68" y="270" fill="#e8e8e8">▾ EventViewer.Tests</text><text x="200" y="270" fill="#8c8c8c">12 tests · 1 failed</text><text x="760" y="270" fill="#8c8c8c" text-anchor="end">1.9 s</text><text x="780" y="270" fill="#e8e8e8">▶ Run</text>
+    <text x="28" y="294" fill="#4ec27a">✓</text><text x="84" y="294" fill="#8c8c8c">EventViewer.Tests.LogReaderTests</text><text x="760" y="294" fill="#8c8c8c" text-anchor="end">0.8 s</text>
+    <text x="28" y="318" fill="#4ec27a">✓</text><text x="100" y="318" fill="#e8e8e8">ReadsNewestFirst</text><text x="760" y="318" fill="#8c8c8c" text-anchor="end">412 ms</text>
+    <text x="28" y="342" fill="#4ec27a">✓</text><text x="100" y="342" fill="#e8e8e8">SkipsEmptyChannels</text><text x="760" y="342" fill="#8c8c8c" text-anchor="end">96 ms</text>
+    <text x="28" y="366" fill="#e5534b">✗</text><text x="84" y="366" fill="#8c8c8c">EventViewer.Tests.FreezeDetectorTests</text><text x="760" y="366" fill="#8c8c8c" text-anchor="end">1.1 s</text>
+    <text x="28" y="390" fill="#4ec27a">✓</text><text x="100" y="390" fill="#e8e8e8">FlagsLongPauses</text><text x="760" y="390" fill="#8c8c8c" text-anchor="end">640 ms</text>
+    <text x="28" y="414" fill="#e5534b">✗</text><text x="100" y="414" fill="#e8e8e8">IgnoresShortStalls</text><text x="760" y="414" fill="#8c8c8c" text-anchor="end">458 ms</text><text x="780" y="414" fill="#e8e8e8">Fix</text>
+    <text x="132" y="436" fill="#8c8c8c" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-size="12">Assert.Equal() Failure: Expected 0, Actual 1</text>
+    <text x="28" y="470" fill="#4ec27a">✓</text><text x="52" y="470" fill="#e8e8e8" font-weight="600">pytest</text><text x="760" y="470" fill="#8c8c8c" text-anchor="end">3.4 s</text>
+    <text x="28" y="494" fill="#4ec27a">✓</text><text x="68" y="494" fill="#e8e8e8">▸ tools</text><text x="124" y="494" fill="#8c8c8c">5 tests</text><text x="760" y="494" fill="#8c8c8c" text-anchor="end">3.4 s</text><text x="780" y="494" fill="#e8e8e8">▶ Run</text>
+    <text x="28" y="528" fill="#4ec27a">✓</text><text x="52" y="528" fill="#e8e8e8" font-weight="600">Claude Code mods</text><text x="760" y="528" fill="#8c8c8c" text-anchor="end">6.6 s</text>
+    <text x="28" y="552" fill="#4ec27a">✓</text><text x="68" y="552" fill="#e8e8e8">▸ catalog-pane</text><text x="166" y="552" fill="#8c8c8c">24 tests</text><text x="760" y="552" fill="#8c8c8c" text-anchor="end">5.8 s</text><text x="780" y="552" fill="#e8e8e8">▶ Run</text>
+    <text x="28" y="576" fill="#4ec27a">✓</text><text x="68" y="576" fill="#e8e8e8">▸ task-board</text><text x="152" y="576" fill="#8c8c8c">6 tests</text><text x="760" y="576" fill="#8c8c8c" text-anchor="end">0.8 s</text><text x="780" y="576" fill="#e8e8e8">▶ Run</text>
+  </g>
+</svg>

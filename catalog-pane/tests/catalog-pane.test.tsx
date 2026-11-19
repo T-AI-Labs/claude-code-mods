@@ -75,6 +75,28 @@ const FILES: Record<string, unknown> = {
   '/plugins/meter/hooks/hooks.json': { modules: ['./register.tsx'] },
   '/mods/catalog/.claude-plugin/plugin.json': { name: 'catalog-pane', description: 'The catalog', version: '0.3.0' },
   '/mods/catalog/hooks/hooks.json': { modules: ['./register.tsx'] },
+  '/home/.claude/skills/find-skills/SKILL.md':
+    '---\nname: find-skills\ndescription: Discover agent skills\nhomepage: https://github.com/vercel-labs/skills\n---\n',
+}
+
+const CHANGED = Date.parse('2026-07-25T07:48:00Z')
+
+const CHANGELOG = `# Changelog
+
+## 2.1.301
+
+- Added the gallery
+- Fixed a crash
+
+## 2.1.300
+
+- Added hooks for panes
+- Faster startup
+`
+
+const TEXTS: Record<string, string> = {
+  'https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md': CHANGELOG,
+  'https://registry.npmjs.org/@anthropic-ai/claude-code/latest': JSON.stringify({ version: '2.1.301' }),
 }
 
 const DIRS: Record<string, string[]> = {
@@ -104,7 +126,7 @@ const REPOS: Record<string, Record<string, unknown>> = {
 // The fixtures are POSIX paths; on Windows the engine resolves them onto the current drive.
 const slash = (path: string) => path.replaceAll('\\', '/').replace(/^[A-Za-z]:/, '')
 
-const world = (on: On, stored: Record<string, unknown> = {}) => {
+const world = (on: On, stored: Record<string, unknown> = {}, env: Record<string, string> = {}) => {
   const filled: string[] = []
   const ran: string[] = []
   const opened: string[] = []
@@ -112,7 +134,7 @@ const world = (on: On, stored: Record<string, unknown> = {}) => {
   const fetched: string[] = []
   const clock = mock.clock(on, { now: Date.parse('2026-10-16T10:00:00Z') })
   mock.store(on, stored)
-  mock.env(on, { USERPROFILE: '/home', CLAUDE_CODE_PLUGIN_DIRS: '/mods/catalog' })
+  mock.env(on, { USERPROFILE: '/home', CLAUDE_CODE_PLUGIN_DIRS: '/mods/catalog', ...env })
   on('session.start', ($, e) => ({ cwd: e.cwd }))
   on('session.attach', ($, e) => ({ clientId: e.clientId }))
   on('command.register', ($, e) => ({ value: { command: e.name } }))
@@ -141,12 +163,12 @@ const world = (on: On, stored: Record<string, unknown> = {}) => {
 
     return names === undefined
       ? { deny: 'ENOENT' }
-      : { value: names.map(name => ({ name, kind: 'dir', size: 0, mtimeMs: 0, isLink: false })) }
+      : { value: names.map(name => ({ name, kind: 'dir', size: 0, mtimeMs: CHANGED, isLink: false })) }
   })
   on('fs.read', ($, e) => {
     const file = FILES[slash(e.path)]
 
-    return file === undefined ? { deny: 'ENOENT' } : { value: JSON.stringify(file) }
+    return file === undefined ? { deny: 'ENOENT' } : { value: typeof file === 'string' ? file : JSON.stringify(file) }
   })
   on('process.run', ($, e) => {
     commands.push(e.argv.join(' '))
@@ -158,7 +180,7 @@ const world = (on: On, stored: Record<string, unknown> = {}) => {
     fetched.push(e.url)
     const body = REPOS[e.url.replace('https://api.github.com/repos/', '')] ?? {}
 
-    return { value: { status: 200, ok: true, headers: {}, text: JSON.stringify(body) } }
+    return { value: { status: 200, ok: true, headers: {}, text: TEXTS[e.url] ?? JSON.stringify(body) } }
   })
   on('ui.open', ($, e) => {
     opened.push(e.id)
@@ -192,9 +214,9 @@ test('lists each category with its count and describes the entries', async ($, o
   for (const surface of SURFACES) {
     const ui = await $.ui.mount({ ...PANE, surface })
 
-    expect((await ui.find({ key: 'tab-skill' }))?.props.label).toBe('Skills 2')
-    expect((await ui.find({ key: 'tab-command' }))?.props.label).toBe('Commands 2')
-    expect((await ui.find({ key: 'tab-mcp' }))?.props.label).toBe('MCP 2')
+    expect((await ui.find({ key: 'tab-skill' }))?.props.label).toBe('✦ Skills 2')
+    expect((await ui.find({ key: 'tab-command' }))?.props.label).toBe('/ Commands 2')
+    expect((await ui.find({ key: 'tab-mcp' }))?.props.label).toBe('⇄ MCP 2')
     expect(await ui.find({ type: 'Text', text: 'Discover agent skills' })).toBeDefined()
     await ui.unmount()
   }
@@ -209,6 +231,7 @@ test('counts command runs and sorts the most used first', async ($, on) => {
 
   for (const surface of SURFACES) {
     const ui = await $.ui.mount({ ...PANE, surface })
+    await ui.press({ key: 'layout-list' })
     const rows = (await ui.findAll({ type: 'Button' })).filter(one => one.key?.startsWith('open-'))
 
     expect(rows[0]?.key).toBe('open-command:review')
@@ -287,6 +310,7 @@ test('shows a plugin with its token cost, update, installs and GitHub stats', as
   await openCatalog($, 'plugins')
   await clock.settle()
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await ui.press({ key: 'layout-list' })
 
   expect((await ui.find({ key: 'open-plugin:auto' }))?.text).toMatch(/~1.6k tok\/session · ★ 1.2k · update/)
 
@@ -397,8 +421,8 @@ test('lists mods apart from plugins with what each one hooks and calls', async (
   await clock.settle()
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
 
-  expect((await ui.find({ key: 'tab-mod' }))?.props.label).toBe('Mods 2')
-  expect((await ui.find({ key: 'tab-plugin' }))?.props.label).toBe('Plugins 2')
+  expect((await ui.find({ key: 'tab-mod' }))?.props.label).toBe('◆ Mods 2')
+  expect((await ui.find({ key: 'tab-plugin' }))?.props.label).toBe('▣ Plugins 2')
   expect(await ui.find({ key: 'open-mod:meter' })).toBeDefined()
 
   await ui.press({ key: 'open-mod:catalog-pane' })
@@ -431,6 +455,7 @@ test('sorts plugins by GitHub stars, installs and install date', async ($, on) =
   await openCatalog($, 'plugins')
   await clock.settle()
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await ui.press({ key: 'layout-list' })
   await ui.select({ key: 'sort', value: 'stars' })
 
   expect(await rowKeys(ui)).toEqual(['open-plugin:agents-kit', 'open-plugin:auto'])
@@ -453,6 +478,7 @@ test('ranks skills by the stars of the plugin they come from', async ($, on) => 
   await openCatalog($, 'skills')
   await clock.settle()
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await ui.press({ key: 'layout-list' })
   await ui.select({ key: 'sort', value: 'stars' })
 
   expect(await rowKeys(ui)).toEqual(['open-skill:auto:fix', 'open-skill:find-skills'])
@@ -474,10 +500,170 @@ test('measures trending from the stored star history, else from the repo age', a
   await openCatalog($, 'plugins')
   await clock.settle()
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await ui.press({ key: 'layout-list' })
   await ui.select({ key: 'sort', value: 'trending' })
 
   expect(await rowKeys(ui)).toEqual(['open-plugin:agents-kit', 'open-plugin:auto'])
   expect((await ui.find({ key: 'open-plugin:auto' }))?.text).toMatch(/\+231 ★ a month/)
   expect((await ui.find({ key: 'open-plugin:agents-kit' }))?.text).toMatch(/~2.7k ★ a month on average/)
   await ui.unmount()
+})
+
+const harness = (on: On) => {
+  on('session.version', () => ({ value: { version: '2.1.300', base: '2.1.300', builtAt: '2026-10-01T12:00:00Z' } }))
+  on('session.model', () => ({ value: 'claude-opus-5-5' }))
+  on('session.surfaces', () => ({ value: ['desktop'] }))
+  on('session.root', () => ({ value: '/work' }))
+}
+
+const links = async (ui: { findAll: (query: { type: string }) => Promise<{ props: Record<string, unknown> }[]> }) =>
+  (await ui.findAll({ type: 'Link' })).map(one => one.props.href)
+
+test('shows the Claude Code version, what changed in it and the newer releases', async ($, on) => {
+  const { fetched, clock } = world(on, {}, { CLAUDE_CODE_ENTRYPOINT: 'claude-desktop' })
+  harness(on)
+  await openCatalog($, 'claude')
+  await clock.settle()
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+
+  expect(fetched).toContain('https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md')
+  expect((await ui.find({ key: 'tab-claude' }))?.props.variant).toBe('primary')
+  expect(await ui.find({ type: 'Text', text: /Claude Code 2\.1\.300/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /built 2026-10-01 · latest 2\.1\.301/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /Runs in the Claude desktop app \(claude-desktop\) · draws on desktop/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /Model claude-opus-5-5/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /Update available: v2\.1\.301/ })).toBeDefined()
+  expect((await ui.find({ key: 'changes' }))?.props.text).toBe('- Added hooks for panes\n- Faster startup')
+  expect((await ui.find({ key: 'newer' }))?.props.text).toBe('- **2.1.301**: Added the gallery (+1 more)')
+  expect(await links(ui)).toContain('https://github.com/anthropics/claude-code')
+  expect((await ui.find({ key: 'builtin-command' }))?.props.label).toBe('Commands 2')
+  expect((await ui.find({ key: 'jump-skill' }))?.props.label).toBe('Skills 2')
+
+  await ui.press({ key: 'builtin-command' })
+
+  expect(await rowKeys(ui)).toEqual(['open-command:review', 'open-command:simplify'])
+  await ui.unmount()
+})
+
+test('shows each entry as a card with its facts and GitHub link in the gallery', async ($, on) => {
+  const { clock } = world(on)
+  await openCatalog($, 'plugins')
+  await clock.settle()
+
+  for (const surface of SURFACES) {
+    const ui = await $.ui.mount({ ...PANE, surface })
+    await ui.press({ key: 'layout-gallery' })
+
+    expect(await ui.find({ key: 'card-plugin:auto' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'v0.3.0 ↑ · ★ 1.2k · unused · ~1.6k tok · 2026-09-30' })).toBeDefined()
+    expect(await links(ui)).toEqual(['https://github.com/wshobson/agents', 'https://github.com/thor/skills'])
+
+    await ui.press({ key: 'open-plugin:auto' })
+
+    expect(await ui.find({ type: 'Text', text: /Update available: v0\.4\.0/ })).toBeDefined()
+    await ui.press({ key: 'back' })
+    await ui.unmount()
+  }
+})
+
+test('sorts the table by a column header, reverses it and filters by status', async ($, on) => {
+  const { clock } = world(on)
+  await openCatalog($, 'plugins')
+  await clock.settle()
+  const ui = await $.ui.mount({ ...PANE, props: { ...PANE.props, bodyColumns: 120 }, surface: 'desktop' })
+  await ui.press({ key: 'layout-table' })
+  await ui.press({ key: 'sort-stars' })
+
+  expect(await rowKeys(ui)).toEqual(['open-plugin:agents-kit', 'open-plugin:auto'])
+  expect(await ui.find({ type: 'Text', text: '★ ▾' })).toBeDefined()
+
+  await ui.press({ key: 'sort-stars' })
+
+  expect(await rowKeys(ui)).toEqual(['open-plugin:auto', 'open-plugin:agents-kit'])
+
+  await ui.select({ key: 'status', value: 'update' })
+
+  expect(await rowKeys(ui)).toEqual(['open-plugin:auto'])
+  expect(await ui.find({ type: 'Text', text: '0.3.0 ↑' })).toBeDefined()
+  await ui.unmount()
+})
+
+test('opens in the table, the first of the layouts, with a description column', async ($, on) => {
+  const { clock } = world(on)
+  await openCatalog($, 'commands')
+  await clock.settle()
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  const layouts = (await ui.findAll({ type: 'Button' })).filter(one => one.key?.startsWith('layout-'))
+
+  expect(layouts.map(one => one.props.label)).toEqual(['▤ Table', '▦ Gallery', '≡ List'])
+  expect(layouts[0]?.props.variant).toBe('primary')
+  expect(await ui.find({ key: 'head-about' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'Review a pull request' })).toBeDefined()
+  await ui.unmount()
+})
+
+test('remembers the chosen layout across sessions', async ($, on) => {
+  const { clock } = world(on, { layout: 'gallery' })
+  await openCatalog($, 'commands')
+  await clock.settle()
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+
+  expect((await ui.find({ key: 'layout-gallery' }))?.props.variant).toBe('primary')
+  expect(await ui.find({ key: 'card-command:review' })).toBeDefined()
+  await ui.unmount()
+})
+
+test('lists everything in the All tab with a kind column', async ($, on) => {
+  const { clock } = world(on)
+  await openCatalog($, 'all')
+  await clock.settle()
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await ui.press({ key: 'layout-table' })
+  await ui.input({ key: 'query', text: 'bash', kind: 'change' })
+
+  expect(await ui.find({ key: 'head-kind' })).toBeDefined()
+  expect(await rowKeys(ui)).toEqual(['open-tool:Bash', 'open-hook:user:PreToolUse:0:0'])
+
+  await ui.press({ key: 'open-tool:Bash' })
+  await ui.press({ key: 'back' })
+
+  expect((await ui.find({ key: 'tab-all' }))?.props.variant).toBe('primary')
+  await ui.unmount()
+})
+
+test('says where a user skill lives, when it changed and which repository it names', async ($, on) => {
+  const { fetched, clock } = world(on)
+  await openCatalog($, 'skills')
+  await clock.settle()
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await ui.press({ key: 'open-skill:find-skills' })
+
+  expect(await ui.find({ type: 'Text', text: /Lives in \/home\/\.claude\/skills\/find-skills\./ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'Changed 2026-07-25' })).toBeDefined()
+  expect(await links(ui)).toContain('https://github.com/vercel-labs/skills')
+  expect(fetched).toContain('https://api.github.com/repos/vercel-labs/skills')
+  await ui.unmount()
+})
+
+const headingSize = async ($: Engine, on: On, version: string) => {
+  const { clock } = world(on)
+  on('session.version', () => ({ value: { version, base: version } }))
+  on('session.model', () => ({ value: 'claude-opus-5-5' }))
+  on('session.surfaces', () => ({ value: ['desktop'] }))
+  on('session.root', () => ({ value: '/work' }))
+  await openCatalog($, 'commands')
+  await clock.settle()
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  const size = (await ui.find({ type: 'Text', text: /^Name/ }))?.props.size
+  const reverse = await ui.find({ key: 'direction' })
+  await ui.unmount()
+
+  return { size, reverse }
+}
+
+test('keeps headings at the normal size where Claude Code refuses a text size, and has no Reverse button', async ($, on) => {
+  const { size, reverse } = await headingSize($, on, '2.1.300')
+
+  expect(size).toBeUndefined()
+  expect(reverse).toBeUndefined()
 })

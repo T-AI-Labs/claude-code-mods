@@ -13,27 +13,33 @@ import type {
   Cost,
   Daily,
   Entry,
+  Harness,
   Kind,
   KnownAgent,
+  Layout,
   Mark,
   PluginInfo,
+  Release,
+  Releases,
   RepoStats,
   Scan,
   Sort,
   Stat,
+  Status,
+  Tab,
   Usage,
   View,
 } from '../types'
 
-const KINDS: readonly { kind: Kind; label: string; noun: string }[] = [
-  { kind: 'skill', label: 'Skills', noun: 'skill' },
-  { kind: 'command', label: 'Commands', noun: 'slash command' },
-  { kind: 'agent', label: 'Agents', noun: 'subagent type' },
-  { kind: 'mod', label: 'Mods', noun: 'mod (a plugin with function hooks)' },
-  { kind: 'plugin', label: 'Plugins', noun: 'plugin' },
-  { kind: 'hook', label: 'Hooks', noun: 'settings hook (a shell command run on an event)' },
-  { kind: 'mcp', label: 'MCP', noun: 'MCP server' },
-  { kind: 'tool', label: 'Tools', noun: 'built-in tool' },
+const KINDS: readonly { kind: Kind; label: string; icon: string; noun: string }[] = [
+  { kind: 'skill', label: 'Skills', icon: '✦', noun: 'skill' },
+  { kind: 'command', label: 'Commands', icon: '/', noun: 'slash command' },
+  { kind: 'agent', label: 'Agents', icon: '◉', noun: 'subagent type' },
+  { kind: 'mod', label: 'Mods', icon: '◆', noun: 'mod (a plugin with function hooks)' },
+  { kind: 'plugin', label: 'Plugins', icon: '▣', noun: 'plugin' },
+  { kind: 'hook', label: 'Hooks', icon: '↯', noun: 'settings hook (a shell command run on an event)' },
+  { kind: 'mcp', label: 'MCP', icon: '⇄', noun: 'MCP server' },
+  { kind: 'tool', label: 'Tools', icon: '⚒', noun: 'built-in tool' },
 ]
 
 const EVERYWHERE = '*'
@@ -46,6 +52,13 @@ const SCANS_KEY = 'scans'
 const SKILLS_KEY = 'skills'
 const AGENTS_KEY = 'agents'
 const EXPLANATIONS_KEY = 'explanations'
+const RELEASES_KEY = 'releases'
+const LAYOUT_KEY = 'layout'
+const CLAUDE_REPO = 'anthropics/claude-code'
+const CHANGELOG_URL = `https://raw.githubusercontent.com/${CLAUDE_REPO}/main/CHANGELOG.md`
+const LATEST_URL = 'https://registry.npmjs.org/@anthropic-ai/claude-code/latest'
+const KEPT_RELEASES = 40
+const SHOWN_CHANGES = 15
 const FLUSH_MS = 10_000
 const DAY_MS = 86_400_000
 const KEPT_DAYS = 31
@@ -67,6 +80,8 @@ const explanations = atom({ plugin: 'catalog-pane', key: 'explanations' } as con
 const explaining = atom({ plugin: 'catalog-pane', key: 'explaining' } as const, [])
 const confirming = atom({ plugin: 'catalog-pane', key: 'confirming' } as const, null)
 const working = atom({ plugin: 'catalog-pane', key: 'working' } as const, null)
+const harness = atom({ plugin: 'catalog-pane', key: 'harness' } as const, null)
+const releases = atom({ plugin: 'catalog-pane', key: 'releases' } as const, null)
 
 type Installed = {
   plugins?: Record<
@@ -121,6 +136,7 @@ let skills = new Set<string>()
 let agents: Record<string, KnownAgent> = {}
 let showsGithub = true
 let enriching: Promise<void> = Promise.resolve()
+let canSize = false
 
 const idOf = (kind: Kind, name: string) => `${kind}:${name}`
 
@@ -241,11 +257,86 @@ const ownerOf = (entry: Entry, list: readonly Entry[]) =>
 
 const infoOf = (entry: Entry, list: readonly Entry[]) => ownerOf(entry, list)?.plugin
 
+const repoNameOf = (entry: Entry, list: readonly Entry[]) => entry.repo ?? infoOf(entry, list)?.repo
+
 const repoOf = (entry: Entry, list: readonly Entry[], known: Record<string, RepoStats>) => {
-  const repo = infoOf(entry, list)?.repo
+  const repo = repoNameOf(entry, list)
 
   return repo === undefined ? undefined : known[repo]
 }
+
+// A plugin's install date; for a file of the user's or the project's, when its folder last changed.
+const addedOf = (entry: Entry, list: readonly Entry[]) =>
+  timeOf(infoOf(entry, list)?.installedAt) ?? (entry.changedAt === 0 ? undefined : entry.changedAt)
+
+const hasUpdate = (info: PluginInfo | undefined) => info?.latest !== undefined && info.latest !== info.version
+
+const matchesStatus = (status: Status, entry: Entry, list: readonly Entry[], stat: Stat) => {
+  const info = infoOf(entry, list)
+
+  switch (status) {
+    case 'enabled':
+      return info === undefined || info.isEnabled
+    case 'disabled':
+      return info?.isEnabled === false
+    case 'update':
+      return hasUpdate(info)
+    case 'github':
+      return repoNameOf(entry, list) !== undefined
+    case 'unused':
+      return stat.month === 0
+    default:
+      return true
+  }
+}
+
+const STATUSES: readonly { status: Status; label: string }[] = [
+  { status: 'any', label: 'Any status' },
+  { status: 'enabled', label: 'Enabled' },
+  { status: 'disabled', label: 'Disabled' },
+  { status: 'update', label: 'Update available' },
+  { status: 'github', label: 'On GitHub' },
+  { status: 'unused', label: 'Unused in 30 days' },
+]
+
+const LAYOUTS: readonly { layout: Layout; label: string }[] = [
+  { layout: 'table', label: '▤ Table' },
+  { layout: 'gallery', label: '▦ Gallery' },
+  { layout: 'list', label: '≡ List' },
+]
+
+// Claude Code 2.1.295 refuses a whole tree with a Text `size`; 2.1.322 is the oldest seen taking it.
+const SIZED_FROM = '2.1.322'
+
+const sized = (size: 'caption' | 'footnote') => (canSize ? { size } : {})
+
+const versionParts = (version: string) => version.split(/[.-]/).slice(0, 3).map(part => Number(part) || 0)
+
+const compareVersions = (a: string, b: string) => {
+  const one = versionParts(a)
+  const two = versionParts(b)
+
+  return [0, 1, 2].map(at => (one[at] ?? 0) - (two[at] ?? 0)).find(diff => diff !== 0) ?? 0
+}
+
+const parseChangelog = (text: string): Release[] =>
+  text
+    .split(/^## /m)
+    .slice(1)
+    .flatMap(section => {
+      const [head = '', ...lines] = section.split(/\r?\n/)
+      const version = /^\[?v?(\d+\.\d+\.\d+)/.exec(head.trim())?.[1]
+
+      return version === undefined
+        ? []
+        : [
+            {
+              version,
+              changes: lines.filter(line => /^\s*[-*] /.test(line)).map(line => line.replace(/^\s*[-*] /, '').trim()),
+            },
+          ]
+    })
+    .slice(0, KEPT_RELEASES)
 
 // Stars gained per month: measured from the stored history once it spans a day, else averaged over the repo's age.
 const trendOf = (repo: RepoStats, now: number) => {
@@ -273,6 +364,7 @@ const SORTS: readonly { sort: Sort; label: string }[] = [
   { sort: 'recent', label: 'Recently used' },
   { sort: 'name', label: 'Name' },
   { sort: 'cleanup', label: 'Clean-up: costly and unused first' },
+  { sort: 'cost', label: 'Token cost' },
   { sort: 'stars', label: 'GitHub stars' },
   { sort: 'trending', label: 'Trending: stars gained per month' },
   { sort: 'forks', label: 'GitHub forks' },
@@ -306,7 +398,9 @@ const metricOf = (
     case 'installs':
       return info?.installs
     case 'installed':
-      return timeOf(info?.installedAt)
+      return addedOf(entry, list)
+    case 'cost':
+      return stat.cost?.alwaysOn
     default:
       return undefined
   }
@@ -333,12 +427,21 @@ const metricText = (
       return repo === undefined || repo.pushedAt === '' ? undefined : `pushed ${dateOf(repo.pushedAt)}`
     case 'installs':
       return info?.installs === undefined ? undefined : `${shortNumber(info.installs)} installs`
-    case 'installed':
-      return info?.installedAt === undefined ? undefined : `installed ${dateOf(info.installedAt)}`
+    case 'installed': {
+      const added = addedOf(entry, list)
+
+      if (added === undefined) {
+        return undefined
+      }
+
+      return `${info?.installedAt === undefined ? 'changed' : 'installed'} ${dateOf(added)}`
+    }
     case 'recent':
       return stat.lastAt === 0 ? undefined : `last ${dateOf(stat.lastAt)}`
     case 'stars':
-      return entry.plugin === undefined && repo !== undefined ? `★ ${shortNumber(repo.stars)}` : undefined
+      return entry.plugin === undefined && entry.repo === undefined && repo !== undefined
+        ? `★ ${shortNumber(repo.stars)}`
+        : undefined
     default:
       return undefined
   }
@@ -347,11 +450,13 @@ const metricText = (
 const visible = (
   list: readonly Entry[],
   stats: Record<string, Stat>,
-  filter: { kind: Kind; query: string; origin: string; sort: Sort },
+  filter: { kind: Tab; query: string; origin: string; sort: Sort; status?: Status; isReversed?: boolean },
   known: Record<string, RepoStats> = {},
   now = 0,
 ) => {
   const query = filter.query.trim().toLowerCase()
+  // Reversing flips the ranking but keeps entries without a value last.
+  const sign = filter.isReversed === true ? -1 : 1
   const order = (a: Entry, b: Entry) => {
     const one = statOf(stats, a.id)
     const two = statOf(stats, b.id)
@@ -363,11 +468,11 @@ const visible = (
         return first === undefined ? 1 : -1
       }
 
-      return second - first
+      return sign * (second - first)
     }
 
     if (filter.sort === 'usage' && one.count !== two.count) {
-      return two.count - one.count
+      return sign * (two.count - one.count)
     }
 
     if (filter.sort === 'cleanup') {
@@ -375,16 +480,17 @@ const visible = (
       const weight = (two.cost?.alwaysOn ?? 0) - (one.cost?.alwaysOn ?? 0)
 
       if (unused !== 0 || weight !== 0 || one.count !== two.count) {
-        return unused || weight || one.count - two.count
+        return sign * (unused || weight || one.count - two.count)
       }
     }
 
-    return a.name.localeCompare(b.name)
+    return sign * a.name.localeCompare(b.name)
   }
 
   return list
-    .filter(one => one.kind === filter.kind)
+    .filter(one => filter.kind === 'all' || one.kind === filter.kind)
     .filter(one => filter.origin === EVERYWHERE || one.origin === filter.origin)
+    .filter(one => matchesStatus(filter.status ?? 'any', one, list, statOf(stats, one.id)))
     .filter(
       one =>
         query === '' ||
@@ -394,20 +500,26 @@ const visible = (
     .sort(order)
 }
 
-const originsOf = (list: readonly Entry[], kind: Kind) =>
-  [...new Set(list.filter(one => one.kind === kind).map(one => one.origin))].sort()
+const originsOf = (list: readonly Entry[], kind: Tab) =>
+  [...new Set(list.filter(one => kind === 'all' || one.kind === kind).map(one => one.origin))].sort()
 
 const firstLine = (text: string) => text.split(/\r?\n/).find(line => line.trim() !== '') ?? ''
+
+// Stars of the entry's own repository; a plugin's part shows them only where a sort asks.
+const ownRepoLine = (entry: Entry, known: Record<string, RepoStats>) => {
+  const repo = entry.repo ?? entry.plugin?.repo
+  const stats = repo === undefined ? undefined : known[repo]
+
+  return stats === undefined ? undefined : `★ ${shortNumber(stats.stars)}`
+}
 
 const rowText = (entry: Entry, stat: Stat, known: Record<string, RepoStats> = {}) =>
   [
     entry.origin,
     stat.count === 0 ? 'never used' : `${stat.count}× (${stat.month} in 30d)`,
     stat.cost === undefined ? undefined : `~${shortNumber(stat.cost.alwaysOn)} tok/session`,
-    entry.plugin?.repo === undefined || known[entry.plugin.repo] === undefined
-      ? undefined
-      : `★ ${shortNumber(known[entry.plugin.repo]?.stars ?? 0)}`,
-    entry.plugin?.latest !== undefined && entry.plugin.latest !== entry.plugin.version ? 'update' : undefined,
+    ownRepoLine(entry, known),
+    hasUpdate(entry.plugin) ? 'update' : undefined,
   ]
     .filter(Boolean)
     .join(' · ')
@@ -423,7 +535,7 @@ const frontmatter = (text: string) => {
       .replace(/^(["'])(.*)\1$/, '$2')
       .replaceAll('\\n', '\n')
 
-  return { name: field('name'), description: field('description') }
+  return { name: field('name'), description: field('description'), repo: githubRepo(head) }
 }
 
 const githubRepo = (value: unknown) => {
@@ -514,17 +626,44 @@ async function agentsIn(
   source: string,
   prefix?: string,
 ): Promise<KnownAgent[]> {
-  const files = await namesIn($, dir, isMarkdown)
+  const files = (await $.fs.list(dir).catch(() => [] as FsEntry[])).filter(isMarkdown)
 
   return Promise.all(
     files.map(async file => {
-      const text = await $.fs.read(`${dir}/${file}`).catch(() => '')
-      const { name = file.replace(/\.md$/, ''), description = '' } = frontmatter(text)
+      const path = `${dir}/${file.name}`
+      const text = await $.fs.read(path).catch(() => '')
+      const { name = file.name.replace(/\.md$/, ''), description = '', repo } = frontmatter(text)
 
-      return { name: prefix === undefined ? name : `${prefix}:${name}`, description, source }
+      return {
+        name: prefix === undefined ? name : `${prefix}:${name}`,
+        description,
+        source,
+        path,
+        changedAt: file.mtimeMs,
+        repo,
+      }
     }),
   )
 }
+
+type SkillFolder = { name: string; path: string; changedAt: number; linkedTo?: string; repo?: string }
+
+async function skillFolders($: EngineInterface, dir: string): Promise<SkillFolder[]> {
+  const folders = (await $.fs.list(dir).catch(() => [] as FsEntry[])).filter(isFolder)
+
+  return Promise.all(
+    folders.map(async folder => {
+      const path = `${dir}/${folder.name}`
+      const head = await $.fs.read(`${path}/SKILL.md`).catch(() => '')
+      const linkedTo = folder.isLink ? (await $.fs.stat(path).catch(() => undefined))?.realPath : undefined
+
+      return { name: folder.name, path, changedAt: folder.mtimeMs, linkedTo, repo: frontmatter(head).repo }
+    }),
+  )
+}
+
+const folderLine = (folder: SkillFolder) =>
+  `Lives in ${folder.path}` + (folder.linkedTo === undefined ? '' : `, linked to ${folder.linkedTo}`) + '.'
 
 async function latestOf($: EngineInterface, marketplace: Marketplaces[string] | undefined, name: string) {
   const location = marketplace?.installLocation
@@ -731,12 +870,16 @@ async function collect($: EngineInterface): Promise<Entry[]> {
     skillOrigins.set(name, name.includes(':') ? (name.split(':')[0] ?? 'user') : 'user')
   }
 
-  for (const name of await namesIn($, `${config}/skills`, isFolder)) {
-    skillOrigins.set(name, 'user')
-  }
+  const skillFiles = new Map<string, SkillFolder>()
 
-  for (const name of await namesIn($, '.claude/skills', isFolder)) {
-    skillOrigins.set(name, 'project')
+  for (const [dir, origin] of [
+    [`${config}/skills`, 'user'],
+    ['.claude/skills', 'project'],
+  ] as const) {
+    for (const folder of await skillFolders($, dir)) {
+      skillOrigins.set(folder.name, origin)
+      skillFiles.set(folder.name, folder)
+    }
   }
 
   const agentsFound = new Map<string, KnownAgent>()
@@ -753,13 +896,15 @@ async function collect($: EngineInterface): Promise<Entry[]> {
     found.push(...(await agentsIn($, `${plugin.root}/agents`, 'plugin', plugin.name)))
   }
 
+  // What the engine offered wins over what the files say, but keeps the file's path and dates.
   for (const agent of [...found, ...Object.values(offered)]) {
-    agentsFound.set(agent.name, agent)
+    agentsFound.set(agent.name, { ...agentsFound.get(agent.name), ...agent })
   }
 
   const commandEntries: Entry[] = commands.map(command => {
     const skillOrigin = skillOrigins.get(command.name)
     const kind: Kind = skillOrigin === undefined ? 'command' : 'skill'
+    const folder = skillFiles.get(command.name)
 
     return {
       id: idOf(kind, command.name),
@@ -767,6 +912,9 @@ async function collect($: EngineInterface): Promise<Entry[]> {
       name: command.name,
       description: command.description,
       origin: commandOrigin(command, skillOrigin),
+      ...(folder === undefined
+        ? {}
+        : { detail: folderLine(folder), root: folder.linkedTo ?? folder.path, changedAt: folder.changedAt, repo: folder.repo }),
     }
   })
 
@@ -809,6 +957,9 @@ async function collect($: EngineInterface): Promise<Entry[]> {
     name: agent.name,
     description: agent.description,
     origin: agentOrigin(agent),
+    ...(agent.path === undefined || agent.name.includes(':')
+      ? {}
+      : { detail: `Lives in ${agent.path}.`, changedAt: agent.changedAt, repo: agent.repo }),
   }))
 
   const toolEntries: Entry[] = tools
@@ -880,7 +1031,7 @@ async function measureCosts($: EngineInterface, list: readonly Entry[]) {
 async function fetchRepos($: EngineInterface, list: readonly Entry[]) {
   const cache = ((await $.store.get(REPOS_KEY)) ?? {}) as Record<string, RepoStats>
   const now = await $.clock.now()
-  const wanted = [...new Set(list.flatMap(entry => entry.plugin?.repo ?? []))]
+  const wanted = [...new Set([CLAUDE_REPO, ...list.flatMap(entry => entry.repo ?? entry.plugin?.repo ?? [])])]
 
   for (const repo of wanted) {
     const cached = cache[repo]
@@ -965,12 +1116,80 @@ async function scanMods($: EngineInterface, list: readonly Entry[]) {
   }
 }
 
+async function fetchReleases($: EngineInterface) {
+  const cached = (await $.store.get(RELEASES_KEY)) as Releases | undefined
+  const now = await $.clock.now()
+
+  if (cached !== undefined && now - cached.fetchedAt < REPO_TTL_MS) {
+    await update($, releases, () => cached)
+
+    return
+  }
+
+  const get = (url: string) =>
+    $.http
+      .fetch(url, { headers: { 'User-Agent': 'catalog-pane' } })
+      .then(response => (response.ok ? response.text : undefined))
+      .catch(() => undefined)
+  const [changelog, latest] = await Promise.all([get(CHANGELOG_URL), get(LATEST_URL)])
+
+  if (changelog === undefined && latest === undefined) {
+    return
+  }
+
+  const parsed = (() => {
+    try {
+      return (JSON.parse(latest ?? '{}') as { version?: unknown }).version
+    } catch {
+      return undefined
+    }
+  })()
+  const found: Releases = {
+    latest: typeof parsed === 'string' ? parsed : undefined,
+    releases: changelog === undefined ? (cached?.releases ?? []) : parseChangelog(changelog),
+    fetchedAt: now,
+  }
+  await $.store.set(RELEASES_KEY, found)
+  await update($, releases, () => found)
+}
+
 async function enrich($: EngineInterface, list: readonly Entry[]) {
+  if (showsGithub) {
+    await fetchReleases($)
+  }
+
   await measureCosts($, list)
   await scanMods($, list)
 
   if (showsGithub) {
     await fetchRepos($, list)
+  }
+}
+
+const settingText = (value: unknown) => (typeof value === 'string' && value !== '' ? value : undefined)
+
+async function collectHarness($: EngineInterface): Promise<Harness> {
+  const [version, model, surfaces, settings, entrypoint, root] = await Promise.all([
+    $.session.version(),
+    $.session.model(),
+    $.session.surfaces(),
+    $.settings.read().catch(() => ({}) as Record<string, unknown>),
+    $.env.get('CLAUDE_CODE_ENTRYPOINT'),
+    $.session.root(),
+  ])
+  const permissions = settings.permissions as { defaultMode?: unknown } | undefined
+
+  return {
+    version: version.version,
+    base: version.base,
+    builtAt: version.builtAt,
+    model,
+    surfaces: [...surfaces],
+    entrypoint: settingText(entrypoint),
+    permissionMode: settingText(permissions?.defaultMode),
+    outputStyle: settingText(settings.outputStyle),
+    configDir: await configDir($),
+    root,
   }
 }
 
@@ -1024,6 +1243,8 @@ async function snapshot($: EngineInterface) {
     confirming: await read($, confirming),
     working: await read($, working),
     isLoading: await read($, isLoading),
+    harness: await read($, harness),
+    releases: await read($, releases),
   }
 }
 
@@ -1031,8 +1252,10 @@ async function refresh($: EngineInterface) {
   await update($, isLoading, () => true)
 
   try {
-    const list = await collect($)
+    const [list, found] = await Promise.all([collect($), collectHarness($).catch(() => null)])
     await update($, entries, () => list)
+    await update($, harness, () => found)
+    canSize = found !== null && compareVersions(found.version, SIZED_FROM) >= 0
     // One enrichment at a time, so a second refresh reads the caches the first one wrote.
     enriching = enriching.then(() => enrich($, list)).catch(() => undefined)
   } finally {
@@ -1052,6 +1275,12 @@ async function startCatalog($: EngineInterface, options: { github: boolean }) {
   await update($, daily, () => days)
   await update($, explanations, () => known)
   await update($, repos, () => (showsGithub ? fetched : {}))
+  const layout = (await $.store.get(LAYOUT_KEY)) as Layout | undefined
+
+  if (LAYOUTS.some(one => one.layout === layout)) {
+    await update($, view, current => ({ ...current, layout: layout ?? current.layout }))
+  }
+
   $.clock.every(FLUSH_MS, () => void flush($))
 }
 
@@ -1240,7 +1469,7 @@ function pluginActions($: EngineInterface, tags: DetailTags, entry: Entry, props
   const hasUpdate = info.latest !== undefined && info.latest !== info.version
 
   return (
-    <Box flexDirection="row" flexWrap="wrap" gap={1}>
+    <Box flexDirection="row" flexWrap="wrap" columnGap={1} rowGap={0}>
       {hasUpdate && (
         <Button
           key="update"
@@ -1317,7 +1546,7 @@ function actions($: EngineInterface, tags: DetailTags, entry: Entry, props: Deta
   const prompt = prompts[entry.kind]
 
   return (
-    <Box flexDirection="column" gap={1}>
+    <Box flexDirection="column" gap={0}>
       {prompt !== undefined && (
         <Box flexDirection="row">
           <Button key="insert" label="Insert into prompt" variant="primary" onPress={() => insert($, prompt)} />
@@ -1376,7 +1605,8 @@ function detail($: EngineInterface, tags: DetailTags, props: DetailProps) {
   const { entry, list } = props
   const stat = statOf(props.stats, entry.id)
   const info = entry.plugin
-  const repo = info?.repo === undefined ? undefined : props.repos[info.repo]
+  const repoName = repoNameOf(entry, list)
+  const repo = repoName === undefined ? undefined : props.repos[repoName]
   const items = isContainer(entry.kind) ? list.filter(one => !isContainer(one.kind) && one.origin === entry.name) : []
   const scan = props.scans[entry.id]
   const facts = [
@@ -1384,6 +1614,9 @@ function detail($: EngineInterface, tags: DetailTags, props: DetailProps) {
     usageLine(stat),
     costLine(stat.cost),
     pluginLine(info),
+    info === undefined && entry.changedAt !== undefined && entry.changedAt > 0
+      ? `Changed ${dateOf(entry.changedAt)}`
+      : undefined,
     info?.installs === undefined ? undefined : `${info.installs.toLocaleString('en-US')} installs in the official directory`,
     entry.kind === 'mcp' ? undefined : entry.detail,
     scan === undefined || scan.hooks === '' ? undefined : `Hooks: ${scan.hooks}`,
@@ -1391,7 +1624,7 @@ function detail($: EngineInterface, tags: DetailTags, props: DetailProps) {
   ].filter(line => line !== undefined)
 
   return (
-    <Box flexDirection="column" gap={1}>
+    <Box flexDirection="column" gap={0}>
       <Box flexDirection="column">
         <Text bold>
           {entry.name}
@@ -1402,9 +1635,9 @@ function detail($: EngineInterface, tags: DetailTags, props: DetailProps) {
         {info?.latest !== undefined && info.latest !== info.version && (
           <Text color="warning">Update available: v{info.latest}</Text>
         )}
-        {info?.repo !== undefined && (
-          <Box flexDirection="row" gap={1} flexWrap="wrap">
-            <Link href={`https://github.com/${info.repo}`} label={info.repo} />
+        {repoName !== undefined && (
+          <Box flexDirection="row" columnGap={1} rowGap={0} flexWrap="wrap">
+            <Link href={`https://github.com/${repoName}`} label={repoName} />
             {repo !== undefined && <Text dimColor>{repoLine(repo, props.now)}</Text>}
           </Box>
         )}
@@ -1412,7 +1645,7 @@ function detail($: EngineInterface, tags: DetailTags, props: DetailProps) {
       <Markdown key="about" text={entry.description || '_No description._'} />
       {entry.kind === 'mcp' && entry.detail !== undefined && <Text dimColor>Tools: {entry.detail}</Text>}
       <Box flexDirection="column">
-        <Text bold>What it is for</Text>
+        <Text bold {...sized('footnote')}>What it is for</Text>
         {props.explanation === undefined ? (
           <Box flexDirection="row">
             <Button
@@ -1428,7 +1661,7 @@ function detail($: EngineInterface, tags: DetailTags, props: DetailProps) {
       {actions($, tags, entry, props)}
       {items.length > 0 && (
         <Box flexDirection="column">
-          <Text bold>Provides</Text>
+          <Text bold {...sized('footnote')}>Provides</Text>
           {items.map(one => (
             <Button key={`item-${one.id}`} plain onPress={() => props.onOpen(one.id)}>
               {one.name} <Text dimColor>{rowText(one, statOf(props.stats, one.id))}</Text>
@@ -1440,12 +1673,284 @@ function detail($: EngineInterface, tags: DetailTags, props: DetailProps) {
   )
 }
 
+const ENTRYPOINTS: Record<string, string> = {
+  cli: 'the terminal',
+  'claude-desktop': 'the Claude desktop app',
+  'claude-vscode': 'the VS Code extension',
+  'sdk-ts': 'the Agent SDK for TypeScript',
+  'sdk-py': 'the Agent SDK for Python',
+  'sdk-cli': 'the Agent SDK',
+  remote: 'a cloud session',
+}
+
+const DOCS_URL = 'https://code.claude.com/docs'
+const CHANGELOG_PAGE = `https://github.com/${CLAUDE_REPO}/blob/main/CHANGELOG.md`
+const NEWER_SHOWN = 5
+
+const runsIn = (found: Harness) => {
+  const where =
+    found.entrypoint === undefined
+      ? undefined
+      : `${ENTRYPOINTS[found.entrypoint] ?? found.entrypoint} (${found.entrypoint})`
+
+  return [
+    where === undefined ? undefined : `Runs in ${where}`,
+    found.surfaces.length === 0 ? undefined : `draws on ${found.surfaces.join(', ')}`,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+}
+
+type ClaudeProps = {
+  harness: Harness | null
+  releases: Releases | null
+  repos: Record<string, RepoStats>
+  list: readonly Entry[]
+  now: number
+  onJump: (kind: Tab, origin: string) => void
+}
+
+function claudeView(tags: DetailTags, props: ClaudeProps) {
+  const { Box, Text, Button, Markdown, Link } = tags
+  const found = props.harness
+
+  if (found === null) {
+    return <Text dimColor>Reading the setup…</Text>
+  }
+
+  const current = found.base?.replace(/-dev$/, '') ?? found.version
+  const known = props.releases?.releases ?? []
+  const latest = props.releases?.latest ?? known[0]?.version
+  const isBehind = latest !== undefined && compareVersions(latest, current) > 0
+  const own = known.find(one => one.version === current)
+  const newer = known.filter(one => compareVersions(one.version, current) > 0)
+  const repo = props.repos[CLAUDE_REPO]
+  const builtIn = props.list.filter(one => one.origin === 'built-in')
+  const yours = props.list.filter(one => one.origin !== 'built-in')
+  const plugins = props.list.filter(one => isContainer(one.kind) && one.plugin !== undefined)
+  const facts = [
+    [
+      found.builtAt === undefined ? undefined : `built ${dateOf(found.builtAt)}`,
+      latest === undefined ? undefined : `latest ${latest}`,
+    ]
+      .filter(Boolean)
+      .join(' · '),
+    runsIn(found),
+    [
+      `Model ${found.model}`,
+      found.permissionMode === undefined ? undefined : `default permission mode ${found.permissionMode}`,
+      found.outputStyle === undefined ? undefined : `output style ${found.outputStyle}`,
+    ]
+      .filter(Boolean)
+      .join(' · '),
+    `Settings in ${found.configDir} · project ${found.root}`,
+    plugins.length === 0
+      ? undefined
+      : `${plugins.filter(one => one.plugin?.isEnabled === true).length} of ${plugins.length} plugins enabled` +
+        `, ${plugins.filter(one => hasUpdate(one.plugin)).length} with an update`,
+  ].filter(line => line !== undefined && line !== '')
+
+  const changes = (release: Release, count: number) =>
+    release.changes.length === 0
+      ? '_No changes listed._'
+      : release.changes
+          .slice(0, count)
+          .map(line => `- ${line}`)
+          .join('\n') +
+        (release.changes.length > count ? `\n\n…and ${release.changes.length - count} more in the changelog.` : '')
+
+  const counted = (kind: Kind, from: readonly Entry[]) => from.filter(one => one.kind === kind).length
+
+  return (
+    <Box flexDirection="column" gap={0}>
+      <Box flexDirection="column">
+        <Text bold>Claude Code {found.version}</Text>
+        {facts.map(line => (
+          <Text dimColor>{line}</Text>
+        ))}
+        {isBehind && <Text color="warning">Update available: v{latest}</Text>}
+        <Box flexDirection="row" flexWrap="wrap" columnGap={1} rowGap={0}>
+          <Link href={DOCS_URL} label="Docs" />
+          <Link href={CHANGELOG_PAGE} label="Changelog" />
+          <Link href={`https://github.com/${CLAUDE_REPO}`} label={CLAUDE_REPO} />
+          {repo !== undefined && <Text dimColor>{repoLine(repo, props.now)}</Text>}
+        </Box>
+      </Box>
+      <Box flexDirection="column">
+        <Text bold {...sized('footnote')}>What is new in {current}</Text>
+        {own !== undefined && <Markdown key="changes" text={changes(own, SHOWN_CHANGES)} />}
+        {own === undefined && (
+          <Text dimColor>
+            {props.releases === null
+              ? 'The changelog is not loaded: it is read from GitHub when githubStats is on.'
+              : `The changelog has no entry for ${current}.`}
+          </Text>
+        )}
+      </Box>
+      {newer.length > 0 && (
+        <Box flexDirection="column">
+          <Text bold {...sized('footnote')}>Newer releases</Text>
+          <Markdown
+            key="newer"
+            text={newer
+              .slice(0, NEWER_SHOWN)
+              .map(one => `- **${one.version}**: ${one.changes[0] ?? 'no changes listed'}` +
+                (one.changes.length > 1 ? ` (+${one.changes.length - 1} more)` : ''))
+              .join('\n')}
+          />
+        </Box>
+      )}
+      <Box flexDirection="column">
+        <Text bold {...sized('footnote')}>Built in</Text>
+        <Box flexDirection="row" flexWrap="wrap" columnGap={1} rowGap={0}>
+          {KINDS.filter(({ kind }) => counted(kind, builtIn) > 0).map(({ kind, label }) => (
+            <Button
+              key={`builtin-${kind}`}
+              label={`${label} ${counted(kind, builtIn)}`}
+              onPress={() => props.onJump(kind, 'built-in')}
+            />
+          ))}
+        </Box>
+      </Box>
+      <Box flexDirection="column">
+        <Text bold {...sized('footnote')}>Your setup</Text>
+        <Box flexDirection="row" flexWrap="wrap" columnGap={1} rowGap={0}>
+          {KINDS.filter(({ kind }) => counted(kind, yours) > 0).map(({ kind, label }) => (
+            <Button
+              key={`jump-${kind}`}
+              label={`${label} ${counted(kind, yours)}`}
+              onPress={() => props.onJump(kind, EVERYWHERE)}
+            />
+          ))}
+        </Box>
+      </Box>
+    </Box>
+  )
+}
+
+type Column = {
+  id: string
+  label: string
+  width: number
+  sort?: Sort
+  isFlexible?: boolean
+  cell: (entry: Entry, stat: Stat) => string
+}
+
+const NAME_MIN = 16
+const NAME_MAX = 30
+const ABOUT_MIN = 20
+const DASH = '–'
+
+// Listed by priority: on a narrow pane the last ones go first.
+const columnsOf = (
+  kind: Tab,
+  list: readonly Entry[],
+  known: Record<string, RepoStats>,
+  width: number,
+) => {
+  const all: (Column & { order: number })[] = [
+    ...(kind === 'all' ? [{ order: 0, id: 'kind', label: 'Kind', width: 8, cell: (entry: Entry) => entry.kind }] : []),
+    { order: 1, id: 'from', label: 'From', width: 14, cell: entry => entry.origin },
+    {
+      order: -1,
+      id: 'about',
+      label: 'Description',
+      width: ABOUT_MIN,
+      isFlexible: true,
+      cell: entry => firstLine(entry.description) || DASH,
+    },
+    {
+      order: 5,
+      id: 'stars',
+      label: '★',
+      width: 7,
+      sort: 'stars',
+      cell: entry => {
+        const repo = repoOf(entry, list, known)
+
+        return repo === undefined ? DASH : shortNumber(repo.stars)
+      },
+    },
+    {
+      order: 6,
+      id: 'added',
+      label: 'Added',
+      width: 10,
+      sort: 'installed',
+      cell: entry => {
+        const added = addedOf(entry, list)
+
+        return added === undefined ? DASH : dateOf(added)
+      },
+    },
+    { order: 3, id: 'used', label: 'Used', width: 6, sort: 'usage', cell: (_, stat) => (stat.count === 0 ? DASH : `${stat.count}`) },
+    {
+      order: 4,
+      id: 'tokens',
+      label: 'Tokens',
+      width: 7,
+      sort: 'cost',
+      cell: (_, stat) => (stat.cost === undefined ? DASH : `~${shortNumber(stat.cost.alwaysOn)}`),
+    },
+    {
+      order: 2,
+      id: 'version',
+      label: 'Version',
+      width: 9,
+      cell: entry => {
+        const info = infoOf(entry, list)
+
+        return info?.version === undefined ? DASH : `${info.version}${hasUpdate(info) ? ' ↑' : ''}`
+      },
+    },
+  ]
+  const kept: typeof all = []
+  const nameWidth = Math.min(NAME_MAX, Math.max(NAME_MIN, Math.floor(width / 4)))
+  let room = width - nameWidth
+
+  for (const column of all) {
+    if (room >= column.width + 1) {
+      kept.push(column)
+      room -= column.width + 1
+    }
+  }
+
+  const flexible = kept.find(column => column.isFlexible === true)
+  const columns = kept
+    .map(column => (column === flexible ? { ...column, width: column.width + room } : column))
+    .sort((a, b) => a.order - b.order)
+
+  return { columns, nameWidth: flexible === undefined ? nameWidth + room : nameWidth }
+}
+
+const cardFacts = (entry: Entry, list: readonly Entry[], stat: Stat, known: Record<string, RepoStats>) => {
+  const info = infoOf(entry, list)
+  const repo = repoOf(entry, list, known)
+  const added = addedOf(entry, list)
+
+  return [
+    info?.version === undefined ? undefined : `v${info.version}${hasUpdate(info) ? ' ↑' : ''}`,
+    repo === undefined ? undefined : `★ ${shortNumber(repo.stars)}`,
+    stat.count === 0 ? 'unused' : `${stat.count}×`,
+    stat.cost === undefined ? undefined : `~${shortNumber(stat.cost.alwaysOn)} tok`,
+    added === undefined ? undefined : dateOf(added),
+  ]
+    .filter(Boolean)
+    .join(' · ')
+}
+
 const PANE = 'catalog'
-const PAGE = 20
+const PAGES: Record<Layout, number> = { list: 20, gallery: 12, table: 30 }
 const EMPTY = { count: 0, lastAt: 0, week: 0, month: 0 }
+const CARD_MIN = 30
+const CARD_GAP = 1
 
 const START: View = {
   kind: 'skill',
+  layout: 'table',
+  status: 'any',
+  isReversed: false,
   selected: null,
   trail: [],
   query: '',
@@ -1456,15 +1961,27 @@ const START: View = {
 
 const view = atom({ plugin: 'catalog-pane', key: 'view' } as const, START)
 
+const TAB_WORDS: Record<string, Tab> = { all: 'all', claude: 'claude', setup: 'claude' }
+
 const startFrom = (args: string): Partial<View> => {
   const word = args.trim().toLowerCase()
-  const kind = KINDS.find(one => one.kind === word || one.label.toLowerCase() === word)?.kind
+  const kind = TAB_WORDS[word] ?? KINDS.find(one => one.kind === word || one.label.toLowerCase() === word)?.kind
+  const layout = LAYOUTS.find(one => one.layout === word)?.layout
 
   if (word === '') {
     return {}
   }
 
+  if (layout !== undefined) {
+    return { layout, selected: null, page: 0 }
+  }
+
   return kind === undefined ? { query: args.trim(), page: 0, selected: null } : { kind, selected: null, page: 0 }
+}
+
+async function setLayout($: EngineInterface, layout: Layout) {
+  await update($, view, current => ({ ...current, layout, page: 0 }))
+  await $.store.set(LAYOUT_KEY, layout)
 }
 
 export const register: Register = (on, options) => {
@@ -1477,8 +1994,8 @@ export const register: Register = (on, options) => {
     await startCatalog($, { github })
     await $.command.register({
       name: 'catalog',
-      description: 'Browse skills, commands, agents, plugins, MCP servers and tools in a pane',
-      argumentHint: '[category or search]',
+      description: 'Browse your Claude Code setup: version, skills, commands, agents, plugins, hooks, MCP servers and tools',
+      argumentHint: '[claude | all | category | gallery | table | search]',
     })
     void refresh($)
 
@@ -1486,7 +2003,17 @@ export const register: Register = (on, options) => {
   })
 
   on('command.run', { command: 'catalog' }, async ($, e) => {
-    await update($, view, current => ({ ...current, trail: [], ...startFrom(e.args ?? '') }))
+    const patch = startFrom(e.args ?? '')
+    await update($, view, (current): View => {
+      const next: View = { ...START, ...current, trail: [], ...patch }
+
+      return patch.query !== undefined && next.kind === 'claude' ? { ...next, kind: 'all' } : next
+    })
+
+    if (patch.layout !== undefined) {
+      await $.store.set(LAYOUT_KEY, patch.layout)
+    }
+
     await refresh($)
     await $.ui.open({ id: PANE, title: 'Catalog' })
 
@@ -1495,40 +2022,51 @@ export const register: Register = (on, options) => {
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const tags = $.ui.resolve(e)
-    const { Box, Button, Text } = tags
-    const { list, stats, repos, scans, now, notes, busy, confirming, working, isLoading: loading } = await snapshot($)
-    const state = await read($, view)
+    const { Box, Button, Text, Link } = tags
+    const snap = await snapshot($)
+    const { list, stats, repos, scans, now, notes, busy, confirming, working, isLoading: loading } = snap
+    // A view an earlier version stored lacks the newer fields.
+    const state: View = { ...START, ...(await read($, view)) }
     const selected = state.selected === null ? undefined : list.find(one => one.id === state.selected)
+    const width = Math.max(NAME_MIN, e.props.bodyColumns)
 
-    const go = (patch: Partial<View>) => update($, view, current => ({ ...current, ...patch }))
+    const go = (patch: Partial<View>) => update($, view, current => ({ ...START, ...current, ...patch }))
     const open = (id: string) =>
-      update($, view, current => {
+      update($, view, (current): View => {
         const target = list.find(one => one.id === id)
 
         return {
+          ...START,
           ...current,
-          kind: target?.kind ?? current.kind,
+          kind: current.kind === 'all' ? 'all' : (target?.kind ?? current.kind),
           trail: current.selected === null ? current.trail : [...current.trail, current.selected],
           selected: id,
         }
       })
     const back = () =>
       update($, view, current => ({
+        ...START,
         ...current,
         selected: current.trail.at(-1) ?? null,
         trail: current.trail.slice(0, -1),
       }))
 
+    const tab = (kind: Tab, label: string) => (
+      <Button
+        key={`tab-${kind}`}
+        label={label}
+        variant={kind === state.kind ? 'primary' : 'secondary'}
+        onPress={() => go({ kind, selected: null, trail: [], origin: EVERYWHERE, status: 'any', page: 0 })}
+      />
+    )
+
     const tabs = (
-      <Box flexDirection="row" flexWrap="wrap" gap={1}>
-        {KINDS.map(({ kind, label }) => (
-          <Button
-            key={`tab-${kind}`}
-            label={`${label} ${list.filter(one => one.kind === kind).length}`}
-            variant={kind === state.kind ? 'primary' : 'secondary'}
-            onPress={() => go({ kind, selected: null, trail: [], origin: EVERYWHERE, page: 0 })}
-          />
-        ))}
+      <Box flexDirection="row" flexWrap="wrap" columnGap={1} rowGap={0}>
+        {tab('claude', '⚙ Claude')}
+        {tab('all', `☰ All ${list.length}`)}
+        {KINDS.map(({ kind, label, icon }) =>
+          tab(kind, `${icon} ${label} ${list.filter(one => one.kind === kind).length}`),
+        )}
         <Button key="refresh" label={loading ? 'Loading…' : 'Refresh'} plain onPress={() => refresh($)} />
       </Box>
     )
@@ -1565,14 +2103,44 @@ export const register: Register = (on, options) => {
       )
     }
 
-    const rows = visible(list, stats, state, repos, now)
-    const pages = Math.max(1, Math.ceil(rows.length / PAGE))
-    const page = Math.min(state.page, pages - 1)
-    const shown = rows.slice(page * PAGE, (page + 1) * PAGE)
+    if (state.kind === 'claude') {
+      return (
+        <Box flexDirection="column" gap={1}>
+          {tabs}
+          {claudeView(tags, {
+            harness: snap.harness,
+            releases: snap.releases,
+            repos,
+            list,
+            now,
+            onJump: (kind, origin) =>
+              void go({ kind, origin, status: 'any', query: '', selected: null, trail: [], page: 0 }),
+          })}
+        </Box>
+      )
+    }
 
-    const filters =
-      'Select' in tags ? (
-        <Box flexDirection="row" flexWrap="wrap" gap={1}>
+    const rows = visible(list, stats, state, repos, now)
+    const size = PAGES[state.layout]
+    const pages = Math.max(1, Math.ceil(rows.length / size))
+    const page = Math.min(state.page, pages - 1)
+    const shown = rows.slice(page * size, (page + 1) * size)
+    const sortBy = (sort: Sort) =>
+      void go(state.sort === sort ? { isReversed: !state.isReversed, page: 0 } : { sort, isReversed: false, page: 0 })
+
+    const layouts = LAYOUTS.map(({ layout, label }) => (
+      <Button
+        key={`layout-${layout}`}
+        label={label}
+        variant={layout === state.layout ? 'primary' : 'secondary'}
+        onPress={() => void setLayout($, layout)}
+      />
+    ))
+
+    const toolbar = (
+      <Box flexDirection="row" flexWrap="wrap" alignItems="center" columnGap={1} rowGap={0}>
+        {layouts}
+        {'Select' in tags && (
           <tags.Input
             key="query"
             label="Filter"
@@ -1581,6 +2149,8 @@ export const register: Register = (on, options) => {
             onInput={query => void go({ query, page: 0 })}
             onSubmit={query => void go({ query, page: 0 })}
           />
+        )}
+        {'Select' in tags && (
           <tags.Select
             key="sort"
             label="Sort"
@@ -1588,6 +2158,8 @@ export const register: Register = (on, options) => {
             options={SORTS.map(({ sort, label }) => ({ value: sort, label }))}
             onSelect={sort => void go({ sort: sort as Sort, page: 0 })}
           />
+        )}
+        {'Select' in tags && (
           <tags.Select
             key="origin"
             label="From"
@@ -1598,42 +2170,142 @@ export const register: Register = (on, options) => {
             ]}
             onSelect={origin => void go({ origin, page: 0 })}
           />
+        )}
+        {'Select' in tags && (
+          <tags.Select
+            key="status"
+            label="Status"
+            value={state.status}
+            options={STATUSES.map(({ status, label }) => ({ value: status, label }))}
+            onSelect={status => void go({ status: status as Status, page: 0 })}
+          />
+        )}
+      </Box>
+    )
+
+    const listRows = (
+      <Box flexDirection="column" gap={0}>
+        {shown.map(one => (
+          <Box key={`row-${one.id}`} flexDirection="column">
+            <Button key={`open-${one.id}`} plain onPress={() => open(one.id)}>
+              {one.name}{' '}
+              <Text dimColor>
+                {[
+                  state.kind === 'all' ? one.kind : undefined,
+                  rowText(one, stats[one.id] ?? EMPTY, repos),
+                  metricText(state.sort, one, list, stats[one.id] ?? EMPTY, repos, now),
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </Text>
+            </Button>
+            {one.description !== '' && (
+              <Text dimColor wrap="truncate-end">
+                {firstLine(one.description)}
+              </Text>
+            )}
+          </Box>
+        ))}
+      </Box>
+    )
+
+    const perRow = Math.max(1, Math.floor((width + CARD_GAP) / (CARD_MIN + CARD_GAP)))
+    const cardWidth = Math.floor((width - CARD_GAP * (perRow - 1)) / perRow)
+
+    const gallery = (
+      <Box flexDirection="row" flexWrap="wrap" columnGap={CARD_GAP} rowGap={0}>
+        {shown.map(one => {
+          const repoName = repoNameOf(one, list)
+
+          return (
+            <Box
+              key={`card-${one.id}`}
+              flexDirection="column"
+              borderStyle="round"
+              borderDimColor
+              paddingX={1}
+              width={cardWidth}
+            >
+              <Button key={`open-${one.id}`} plain onPress={() => open(one.id)}>
+                <Text bold wrap="truncate-end">
+                  {one.name}
+                </Text>
+              </Button>
+              <Text dimColor wrap="truncate-end">
+                {one.kind} · {one.origin}
+              </Text>
+              <Text wrap="truncate-end">
+                {firstLine(one.description) || 'No description.'}
+              </Text>
+              <Text dimColor wrap="truncate-end">
+                {cardFacts(one, list, stats[one.id] ?? EMPTY, repos)}
+              </Text>
+              {repoName !== undefined && <Link href={`https://github.com/${repoName}`} label={repoName} />}
+            </Box>
+          )
+        })}
+      </Box>
+    )
+
+    const { columns, nameWidth } = columnsOf(state.kind, list, repos, width)
+    const arrow = (sort: Sort | undefined) =>
+      sort !== undefined && sort === state.sort ? (state.isReversed ? ' ▴' : ' ▾') : ''
+    const header = (key: string, label: string, cellWidth: number, sort: Sort | undefined) => (
+      <Box key={`head-${key}`} width={cellWidth} flexShrink={0}>
+        {sort === undefined ? (
+          <Text bold dimColor {...sized('caption')} wrap="truncate-end">
+            {label}
+          </Text>
+        ) : (
+          <Button key={`sort-${key}`} plain onPress={() => sortBy(sort)}>
+            <Text bold dimColor {...sized('caption')} wrap="truncate-end">
+              {label}
+              {arrow(sort)}
+            </Text>
+          </Button>
+        )}
+      </Box>
+    )
+
+    const table = (
+      <Box flexDirection="column">
+        <Box flexDirection="row" columnGap={1}>
+          {header('name', 'Name', nameWidth, 'name')}
+          {columns.map(column => header(column.id, column.label, column.width, column.sort))}
         </Box>
-      ) : undefined
+        {shown.map(one => (
+          <Box key={`line-${one.id}`} flexDirection="row" columnGap={1}>
+            <Box width={nameWidth} flexShrink={0}>
+              <Button key={`open-${one.id}`} plain onPress={() => open(one.id)}>
+                <Text wrap="truncate-end">{one.name}</Text>
+              </Button>
+            </Box>
+            {columns.map(column => (
+              <Box key={`cell-${one.id}-${column.id}`} width={column.width} flexShrink={0}>
+                <Text dimColor wrap="truncate-end">
+                  {column.cell(one, stats[one.id] ?? EMPTY)}
+                </Text>
+              </Box>
+            ))}
+          </Box>
+        ))}
+      </Box>
+    )
+
+    const body = { list: listRows, gallery, table }[state.layout]
 
     return (
       <Box flexDirection="column" gap={1}>
         {tabs}
-        {filters}
+        {toolbar}
         {list.length === 0 && <Text dimColor>{loading ? 'Collecting…' : 'Nothing found yet. Press Refresh.'}</Text>}
         {list.length > 0 && rows.length === 0 && <Text dimColor>Nothing matches.</Text>}
-        <Box flexDirection="column" gap={1}>
-          {shown.map(one => (
-            <Box key={`row-${one.id}`} flexDirection="column">
-              <Button key={`open-${one.id}`} plain onPress={() => open(one.id)}>
-                {one.name}{' '}
-                <Text dimColor>
-                  {[
-                    rowText(one, stats[one.id] ?? EMPTY, repos),
-                    metricText(state.sort, one, list, stats[one.id] ?? EMPTY, repos, now),
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')}
-                </Text>
-              </Button>
-              {one.description !== '' && (
-                <Text dimColor wrap="truncate-end">
-                  {firstLine(one.description)}
-                </Text>
-              )}
-            </Box>
-          ))}
-        </Box>
+        {rows.length > 0 && body}
         {pages > 1 && (
           <Box flexDirection="row" gap={1} alignItems="center">
             <Button key="previous" label="‹ Previous" onPress={() => go({ page: Math.max(0, page - 1) })} />
             <Text dimColor>
-              {page * PAGE + 1}–{Math.min(rows.length, (page + 1) * PAGE)} of {rows.length}
+              {page * size + 1}–{Math.min(rows.length, (page + 1) * size)} of {rows.length}
             </Text>
             <Button key="next" label="Next ›" onPress={() => go({ page: Math.min(pages - 1, page + 1) })} />
           </Box>
