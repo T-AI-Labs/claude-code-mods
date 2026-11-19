@@ -1,0 +1,11 @@
+{
+  "name": "test-explorer",
+  "version": "0.1.0",
+  "author": {
+    "name": "Claude",
+    "email": "noreply@anthropic.com"
+  },
+  "license": "MIT",
+  "description": "A test explorer pane, opened with /test-explorer or the Tests button above the prompt: finds .NET, pytest, Vitest and Claude Code mod tests in the project, shows them as a tree of tool, project, file and test with status, duration and a pass bar, runs them, and hands a failing test to Claude to fix.",
+  "types": "./types/index.d.ts"
+}

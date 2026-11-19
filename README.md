@@ -1,6 +1,6 @@
 <h1 align="center">Claude Code Mods</h1>
 
-<p align="center"><em>Context, prompt-cache and usage-limit meters right above the Claude Code prompt, a row of dropdowns for agents, skills and commands, a task board for the tasks and ideas that come up while Claude works, a pane that explains everything your setup provides, and one that adds up your token usage.</em></p>
+<p align="center"><em>Context, prompt-cache and usage-limit meters right above the Claude Code prompt, a row of dropdowns for agents, skills and commands, a task board for the tasks and ideas that come up while Claude works, a pane that explains everything your setup provides, one that adds up your token usage, and a test explorer.</em></p>
 
 <p align="center">
   <a href="https://github.com/T-AI-Labs/claude-code-mods/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/T-AI-Labs/claude-code-mods/ci.yml?branch=main&style=flat-square&label=ci" alt="CI"></a>
@@ -19,6 +19,7 @@ Claude Code shows little of what costs you: how full the context is, whether the
 - **A thought comes up while Claude is busy?** [task-board](#task-board) turns it into a task from a row above the prompt, without interrupting the turn, and keeps a board per project. Name a task's key in a prompt and Claude gets the whole task.
 - **Lost track of what your setup loads?** [catalog-pane](#catalog-pane) explains your Claude Code version and lists every skill, plugin, hook and MCP server with where it comes from, its usage and the tokens it adds to every session.
 - **Where did this week's tokens go?** [usage-pane](#usage-pane) adds up tokens, cache hit rate and API price by day, model and project, and shows which prompts cost the most and why.
+- **Which tests broke?** [test-explorer](#test-explorer) finds the project's .NET, pytest, Vitest and mod tests, runs them, shows each one's status, and hands a failing test to Claude.
 
 ## Installation
 
@@ -95,6 +96,16 @@ claude plugin update task-board@T-AI-Labs
 ```
 
 </td><td><img src=".docs/task-board.svg" alt="The task board" width="320"></td></tr>
+<tr><td><a href="#test-explorer">test&#8209;explorer</a></td><td>
+
+Your project's tests by status, run with a press.
+
+```
+claude plugin install test-explorer@T-AI-Labs
+claude plugin update test-explorer@T-AI-Labs
+```
+
+</td><td><img src=".docs/test-explorer.svg" alt="The test explorer" width="320"></td></tr>
 <tr><td><a href="#context-meter">context&#8209;meter</a></td><td>
 
 The context row of context-usage on its own.
@@ -400,6 +411,35 @@ The row sits in the band above the prompt and the mod costs no tokens of its own
 ```
 
 Set it as for [context-usage](#options). The tool waits behind tool search, as an MCP server's tools do: every request carries its name, and Claude loads its description only when it uses it. A toast names every task Claude creates or changes.
+
+## test-explorer&nbsp;<a href="https://github.com/T-AI-Labs/claude-code-mods/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FT-AI-Labs%2Fclaude-code-mods%2Fmain%2Ftest-explorer%2F.claude-plugin%2Fplugin.json&query=%24.version&prefix=v&label=&style=flat-square" alt="test-explorer version"></a>
+
+<p align="center"><img src=".docs/test-explorer.svg" alt="The test explorer with one failing .NET test" width="882"></p>
+
+A pane that lists the tests of the session's folder as a tree, one level per tool, project, file or class and test, with columns for the status, the name, the duration and an action:
+
+| Status | Means |
+| --- | --- |
+| ✓ | Passed; a group whose tests all passed. |
+| ✗ | Failed; a group with at least one failed test. |
+| – | Skipped. |
+| · | Not run yet. |
+| ◌ | Being listed or run now. |
+
+| Tool | Found by | Runs |
+| --- | --- | --- |
+| .NET | a `.csproj` that references a test SDK or test framework | `dotnet test` |
+| pytest | `pytest.ini`, or a pytest section in `pyproject.toml`, `setup.cfg` or `tox.ini` | the project's `.venv` Python, `uv run` with a `uv.lock`, else `python` |
+| Vitest | a `package.json` that names `vitest` | the installed `node_modules/vitest` |
+| Claude Code mods | a folder with `.claude-plugin` and `tests` | `claude plugin test` |
+
+### Usage
+
+`/test-explorer` or the **Tests** button above the prompt opens the pane, in the desktop app and in the terminal. The first time it looks through the folder, at most six levels deep, skipping `node_modules`, `bin`, `obj` and other build folders, and lists each project's tests: for .NET that builds the project. **▶ Run all** runs every project one after the other, **▶ Run** one project. A project opens by itself when a test in it fails, and its error message shows under the test. **Fix** sends Claude a prompt with the test, its project and the message, asking it to find the cause, fix it and run the test again.
+
+Above the table the totals count passed, failed, skipped and not run tests, with a bar of the passed share. **✗ Failed only** and the filter narrow the table to failed tests or to names that contain the text. **⟳ Refresh** looks through the folder again and lists the tests anew, without results. The **Tests** button hides while the pane is open.
+
+The mod makes no network or model requests and costs no tokens of its own: only **Fix** sends a prompt.
 
 ## License
 

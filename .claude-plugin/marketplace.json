@@ -5,7 +5,7 @@
     "email": "CleanMyPost@gmx.de"
   },
   "metadata": {
-    "description": "Mods for Claude Code: a context and usage-limits band with compaction controls, a prompt-cache row that keeps the cache warm, the context and usage-limits rows on their own, a row of dropdowns that inserts or runs an agent, skill or command, a task board fed from above the prompt, a catalog pane that explains the setup and the Claude Code version, and a usage pane that adds up tokens, cache hits and API price."
+    "description": "Mods for Claude Code: a context and usage-limits band with compaction controls, a prompt-cache row that keeps the cache warm, the context and usage-limits rows on their own, a row of dropdowns that inserts or runs an agent, skill or command, a task board fed from above the prompt, a catalog pane that explains the setup and the Claude Code version, a usage pane that adds up tokens, cache hits and API price, and a test explorer that runs the project's tests."
   },
   "plugins": [
     {
@@ -47,6 +47,11 @@
       "name": "usage-pane",
       "source": "./usage-pane",
       "description": "A pane, opened with /tokens, that adds up tokens, cache hit rate, turns, tool calls, model time, output speed and API price for the last turn, the session, today, 7 and 30 days, by model and by project, with the history of the 5-hour and weekly limits, and lists each session's prompts by cost with what made them expensive."
+    },
+    {
+      "name": "test-explorer",
+      "source": "./test-explorer",
+      "description": "A test explorer pane, opened with /test-explorer: the project's .NET, pytest, Vitest and mod tests as a tree with status, duration and a pass bar, run with a press, and a Fix button that hands a failing test to Claude."
     }
   ]
 }
