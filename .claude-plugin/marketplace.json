@@ -5,7 +5,7 @@
     "email": "CleanMyPost@gmx.de"
   },
   "metadata": {
-    "description": "Mods for Claude Code: a context and usage-limits band with compaction controls, a prompt-cache row that keeps the cache warm, the context and usage-limits rows on their own, a row of dropdowns that inserts or runs an agent, skill or command, a task board fed from above the prompt, a catalog pane of everything the setup provides, and a usage pane that adds up tokens, cache hits and API price."
+    "description": "Mods for Claude Code: a context and usage-limits band with compaction controls, a prompt-cache row that keeps the cache warm, the context and usage-limits rows on their own, a row of dropdowns that inserts or runs an agent, skill or command, a task board fed from above the prompt, a catalog pane that explains the setup and the Claude Code version, and a usage pane that adds up tokens, cache hits and API price."
   },
   "plugins": [
     {
@@ -41,7 +41,7 @@
     {
       "name": "catalog-pane",
       "source": "./catalog-pane",
-      "description": "A pane that lists every skill, command, agent, mod, plugin, settings hook, MCP server and tool by category, with usage, token cost, updates and GitHub stats, and buttons to insert, run, update, disable or uninstall."
+      "description": "A pane that explains your setup: the Claude Code version with its changelog, and every skill, command, agent, mod, plugin, settings hook, MCP server and tool as a list, gallery or sortable table, with origin, GitHub stats, install date, usage, token cost and updates, and buttons to insert, run, update, disable or uninstall."
     },
     {
       "name": "usage-pane",

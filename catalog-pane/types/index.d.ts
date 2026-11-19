@@ -1,5 +1,11 @@
 export type Kind = 'skill' | 'command' | 'agent' | 'mod' | 'plugin' | 'hook' | 'mcp' | 'tool'
 
+export type Tab = Kind | 'all' | 'claude'
+
+export type Layout = 'list' | 'gallery' | 'table'
+
+export type Status = 'any' | 'enabled' | 'disabled' | 'update' | 'github' | 'unused'
+
 export type Cost = { alwaysOn: number; onInvoke?: number }
 
 export type PluginInfo = {
@@ -23,6 +29,8 @@ export type Entry = {
   plugin?: PluginInfo
   root?: string
   isRemovable?: boolean
+  repo?: string
+  changedAt?: number
 }
 
 export type Scan = { hooks: string; calls: string }
@@ -48,13 +56,38 @@ export type RepoStats = {
   fetchedAt: number
 }
 
-export type KnownAgent = { name: string; description: string; source: string }
+export type KnownAgent = {
+  name: string
+  description: string
+  source: string
+  path?: string
+  changedAt?: number
+  repo?: string
+}
+
+export type Release = { version: string; changes: string[] }
+
+export type Releases = { latest?: string; releases: Release[]; fetchedAt: number }
+
+export type Harness = {
+  version: string
+  base?: string
+  builtAt?: string
+  model: string
+  surfaces: string[]
+  entrypoint?: string
+  permissionMode?: string
+  outputStyle?: string
+  configDir: string
+  root: string
+}
 
 export type Sort =
   | 'usage'
   | 'recent'
   | 'name'
   | 'cleanup'
+  | 'cost'
   | 'stars'
   | 'trending'
   | 'forks'
@@ -63,7 +96,10 @@ export type Sort =
   | 'installed'
 
 export type View = {
-  kind: Kind
+  kind: Tab
+  layout: Layout
+  status: Status
+  isReversed: boolean
   selected: string | null
   trail: string[]
   query: string
@@ -88,6 +124,8 @@ declare module 'claude-code' {
       explaining: string[]
       confirming: string | null
       working: string | null
+      harness: Harness | null
+      releases: Releases | null
     }
   }
 }

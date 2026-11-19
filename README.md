@@ -1,6 +1,6 @@
 <h1 align="center">Claude Code Mods</h1>
 
-<p align="center"><em>Context, prompt-cache and usage-limit meters right above the Claude Code prompt, a row of dropdowns for agents, skills and commands, a task board for the tasks and ideas that come up while Claude works, a pane that lists everything your setup provides, and one that adds up your token usage.</em></p>
+<p align="center"><em>Context, prompt-cache and usage-limit meters right above the Claude Code prompt, a row of dropdowns for agents, skills and commands, a task board for the tasks and ideas that come up while Claude works, a pane that explains everything your setup provides, and one that adds up your token usage.</em></p>
 
 <p align="center">
   <a href="https://github.com/T-AI-Labs/claude-code-mods/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/T-AI-Labs/claude-code-mods/ci.yml?branch=main&style=flat-square&label=ci" alt="CI"></a>
@@ -17,7 +17,7 @@ Claude Code shows little of what costs you: how full the context is, whether the
 - **Back from a break to a cold cache?** Writing 200k tokens of context again costs about $1.00 on Claude Opus 5.5. [cache-meter](#cache-meter) shows when the cache goes cold and can keep it warm at about $0.04 a refresh.
 - **Can't remember the name of that agent or skill?** [command-center](#command-center) lists your agents, skills and commands in dropdowns above the prompt, filtered by where they come from, and inserts or runs the pick.
 - **A thought comes up while Claude is busy?** [task-board](#task-board) turns it into a task from a row above the prompt, without interrupting the turn, and keeps a board per project. Name a task's key in a prompt and Claude gets the whole task.
-- **Lost track of what your setup loads?** [catalog-pane](#catalog-pane) lists every skill, plugin, hook and MCP server with its usage and the tokens it adds to every session.
+- **Lost track of what your setup loads?** [catalog-pane](#catalog-pane) explains your Claude Code version and lists every skill, plugin, hook and MCP server with where it comes from, its usage and the tokens it adds to every session.
 - **Where did this week's tokens go?** [usage-pane](#usage-pane) adds up tokens, cache hit rate and API price by day, model and project, and shows which prompts cost the most and why.
 
 ## Installation
@@ -57,7 +57,7 @@ claude plugin update cache-meter@T-AI-Labs
 </td><td><img src=".docs/cache-meter.svg" alt="The cache-meter row" width="320"></td></tr>
 <tr><td><a href="#catalog-pane">catalog&#8209;pane</a></td><td>
 
-Every skill, plugin, hook and MCP server you have.
+Your Claude Code version and every skill, plugin, hook and MCP server you have.
 
 ```
 claude plugin install catalog-pane@T-AI-Labs
@@ -256,18 +256,28 @@ Each refresh reads the cached context once at the cache price, plus a one-word r
 
 <p align="center"><img src=".docs/catalog-pane.svg" alt="The catalog pane listing skills" width="882"></p>
 
-A pane with one tab per category: **Skills**, **Commands**, **Agents**, **Mods**, **Plugins**, **Hooks** (from the settings files), **MCP** servers and built-in **Tools**.
+A pane that explains your setup. **Claude** shows the Claude Code version, when it was built and whether a newer one is out, what the changelog says about your version and the newer ones, where it runs (terminal, desktop app, VS Code, Agent SDK), the model, the default permission mode and output style, and how many tools, commands and agents are built in against what you added. **All** lists everything at once, and one tab per category follows: **Skills**, **Commands**, **Agents**, **Mods**, **Plugins**, **Hooks** (from the settings files), **MCP** servers and built-in **Tools**.
 
 ### Usage
 
-`/catalog` opens the pane, in the desktop app and in the terminal; `/catalog mods` opens a category, `/catalog <text>` a search. Each row shows the entry's origin, how often it was used in total and in the last 30 days, and for plugin parts the tokens it adds to every session. Usage is counted from the install of the mod on. On the desktop you can filter by text and origin and sort:
+`/catalog` opens the pane, in the desktop app and in the terminal; `/catalog claude` opens the Claude tab, `/catalog mods` a category, `/catalog gallery` or `/catalog table` a layout, `/catalog <text>` a search. Usage is counted from the install of the mod on.
+
+| Layout | Shows |
+| --- | --- |
+| List | One row per entry: origin, uses in total and in the last 30 days, the tokens a plugin part adds to every session, stars and updates. |
+| Gallery | A card per entry with its kind, origin, description, version, stars, usage, token cost, install date and a link to its GitHub repository. |
+| Table | Columns for kind, origin, version, uses, tokens, stars and the install date. Pressing a column header sorts by it, pressing it again reverses the order. Columns drop away on a narrow pane. |
+
+The pane remembers the layout. On the desktop you can filter by text, origin and status (enabled, disabled, update available, on GitHub, unused in 30 days) and sort:
 
 | Sort | Order |
 | --- | --- |
 | Most used, Recently used, Name | By usage, or alphabetically. |
-| Clean-up | Costly and unused entries first. |
+| Clean-up, Token cost | Costly and unused entries first, or by the tokens added to every session. |
 | GitHub stars, Trending, GitHub forks, Latest GitHub push | By the plugin's repository; Trending is stars gained per month. |
 | Installs, Newest installed | By the official directory's install count, or by install date. |
+
+**Reverse** flips any sort. A plugin's skills, agents and commands share its repository and install date. A skill or agent of your own or of the project shows the folder it lives in, where a link points, when the folder last changed, and the GitHub repository its frontmatter names, if any.
 
 <p align="center"><img src=".docs/catalog-pane-detail.svg" alt="The catalog pane showing one mod" width="882"></p>
 
@@ -278,7 +288,7 @@ Pressing an entry opens its detail: usage over 7 and 30 days, token cost, versio
 | Option | Values | Default | Effect |
 | --- | --- | --- | --- |
 | `language` | any language name | `English` | The language **Explain with Haiku** answers in. |
-| `githubStats` | `true`, `false` | `true` | Fetches the GitHub stats of each plugin's repository once a day. |
+| `githubStats` | `true`, `false` | `true` | Fetches the GitHub stats of each repository, the Claude Code changelog and the latest version once a day. |
 
 ```
 '{"language":"German"}' | claude plugin configure catalog-pane@T-AI-Labs --values-stdin
@@ -288,7 +298,8 @@ Set them as for [context-usage](#options).
 
 ### Network and model requests
 
-- **GitHub:** once a day, the public API for each plugin repository's stars, forks, open issues and last push. Off with `githubStats`.
+- **GitHub:** once a day, the public API for the stars, forks, open issues and last push of each plugin's repository, each repository a skill or agent names, and `anthropics/claude-code`, and the Claude Code changelog from `raw.githubusercontent.com`. Off with `githubStats`.
+- **npm:** once a day, the latest Claude Code version from `registry.npmjs.org`. Off with `githubStats`.
 - **Haiku:** one request of at most 400 output tokens per **Explain with Haiku**. The answer is kept, so each entry is explained once.
 - **Claude Code CLI:** `claude plugin details` once per plugin version for its token cost, `claude plugin validate` once per mod version, and `update`, `disable`, `enable` or `uninstall` when you press those buttons.
 

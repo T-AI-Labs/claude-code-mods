@@ -1,12 +1,12 @@
 {
   "name": "catalog-pane",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "author": {
     "name": "Claude",
     "email": "noreply@anthropic.com"
   },
   "license": "MIT",
-  "description": "A pane, opened with /catalog, that lists every skill, command, agent, mod, plugin, settings hook, MCP server and tool by category: descriptions, usage over 7 and 30 days, token cost, what each mod hooks, updates, GitHub stars, a model-written note on what each is for, and buttons to insert, run, update, disable or uninstall.",
+  "description": "A pane, opened with /catalog, that explains your Claude Code setup: the version with its changelog and the harness it runs in, and every skill, command, agent, mod, plugin, settings hook, MCP server and tool as a list, a gallery of cards or a sortable table, with where each comes from, its GitHub repository and stars, install date, usage, token cost, updates, a model-written note on what each is for, and buttons to insert, run, update, disable or uninstall.",
   "types": "./types/index.d.ts",
   "userConfig": {
     "language": {
