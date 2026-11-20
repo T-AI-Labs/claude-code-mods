@@ -76,3 +76,64 @@ test('finds a mod project, runs it and offers a fix for the failing test', async
   expect(prompts[0]).toContain('expected 2 to be 3')
   await ui.unmount()
 })
+
+const WORK: Record<string, FsEntry[]> = {
+  '/work': [dir('calc'), dir('shop')],
+  '/work/calc': [file('go.mod'), file('calc_test.go')],
+  '/work/shop': [file('pom.xml'), dir('src'), dir('target')],
+  '/work/shop/src': [],
+  '/work/shop/target/surefire-reports': [file('TEST-com.acme.CartTest.xml')],
+}
+
+const REPORT =
+  '<testsuite><testcase name="adds" classname="com.acme.CartTest" time="0.01"/>' +
+  '<testcase name="totals" classname="com.acme.CartTest" time="0.02"><failure message="expected 3"/></testcase></testsuite>'
+
+test('finds Go and Maven projects and runs each with its own tool', async ($, on) => {
+  const clock = mock.clock(on)
+  const ran: string[][] = []
+  mock.env(on, {})
+  const slash = (path: string) => path.replace(/\\/g, '/').replace(/^[A-Za-z]:/, '')
+  on('fs.list', (_, e) => {
+    const entries = WORK[slash(e.path)]
+
+    return entries === undefined ? { deny: 'ENOENT' } : { value: entries }
+  })
+  on('session.cwd', () => ({ value: '/work' }))
+  on('fs.read', (_, e) => ({ value: slash(e.path).endsWith('.xml') ? REPORT : '' }))
+  on('fs.exists', () => ({ value: false }))
+  on('process.run', (_, e) => {
+    ran.push([...e.argv])
+    const events = [
+      { Action: 'pass', Package: 'example.com/calc', Test: 'TestAdd', Elapsed: 0.004 },
+      { Action: 'output', Package: 'example.com/calc', Test: 'TestDivide', Output: 'calc_test.go:9: got 1\n' },
+      { Action: 'fail', Package: 'example.com/calc', Test: 'TestDivide', Elapsed: 0 },
+    ]
+    const stdout = e.argv.includes('-list')
+      ? 'TestAdd\nTestDivide\nok  \texample.com/calc\t0.001s\n'
+      : e.argv.includes('-json')
+        ? events.map(one => JSON.stringify(one)).join('\n')
+        : ''
+
+    return { value: { exitCode: 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
+  })
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await ui.press({ key: 'scan' })
+  await clock.settle()
+
+  expect(await ui.find({ type: 'Text', text: 'Go' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'Maven' })).toBeDefined()
+  expect(ran).toContainEqual(['go', 'test', '-list', '.', './...'])
+
+  await ui.press({ key: 'run|go:calc' })
+  await ui.press({ key: 'run|maven:shop' })
+  await clock.settle()
+
+  expect(ran).toContainEqual(['go', 'test', '-json', './...'])
+  expect(ran).toContainEqual(['mvn', '-B', 'test', '-Dmaven.test.failure.ignore=true'])
+  expect(await ui.find({ type: 'Text', text: /got 1/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /expected 3/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /2 tests · 1 failed/ })).toBeDefined()
+  await ui.unmount()
+})

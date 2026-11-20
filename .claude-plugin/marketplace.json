@@ -51,7 +51,7 @@
     {
       "name": "test-explorer",
       "source": "./test-explorer",
-      "description": "A test explorer pane, opened with /test-explorer: the project's .NET, pytest, Vitest and mod tests as a tree with status, duration and a pass bar, run with a press, and a Fix button that hands a failing test to Claude."
+      "description": "A test explorer pane, opened with /test-explorer: the project's .NET, pytest, Vitest, Jest, Mocha, Playwright, Go, Rust, Maven, Gradle, RSpec and Claude Code mod tests as a tree with status, duration and a pass bar, run with a press, and a Fix button that hands a failing test to Claude."
     }
   ]
 }

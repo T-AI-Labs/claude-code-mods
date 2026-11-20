@@ -1,4 +1,16 @@
-export type Tool = 'dotnet' | 'pytest' | 'vitest' | 'claude-plugin'
+export type Tool =
+  | 'dotnet'
+  | 'pytest'
+  | 'vitest'
+  | 'jest'
+  | 'mocha'
+  | 'playwright'
+  | 'go'
+  | 'cargo'
+  | 'maven'
+  | 'gradle'
+  | 'rspec'
+  | 'claude-plugin'
 
 export type Status = 'unknown' | 'passed' | 'failed' | 'skipped'
 

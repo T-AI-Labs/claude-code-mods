@@ -4,12 +4,23 @@ import type { EngineInterface, FsEntry, Register, RenderElement } from 'claude-c
 import type { Project, Status, TestCase, Tool } from '../types'
 import {
   merge,
+  parseCargoList,
+  parseCargoRun,
   parseDotnetList,
   parseDotnetRun,
+  parseGoList,
+  parseGoRun,
+  parseJunitXml,
+  parseMochaList,
+  parseMochaRun,
+  parsePlaywrightList,
+  parsePlaywrightRun,
   parsePluginTestRun,
   parsePluginTestSource,
   parsePytestList,
   parsePytestRun,
+  parseRspecList,
+  parseRspecRun,
   parseVitestList,
   parseVitestRun,
   TOOL_LABEL,
@@ -25,7 +36,21 @@ const LIST_TIMEOUT = 180_000
 const RUN_TIMEOUT = 600_000
 const ENV = { NO_COLOR: '1', FORCE_COLOR: '0', CI: '1' }
 const SKIP = new Set(['node_modules', 'bin', 'obj', 'dist', 'build', 'target', 'out', 'coverage', '__pycache__', 'venv'])
-const TOOLS: Tool[] = ['dotnet', 'pytest', 'vitest', 'claude-plugin']
+const TOOLS: Tool[] = [
+  'dotnet',
+  'pytest',
+  'vitest',
+  'jest',
+  'mocha',
+  'playwright',
+  'go',
+  'cargo',
+  'maven',
+  'gradle',
+  'rspec',
+  'claude-plugin',
+]
+const REPORT_DIRS: Partial<Record<Tool, string>> = { maven: 'target/surefire-reports', gradle: 'build/test-results/test' }
 const ICON: Record<Status, string> = { passed: '✓', failed: '✗', skipped: '–', unknown: '·' }
 const COLOR: Record<Status, string | undefined> = {
   passed: 'success',
@@ -70,14 +95,56 @@ const pytestArgv = async ($: EngineInterface, dir: string) => {
   return ['python', '-m', 'pytest']
 }
 
-const vitestEntry = async ($: EngineInterface, dir: string, root: string) => {
+const nodeEntry = async ($: EngineInterface, dir: string, root: string, file: string, label: string) => {
   for (let at = dir; at.length >= root.length; at = at.slice(0, Math.max(0, at.lastIndexOf('/')))) {
-    const entry = join(at, 'node_modules/vitest/vitest.mjs')
+    const entry = join(at, `node_modules/${file}`)
     if (await $.fs.exists(entry)) return entry
     if (!at.includes('/')) break
   }
-  throw new Error('Vitest is not installed here: run npm install first.')
+  throw new Error(`${label} is not installed here: run npm install first.`)
 }
+
+// Batch and cmd launchers (mvn, gradle, bundle, rspec and the wrappers) only start through cmd on Windows.
+const isWindows = async ($: EngineInterface) => (await $.env.get('OS')) === 'Windows_NT'
+
+const launcher = async ($: EngineInterface, dir: string, wrapper: string, tool: string) => {
+  const windows = await isWindows($)
+  const script = windows ? `${wrapper}.${wrapper === 'gradlew' ? 'bat' : 'cmd'}` : wrapper
+  const command = (await $.fs.exists(join(dir, script))) ? join(dir, script) : tool
+
+  return windows ? ['cmd', '/c', command] : [command]
+}
+
+const rspecArgv = async ($: EngineInterface, dir: string) => {
+  const base = (await $.fs.exists(join(dir, 'Gemfile'))) ? ['bundle', 'exec', 'rspec'] : ['rspec']
+
+  return (await isWindows($)) ? ['cmd', '/c', ...base] : base
+}
+
+const junitReports = async ($: EngineInterface, project: Project) => {
+  const dir = join(project.dir, REPORT_DIRS[project.tool] ?? '')
+  let files: readonly FsEntry[]
+  try {
+    files = await $.fs.list(dir)
+  } catch {
+    return []
+  }
+  const found = await Promise.all(
+    files.filter(f => /^TEST-.*\.xml$/.test(f.name)).map(async f => parseJunitXml(await readText($, join(dir, f.name)))),
+  )
+
+  return found.flat()
+}
+
+const junit = ($: EngineInterface, argv: (p: Project) => Promise<string[]>): Adapter => ({
+  // Neither Maven nor Gradle lists tests without running them: the reports of the last run stand in.
+  list: async p => (await junitReports($, p)).map(o => ({ name: o.name, group: o.group ?? '', status: 'unknown' })),
+  run: async p => {
+    const r = await exec($, await argv(p), p.dir, RUN_TIMEOUT)
+
+    return { ...r, outcomes: await junitReports($, p) }
+  },
+})
 
 const adapters = ($: EngineInterface, root: string): Record<Tool, Adapter> => ({
   dotnet: {
@@ -105,15 +172,80 @@ const adapters = ($: EngineInterface, root: string): Record<Tool, Adapter> => ({
   },
   vitest: {
     list: async p => {
-      const entry = await vitestEntry($, p.dir, root)
+      const entry = await nodeEntry($, p.dir, root, 'vitest/vitest.mjs', 'Vitest')
 
       return parseVitestList((await exec($, ['node', entry, 'list', '--json'], p.dir, LIST_TIMEOUT)).stdout, p.dir)
     },
     run: async p => {
-      const entry = await vitestEntry($, p.dir, root)
+      const entry = await nodeEntry($, p.dir, root, 'vitest/vitest.mjs', 'Vitest')
       const r = await exec($, ['node', entry, 'run', '--reporter=json'], p.dir, RUN_TIMEOUT)
 
       return { ...r, outcomes: parseVitestRun(r.stdout, p.dir) }
+    },
+  },
+  jest: {
+    // Jest lists files, not tests: the tests appear with the first run.
+    list: async () => [],
+    run: async p => {
+      const entry = await nodeEntry($, p.dir, root, 'jest/bin/jest.js', 'Jest')
+      const r = await exec($, ['node', entry, '--json', '--ci'], p.dir, RUN_TIMEOUT)
+
+      return { ...r, outcomes: parseVitestRun(r.stdout, p.dir) }
+    },
+  },
+  mocha: {
+    list: async p => {
+      const entry = await nodeEntry($, p.dir, root, 'mocha/bin/mocha.js', 'Mocha')
+
+      return parseMochaList((await exec($, ['node', entry, '--dry-run', '--reporter', 'json'], p.dir, LIST_TIMEOUT)).stdout, p.dir)
+    },
+    run: async p => {
+      const entry = await nodeEntry($, p.dir, root, 'mocha/bin/mocha.js', 'Mocha')
+      const r = await exec($, ['node', entry, '--reporter', 'json'], p.dir, RUN_TIMEOUT)
+
+      return { ...r, outcomes: parseMochaRun(r.stdout, p.dir) }
+    },
+  },
+  playwright: {
+    list: async p => {
+      const entry = await nodeEntry($, p.dir, root, '@playwright/test/cli.js', 'Playwright')
+      const r = await exec($, ['node', entry, 'test', '--list', '--reporter=json'], p.dir, LIST_TIMEOUT)
+
+      return parsePlaywrightList(r.stdout, p.dir)
+    },
+    run: async p => {
+      const entry = await nodeEntry($, p.dir, root, '@playwright/test/cli.js', 'Playwright')
+      const r = await exec($, ['node', entry, 'test', '--reporter=json'], p.dir, RUN_TIMEOUT)
+
+      return { ...r, outcomes: parsePlaywrightRun(r.stdout, p.dir) }
+    },
+  },
+  go: {
+    list: async p => parseGoList((await exec($, ['go', 'test', '-list', '.', './...'], p.dir, LIST_TIMEOUT)).stdout),
+    run: async p => {
+      const r = await exec($, ['go', 'test', '-json', './...'], p.dir, RUN_TIMEOUT)
+
+      return { ...r, outcomes: parseGoRun(r.stdout) }
+    },
+  },
+  cargo: {
+    list: async p =>
+      parseCargoList((await exec($, ['cargo', 'test', '--', '--list', '--format', 'terse'], p.dir, LIST_TIMEOUT)).stdout),
+    run: async p => {
+      const r = await exec($, ['cargo', 'test', '--no-fail-fast'], p.dir, RUN_TIMEOUT)
+
+      return { ...r, outcomes: parseCargoRun(r.stdout) }
+    },
+  },
+  maven: junit($, async p => [...(await launcher($, p.dir, 'mvnw', 'mvn')), '-B', 'test', '-Dmaven.test.failure.ignore=true']),
+  gradle: junit($, async p => [...(await launcher($, p.dir, 'gradlew', 'gradle')), 'test', '--continue']),
+  rspec: {
+    list: async p =>
+      parseRspecList((await exec($, [...(await rspecArgv($, p.dir)), '--dry-run', '--format', 'json'], p.dir, LIST_TIMEOUT)).stdout),
+    run: async p => {
+      const r = await exec($, [...(await rspecArgv($, p.dir)), '--format', 'json'], p.dir, RUN_TIMEOUT)
+
+      return { ...r, outcomes: parseRspecRun(r.stdout) }
     },
   },
   'claude-plugin': {
@@ -161,6 +293,14 @@ const detect = async ($: EngineInterface, root: string, dir: string, entries: re
   )
     found.push(make('pytest', base))
   if (await has('package.json', /"vitest"\s*:/)) found.push(make('vitest', base))
+  if (await has('package.json', /"jest"\s*:/)) found.push(make('jest', base))
+  if (await has('package.json', /"mocha"\s*:/)) found.push(make('mocha', base))
+  if (await has('package.json', /"@playwright\/test"\s*:/)) found.push(make('playwright', base))
+  if (names.has('go.mod')) found.push(make('go', base))
+  if (names.has('Cargo.toml')) found.push(make('cargo', base))
+  if (names.has('pom.xml')) found.push(make('maven', base))
+  if (names.has('build.gradle') || names.has('build.gradle.kts')) found.push(make('gradle', base))
+  if (names.has('.rspec') || (await has('Gemfile', /rspec/))) found.push(make('rspec', base))
   if (names.has('.claude-plugin') && names.has('tests')) found.push(make('claude-plugin', base))
 
   return found
