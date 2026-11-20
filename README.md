@@ -19,7 +19,7 @@ Claude Code shows little of what costs you: how full the context is, whether the
 - **A thought comes up while Claude is busy?** [task-board](#task-board) turns it into a task from a row above the prompt, without interrupting the turn, and keeps a board per project. Name a task's key in a prompt and Claude gets the whole task.
 - **Lost track of what your setup loads?** [catalog-pane](#catalog-pane) explains your Claude Code version and lists every skill, plugin, hook and MCP server with where it comes from, its usage and the tokens it adds to every session.
 - **Where did this week's tokens go?** [usage-pane](#usage-pane) adds up tokens, cache hit rate and API price by day, model and project, and shows which prompts cost the most and why.
-- **Which tests broke?** [test-explorer](#test-explorer) finds the project's .NET, pytest, Vitest and mod tests, runs them, shows each one's status, and hands a failing test to Claude.
+- **Which tests broke?** [test-explorer](#test-explorer) finds the project's tests in a dozen frameworks, from .NET, pytest and Jest to Go, Rust and JUnit, runs them, shows each one's status, and hands a failing test to Claude.
 
 ## Installation
 
@@ -435,6 +435,14 @@ A pane that lists the tests of the session's folder as a tree, one level per too
 | .NET | a `.csproj` that references a test SDK or test framework | `dotnet test` |
 | pytest | `pytest.ini`, or a pytest section in `pyproject.toml`, `setup.cfg` or `tox.ini` | the project's `.venv` Python, `uv run` with a `uv.lock`, else `python` |
 | Vitest | a `package.json` that names `vitest` | the installed `node_modules/vitest` |
+| Jest | a `package.json` that names `jest` | the installed `node_modules/jest` with `--json`; Jest lists no tests, so they appear with the first run |
+| Mocha | a `package.json` that names `mocha` | the installed `node_modules/mocha` with the JSON reporter |
+| Playwright | a `package.json` that names `@playwright/test` | the installed `@playwright/test` with the JSON reporter, one row per test and project |
+| Go | a `go.mod` | `go test -json ./...` |
+| Rust | a `Cargo.toml` | `cargo test --no-fail-fast` |
+| Maven | a `pom.xml` | `mvnw` if the project has it, else `mvn`, then the JUnit reports in `target/surefire-reports`; the tests appear with the first run |
+| Gradle | a `build.gradle` or `build.gradle.kts` | `gradlew` if the project has it, else `gradle`, then the JUnit reports in `build/test-results/test`; the tests appear with the first run |
+| RSpec | a `.rspec`, or a `Gemfile` that names `rspec` | `bundle exec rspec` with a `Gemfile`, else `rspec`, with the JSON formatter |
 | Claude Code mods | a folder with `.claude-plugin` and `tests` | `claude plugin test` |
 
 ### Usage
