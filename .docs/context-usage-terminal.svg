@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 615 86" width="615" height="86" role="img" aria-labelledby="t d">
+  <title id="t">The context-usage rows in the terminal</title>
+  <desc id="d">Recreated from the text Claude Code prints in a terminal, with sample figures. First row: context fill 10 percent of a 1M window, the Auto 97 percent dropdown and the buttons Compact and Clear. Second row: 5-hour limit 42 percent, resetting in 2 hours 13 minutes, and weekly limit 78 percent in yellow, resetting in 3 days 4 hours.</desc>
+  <rect width="615" height="86" rx="12" fill="#1a1a1a"/>
+  <g font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas, 'DejaVu Sans Mono', monospace" font-size="15" xml:space="preserve">
+    <text x="24 33 42 51 60 69 78" y="40" fill="#8c8c8c">Context</text>
+    <text x="96" y="40" fill="#e8e8e8">▮</text>
+    <text x="105 114 123 132" y="40" fill="#8c8c8c">▯▯▯▯</text>
+    <text x="159 168 177" y="40" fill="#e8e8e8">10%</text>
+    <text x="195 204 213 222 231 240 249 258 267" y="40" fill="#8c8c8c">(100k/1M)</text>
+    <text x="294 303 312 321 330 339 348 357 366 375 384 393 402 411 420 429 438 447 456 465 474 483 492 501 510 519 528 537 546 555 564 573 582" y="40" fill="#e8e8e8">Auto: 97% ▾ [ Compact ] [ Clear ]</text>
+    <text x="33 42" y="62" fill="#8c8c8c">5h</text>
+    <text x="96 105" y="62" fill="#e8e8e8">▮▮</text>
+    <text x="114 123 132" y="62" fill="#8c8c8c">▯▯▯</text>
+    <text x="159 168 177" y="62" fill="#e8e8e8">42%</text>
+    <text x="195 204 213 222 231 240 249 258" y="62" fill="#8c8c8c">(2h 13m)</text>
+    <text x="294 303 312 321" y="62" fill="#8c8c8c">Week</text>
+    <text x="366 375 384 393" y="62" fill="#e0a83c">▮▮▮▮</text>
+    <text x="402" y="62" fill="#8c8c8c">▯</text>
+    <text x="429 438 447" y="62" fill="#e0a83c">78%</text>
+    <text x="465 474 483 492 501 510 519" y="62" fill="#8c8c8c">(3d 4h)</text>
+  </g>
+</svg>

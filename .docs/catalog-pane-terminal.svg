@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 912 372" width="912" height="372" role="img" aria-labelledby="t d">
+  <title id="t">The catalog pane in the terminal</title>
+  <desc id="d">Recreated from the text Claude Code prints in a terminal, with sample figures. Tabs for Claude, All, Skills, Commands, Agents, Mods, Plugins, Hooks, MCP and Tools with their counts and icons, Skills in the accent color, then Refresh; the layouts Table, Gallery and List with Table on, the Filter field, Sort set to Most used, From set to Everywhere and Status set to Any status. Below them a table of eight skills with the columns Name, Description, From, Used, Tokens, stars and Added, cut to fit the pane.</desc>
+  <rect width="912" height="372" rx="12" fill="#1a1a1a"/>
+  <g font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas, 'DejaVu Sans Mono', monospace" font-size="15" xml:space="preserve">
+    <text x="24 33 42 51 60 69 78 87 96 105 114 123" y="40" fill="#e8e8e8">[ ⚙ Claude ]</text>
+    <text x="141 150 159 168 177 186 195 204 213 222 231 240 249" y="40" fill="#e8e8e8">[ ☰ All 212 ]</text>
+    <text x="267 276 285 294 303 312 321 330 339 348 357 366 375 384 393" y="40" fill="#d97757">[ ✦ Skills 24 ]</text>
+    <text x="411 420 429 438 447 456 465 474 483 492 501 510 519 528 537 546 555" y="40" fill="#e8e8e8">[ / Commands 18 ]</text>
+    <text x="573 582 591 600 609 618 627 636 645 654 663 672 681 690" y="40" fill="#e8e8e8">[ ◉ Agents 9 ]</text>
+    <text x="708 717 726 735 744 753 762 771 780 789 798 807" y="40" fill="#e8e8e8">[ ◆ Mods 9 ]</text>
+    <text x="24 33 42 51 60 69 78 87 96 105 114 123 132 141 150 159" y="62" fill="#e8e8e8">[ ▣ Plugins 12 ]</text>
+    <text x="177 186 195 204 213 222 231 240 249 258 267 276 285" y="62" fill="#e8e8e8">[ ↯ Hooks 4 ]</text>
+    <text x="303 312 321 330 339 348 357 366 375 384 393" y="62" fill="#e8e8e8">[ ⇄ MCP 5 ]</text>
+    <text x="411 420 429 438 447 456 465 474 483 492 501 510 519 528" y="62" fill="#e8e8e8">[ ⚒ Tools 21 ]</text>
+    <text x="546 555 564 573 582 591 600" y="62" fill="#e8e8e8">Refresh</text>
+    <text x="24 33 42 51 60 69 78 87 96 105 114" y="106" fill="#d97757">[ ▤ Table ]</text>
+    <text x="132 141 150 159 168 177 186 195 204 213 222 231 240" y="106" fill="#e8e8e8">[ ▦ Gallery ]</text>
+    <text x="258 267 276 285 294 303 312 321 330 339" y="106" fill="#e8e8e8">[ ≡ List ]</text>
+    <text x="357 366 375 384 393 402 411" y="106" fill="#e8e8e8">Filter:</text>
+    <text x="429 438 447 456 465 474 483 492 501 510 519 528 537 546 555 564 573 582 591" y="106" fill="#8c8c8c">name or description</text>
+    <text x="609 618 627 636 645 654 663 672 681 690 699 708 717 726 735 744 753" y="106" fill="#e8e8e8">Sort: Most used ▾</text>
+    <text x="24 33 42 51 60 69 78 87 96 105 114 123 132 141 150 159 168 177" y="128" fill="#e8e8e8">From: Everywhere ▾</text>
+    <text x="195 204 213 222 231 240 249 258 267 276 285 294 303 312 321 330 339 348 357 366" y="128" fill="#e8e8e8">Status: Any status ▾</text>
+    <text x="24 33 42 51" y="172" fill="#8c8c8c" font-weight="700">Name</text>
+    <text x="249 258 267 276 285 294 303 312 321 330 339" y="172" fill="#8c8c8c" font-weight="700">Description</text>
+    <text x="456 465 474 483" y="172" fill="#8c8c8c" font-weight="700">From</text>
+    <text x="591 600 609 618 627 636" y="172" fill="#8c8c8c" font-weight="700">Used ▾</text>
+    <text x="654 663 672 681 690 699" y="172" fill="#8c8c8c" font-weight="700">Tokens</text>
+    <text x="726" y="172" fill="#8c8c8c" font-weight="700">★</text>
+    <text x="798 807 816 825 834" y="172" fill="#8c8c8c" font-weight="700">Added</text>
+    <text x="24 33 42 51 60 69 78 87 96 105 114" y="194" fill="#e8e8e8">code-review</text>
+    <text x="249 258 267 276 285 294 303 312 321 330 339 348 357 366 375 384 393 402 411 420 429 438" y="194" fill="#8c8c8c">Review the current di…</text>
+    <text x="456 465 474 483 492 501 510 519" y="194" fill="#8c8c8c">built-in</text>
+    <text x="591 600" y="194" fill="#8c8c8c">42</text>
+    <text x="654" y="194" fill="#8c8c8c">–</text>
+    <text x="726" y="194" fill="#8c8c8c">–</text>
+    <text x="798" y="194" fill="#8c8c8c">–</text>
+    <text x="24 33 42" y="216" fill="#e8e8e8">pdf</text>
+    <text x="249 258 267 276 285 294 303 312 321 330 339 348 357 366 375 384 393 402 411 420 429 438" y="216" fill="#8c8c8c">Read, create, merge, …</text>
+    <text x="456 465 474 483 492 501 510 519 528 537 546 555 564 573" y="216" fill="#8c8c8c">anthropic-ski…</text>
+    <text x="591 600" y="216" fill="#8c8c8c">17</text>
+    <text x="654 663 672" y="216" fill="#8c8c8c">~95</text>
+    <text x="726 735 744 753" y="216" fill="#8c8c8c">3.1k</text>
+    <text x="798 807 816 825 834 843 852 861 870 879" y="216" fill="#8c8c8c">2026-08-12</text>
+    <text x="24 33 42 51 60 69 78 87 96 105 114 123 132" y="238" fill="#e8e8e8">release-notes</text>
+    <text x="249 258 267 276 285 294 303 312 321 330 339 348 357 366 375 384 393 402 411 420 429 438" y="238" fill="#8c8c8c">Draft release notes f…</text>
+    <text x="456 465 474 483" y="238" fill="#8c8c8c">user</text>
+    <text x="591" y="238" fill="#8c8c8c">9</text>
+    <text x="654" y="238" fill="#8c8c8c">–</text>
+    <text x="726" y="238" fill="#8c8c8c">–</text>
+    <text x="798 807 816 825 834 843 852 861 870 879" y="238" fill="#8c8c8c">2026-07-25</text>
+    <text x="24 33 42 51 60 69 78 87" y="260" fill="#e8e8e8">auto:fix</text>
+    <text x="249 258 267 276 285 294 303 312 321 330 339 348 357 366 375 384 393 402 411 420 429 438" y="260" fill="#8c8c8c">Fix a bug from its ti…</text>
+    <text x="456 465 474 483" y="260" fill="#8c8c8c">auto</text>
+    <text x="591" y="260" fill="#8c8c8c">6</text>
+    <text x="654 663 672" y="260" fill="#8c8c8c">~80</text>
+    <text x="726 735 744 753" y="260" fill="#8c8c8c">1.2k</text>
+    <text x="798 807 816 825 834 843 852 861 870 879" y="260" fill="#8c8c8c">2026-09-30</text>
+    <text x="24 33 42 51 60 69 78 87" y="282" fill="#e8e8e8">simplify</text>
+    <text x="249 258 267 276 285 294 303 312 321 330 339 348 357 366 375 384 393 402 411 420 429 438" y="282" fill="#8c8c8c">Review the changed co…</text>
+    <text x="456 465 474 483 492 501 510 519" y="282" fill="#8c8c8c">built-in</text>
+    <text x="591" y="282" fill="#8c8c8c">4</text>
+    <text x="654" y="282" fill="#8c8c8c">–</text>
+    <text x="726" y="282" fill="#8c8c8c">–</text>
+    <text x="798" y="282" fill="#8c8c8c">–</text>
+    <text x="24 33 42 51 60 69 78 87 96 105 114" y="304" fill="#e8e8e8">find-skills</text>
+    <text x="249 258 267 276 285 294 303 312 321 330 339 348 357 366 375 384 393 402 411 420 429 438" y="304" fill="#8c8c8c">Discover and install …</text>
+    <text x="456 465 474 483" y="304" fill="#8c8c8c">user</text>
+    <text x="591" y="304" fill="#8c8c8c">1</text>
+    <text x="654" y="304" fill="#8c8c8c">–</text>
+    <text x="726 735 744 753" y="304" fill="#8c8c8c">2.4k</text>
+    <text x="798 807 816 825 834 843 852 861 870 879" y="304" fill="#8c8c8c">2026-07-25</text>
+    <text x="24 33 42 51" y="326" fill="#e8e8e8">xlsx</text>
+    <text x="249 258 267 276 285 294 303 312 321 330 339 348 357 366 375 384 393 402 411 420 429 438" y="326" fill="#8c8c8c">Open, edit and create…</text>
+    <text x="456 465 474 483 492 501 510 519 528 537 546 555 564 573" y="326" fill="#8c8c8c">anthropic-ski…</text>
+    <text x="591" y="326" fill="#8c8c8c">–</text>
+    <text x="654 663 672 681" y="326" fill="#8c8c8c">~110</text>
+    <text x="726 735 744 753" y="326" fill="#8c8c8c">3.1k</text>
+    <text x="798 807 816 825 834 843 852 861 870 879" y="326" fill="#8c8c8c">2026-08-12</text>
+    <text x="24 33 42 51 60 69 78 87 96 105 114 123" y="348" fill="#e8e8e8">context7-mcp</text>
+    <text x="249 258 267 276 285 294 303 312 321 330 339 348 357 366 375 384 393 402 411 420 429 438" y="348" fill="#8c8c8c">Fetch current library…</text>
+    <text x="456 465 474 483" y="348" fill="#8c8c8c">user</text>
+    <text x="591" y="348" fill="#8c8c8c">–</text>
+    <text x="654" y="348" fill="#8c8c8c">–</text>
+    <text x="726" y="348" fill="#8c8c8c">–</text>
+    <text x="798 807 816 825 834 843 852 861 870 879" y="348" fill="#8c8c8c">2026-07-31</text>
+  </g>
+</svg>
