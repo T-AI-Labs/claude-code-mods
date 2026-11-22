@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 615 64" width="615" height="64" role="img" aria-labelledby="t d">
+  <title id="t">The cache-meter row in the terminal</title>
+  <desc id="d">Recreated from the text Claude Code prints in a terminal, with sample figures. Cache hit rate 92 percent, 92k of 100k input tokens, the cache warm for 3 minutes 12 seconds, and the Keep warm button.</desc>
+  <rect width="615" height="64" rx="12" fill="#1a1a1a"/>
+  <g font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas, 'DejaVu Sans Mono', monospace" font-size="15" xml:space="preserve">
+    <text x="24 33 42 51 60" y="40" fill="#8c8c8c">Cache</text>
+    <text x="96 105 114 123 132" y="40" fill="#e8e8e8">▮▮▮▮▮</text>
+    <text x="159 168 177" y="40" fill="#e8e8e8">92%</text>
+    <text x="195 204 213 222 231 240 249 258 267 276" y="40" fill="#8c8c8c">(92k/100k)</text>
+    <text x="294 303 312 321 330 339 348 357 366" y="40" fill="#8c8c8c">warm 3:12</text>
+    <text x="393 402 411 420 429 438 447 456 465 474 483 492 501" y="40" fill="#e8e8e8">[ Keep warm ]</text>
+  </g>
+</svg>

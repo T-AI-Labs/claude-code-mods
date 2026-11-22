@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 64" width="840" height="64" role="img" aria-labelledby="t d">
+  <title id="t">The command-center row in the terminal</title>
+  <desc id="d">Recreated from the text Claude Code prints in a terminal, with sample figures. The dropdowns Source All, Agent Explore and Skill/Command with the skill find-skills, and the buttons Insert and Run, dropdowns drawn as label, value and a triangle, buttons in square brackets.</desc>
+  <rect width="840" height="64" rx="12" fill="#1a1a1a"/>
+  <g font-family="ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas, 'DejaVu Sans Mono', monospace" font-size="15" xml:space="preserve">
+    <text x="24 33 42 51 60 69 78 87 96 105 114 123 132 141 150 159 168 177 186 195 204 213 222 231 240 249 258 267 276 285 294 303 312 321 330 339 348 357 366 375 384 393 402 411 420 429 438 447 456 465 474 483 492 501 510 519 528 537 546 555 564 573 582 591 600 609 618 627 636 645 654 663 672 681 690 699 708 717 726 735 744 753 762 771 780 789 798 807 816" y="40" fill="#e8e8e8">Source: All ▾  Agent: Explore ▾  Skill/Command: find-skills · skill ▾  [ Insert ] [ Run ]</text>
+  </g>
+</svg>

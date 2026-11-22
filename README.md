@@ -32,7 +32,7 @@ claude plugin marketplace update T-AI-Labs
 
 ## Mods
 
-context-meter and usage-limits are the two rows of context-usage as separate mods: install either context-usage or those two, not both. The previews show the desktop app; in a terminal the controls are text, see [Terminal and desktop app](#terminal-and-desktop-app).
+context-meter and usage-limits are the two rows of context-usage as separate mods: install either context-usage or those two, not both. The previews show the terminal; the desktop app draws the same controls as framed buttons and dropdowns, see [Terminal and desktop app](#terminal-and-desktop-app).
 
 <table>
 <tr><th>Mod</th><th>Description</th><th width="35%">Preview</th></tr>
@@ -45,7 +45,7 @@ claude plugin install context-usage@T-AI-Labs
 claude plugin update context-usage@T-AI-Labs
 ```
 
-</td><td><img src=".docs/context-usage.svg" alt="The context-usage rows" width="320"></td></tr>
+</td><td><img src=".docs/context-usage-terminal.svg" alt="The context-usage rows in the terminal" width="320"></td></tr>
 <tr><td><a href="#cache-meter">cache&#8209;meter</a></td><td>
 
 Prompt-cache hits and when the cache goes cold.
@@ -55,7 +55,7 @@ claude plugin install cache-meter@T-AI-Labs
 claude plugin update cache-meter@T-AI-Labs
 ```
 
-</td><td><img src=".docs/cache-meter.svg" alt="The cache-meter row" width="320"></td></tr>
+</td><td><img src=".docs/cache-meter-terminal.svg" alt="The cache-meter row in the terminal" width="320"></td></tr>
 <tr><td><a href="#catalog-pane">catalog&#8209;pane</a></td><td>
 
 Your Claude Code version and every skill, plugin, hook and MCP server you have.
@@ -65,7 +65,7 @@ claude plugin install catalog-pane@T-AI-Labs
 claude plugin update catalog-pane@T-AI-Labs
 ```
 
-</td><td><img src=".docs/catalog-pane.svg" alt="The catalog pane" width="320"></td></tr>
+</td><td><img src=".docs/catalog-pane-terminal.svg" alt="The catalog pane in the terminal" width="320"></td></tr>
 <tr><td><a href="#usage-pane">usage&#8209;pane</a></td><td>
 
 Tokens and API price by day, session and prompt.
@@ -75,7 +75,7 @@ claude plugin install usage-pane@T-AI-Labs
 claude plugin update usage-pane@T-AI-Labs
 ```
 
-</td><td><img src=".docs/usage-pane.svg" alt="The usage pane" width="320"></td></tr>
+</td><td><img src=".docs/usage-pane-terminal.svg" alt="The usage pane in the terminal" width="320"></td></tr>
 <tr><td><a href="#command-center">command&#8209;center</a></td><td>
 
 Agents, skills and commands in dropdowns.
@@ -85,7 +85,7 @@ claude plugin install command-center@T-AI-Labs
 claude plugin update command-center@T-AI-Labs
 ```
 
-</td><td><img src=".docs/command-center.svg" alt="The command-center row" width="320"></td></tr>
+</td><td><img src=".docs/command-center-terminal.svg" alt="The command-center row in the terminal" width="320"></td></tr>
 <tr><td><a href="#task-board">task&#8209;board</a></td><td>
 
 A task board per project, fed from above the prompt.
@@ -95,7 +95,7 @@ claude plugin install task-board@T-AI-Labs
 claude plugin update task-board@T-AI-Labs
 ```
 
-</td><td><img src=".docs/task-board.svg" alt="The task board" width="320"></td></tr>
+</td><td><img src=".docs/task-board-terminal.svg" alt="The task board in the terminal" width="320"></td></tr>
 <tr><td><a href="#test-explorer">test&#8209;explorer</a></td><td>
 
 Your project's tests by status, run with a press.
@@ -105,7 +105,7 @@ claude plugin install test-explorer@T-AI-Labs
 claude plugin update test-explorer@T-AI-Labs
 ```
 
-</td><td><img src=".docs/test-explorer.svg" alt="The test explorer" width="320"></td></tr>
+</td><td><img src=".docs/test-explorer-terminal.svg" alt="The test explorer in the terminal" width="320"></td></tr>
 <tr><td><a href="#context-meter">context&#8209;meter</a></td><td>
 
 The context row of context-usage on its own.
@@ -115,7 +115,7 @@ claude plugin install context-meter@T-AI-Labs
 claude plugin update context-meter@T-AI-Labs
 ```
 
-</td><td><img src=".docs/context-meter.svg" alt="The context-meter row" width="320"></td></tr>
+</td><td><img src=".docs/context-meter-terminal.svg" alt="The context-meter row in the terminal" width="320"></td></tr>
 <tr><td><a href="#usage-limits">usage&#8209;limits</a></td><td>
 
 The usage row of context-usage on its own.
@@ -125,12 +125,12 @@ claude plugin install usage-limits@T-AI-Labs
 claude plugin update usage-limits@T-AI-Labs
 ```
 
-</td><td><img src=".docs/usage-limits.svg" alt="The usage-limits row" width="320"></td></tr>
+</td><td><img src=".docs/usage-limits-terminal.svg" alt="The usage-limits row in the terminal" width="320"></td></tr>
 </table>
 
 ## Terminal and desktop app
 
-The previews in this README are illustrations of the desktop app, with sample figures. Each mod adds only its own rows, shown here one mod at a time. The mods draw their dropdowns and buttons with Claude Code's own controls, and Claude Code draws those differently in a terminal: as text in the terminal's font and colors, a dropdown as `Agent: Explore ▾` and a button as `[ Run ]`. A mod cannot change that, and both work the same way.
+The previews in the [Mods](#mods) table show the terminal, those in the sections below the desktop app, all illustrations with sample figures. Each mod adds only its own rows, shown here one mod at a time. The mods draw their dropdowns and buttons with Claude Code's own controls, and Claude Code draws those differently in a terminal: as text in the terminal's font and colors, a dropdown as `Agent: Explore ▾` and a button as `[ Run ]`. A mod cannot change that, and both work the same way.
 
 <p align="center"><img src=".docs/band-terminal.svg" alt="The rows of context-usage, cache-meter, command-center and task-board in a terminal, drawn as text" width="857"><br><em>Terminal</em></p>
 
